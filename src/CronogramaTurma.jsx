@@ -1,6 +1,6 @@
 // ==========================================
 // CRONOGRAMA TURMA
-// Página da coordenação
+// Versão final profissional para impressão
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -12,9 +12,9 @@ function CronogramaTurma() {
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [cronograma, setCronograma] = useState([]);
 
-  // ===============================
-  // Carregar todas as turmas
-  // ===============================
+  // ==========================================
+  // CARREGAR TURMAS
+  // ==========================================
 
   useEffect(() => {
     carregarTurmas();
@@ -25,13 +25,13 @@ function CronogramaTurma() {
       const response = await api.get("/turmas");
       setTurmas(response.data);
     } catch (error) {
-      console.error("Erro ao carregar turmas:", error);
+      console.error("Erro ao carregar turmas", error);
     }
   };
 
-  // ===============================
-  // Carregar cronograma da turma
-  // ===============================
+  // ==========================================
+  // CARREGAR CRONOGRAMA DA TURMA
+  // ==========================================
 
   const carregarCronograma = async (turmaId) => {
     if (!turmaId) return;
@@ -39,6 +39,7 @@ function CronogramaTurma() {
     try {
       const response = await api.get(`/calendario/${turmaId}`);
 
+      // Ordena por data
       const ordenado = response.data.sort(
         (a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
       );
@@ -46,26 +47,57 @@ function CronogramaTurma() {
       setCronograma(ordenado);
 
     } catch (error) {
-      console.error("Erro ao carregar cronograma:", error);
+      console.error("Erro ao carregar cronograma", error);
       setCronograma([]);
     }
   };
 
-  // ===============================
-  // Função imprimir
-  // ===============================
+  // ==========================================
+  // FUNÇÃO PARA IMPRIMIR
+  // ==========================================
 
   const imprimir = () => {
     window.print();
   };
 
-  return (
-    <div style={{ padding: "30px", fontFamily: "Arial" }}>
-      <h2>Cronograma Completo da Turma</h2>
+  // ==========================================
+  // CONVERTER CONTEÚDO JSON EM LISTA
+  // ==========================================
 
-      {/* Seleção da Turma */}
-      <div>
-        <label>Selecione a Turma:</label>
+  const renderTopicos = (conteudo) => {
+    try {
+      const topicos = JSON.parse(conteudo);
+
+      if (Array.isArray(topicos)) {
+        return (
+          <ul style={{ margin: 0, paddingLeft: "18px" }}>
+            {topicos.map((topico, index) => (
+              <li key={index}>{topico}</li>
+            ))}
+          </ul>
+        );
+      }
+
+      return conteudo;
+
+    } catch {
+      return conteudo;
+    }
+  };
+
+  return (
+    <div>
+
+      {/* ================================
+         ÁREA NÃO IMPRESSA
+      ================================== */}
+
+      <div className="no-print">
+
+        <h2>Cronograma Completo da Turma</h2>
+
+        <label>Selecione a Turma:</label><br />
+
         <select
           value={turmaSelecionada}
           onChange={(e) => {
@@ -80,50 +112,106 @@ function CronogramaTurma() {
             </option>
           ))}
         </select>
+
+        {cronograma.length > 0 && (
+          <div style={{ marginTop: "20px" }}>
+            <button onClick={imprimir}>🖨 Imprimir</button>
+          </div>
+        )}
+
       </div>
 
-      {/* Botão Imprimir */}
+      {/* ================================
+         ÁREA QUE SERÁ IMPRESSA
+      ================================== */}
+
       {cronograma.length > 0 && (
-        <div style={{ marginTop: "20px" }}>
-          <button onClick={imprimir}>🖨 Imprimir</button>
+
+        <div className="area-impressao">
+
+          <h2 style={{ textAlign: "center", marginBottom: "25px" }}>
+            CRONOGRAMA DE AVALIAÇÕES — {turmas.find(t => t.id === turmaSelecionada)?.nome}
+          </h2>
+
+          <table>
+
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Professor</th>
+                <th>Disciplina</th>
+                <th>Bimestre</th>
+                <th>Conteúdo</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {cronograma.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    {new Date(item.data_avaliacao).toLocaleDateString("pt-BR")}
+                  </td>
+                  <td>{item.atribuicao.professor.nome}</td>
+                  <td>{item.atribuicao.disciplina.nome}</td>
+                  <td>{item.bimestre}º</td>
+                  <td>{renderTopicos(item.conteudo)}</td>
+                </tr>
+              ))}
+            </tbody>
+
+          </table>
+
         </div>
       )}
 
-      {/* Tabela */}
-      {cronograma.length > 0 && (
-        <table
-          border="1"
-          cellPadding="8"
-          style={{
-            marginTop: "20px",
-            borderCollapse: "collapse",
-            width: "100%"
-          }}
-        >
-          <thead style={{ backgroundColor: "#f0f0f0" }}>
-            <tr>
-              <th>Data da Avaliação</th>
-              <th>Professor</th>
-              <th>Disciplina</th>
-              <th>Bimestre</th>
-              <th>Conteúdo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cronograma.map((item) => (
-              <tr key={item.id}>
-                <td>
-                  {new Date(item.data_avaliacao).toLocaleDateString("pt-BR")}
-                </td>
-                <td>{item.atribuicao.professor.nome}</td>
-                <td>{item.atribuicao.disciplina.nome}</td>
-                <td>{item.bimestre}º</td>
-                <td>{item.conteudo}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      {/* ================================
+         ESTILO
+      ================================== */}
+
+      <style>
+        {`
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12px;
+        }
+
+        th, td {
+          border: 1px solid #000;
+          padding: 6px;
+          vertical-align: top;
+        }
+
+        th {
+          background-color: #f2f2f2;
+        }
+
+        @media print {
+
+          /* Esconde tudo */
+          body * {
+            visibility: hidden;
+          }
+
+          /* Mostra apenas o cronograma */
+          .area-impressao,
+          .area-impressao * {
+            visibility: visible;
+          }
+
+          .area-impressao {
+            position: absolute;
+            top: 4.5cm;   /* espaço do logo */
+            left: 2cm;
+            right: 2cm;
+          }
+
+        }
+
+        `}
+      </style>
+
     </div>
   );
 }
