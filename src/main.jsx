@@ -1,10 +1,28 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+// ==========================================
+// MAIN.JSX
+// Configuração com Layout Global
+// ==========================================
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Layout from "./Layout";
+import App from "./App";
+import CronogramaTurma from "./CronogramaTurma";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <Routes>
+
+        {/* Layout envolve todas as páginas */}
+        <Route path="/" element={<Layout />}>
+          <Route index element={<App />} />
+          <Route path="cronograma" element={<CronogramaTurma />} />
+        </Route>
+
+      </Routes>
+    </BrowserRouter>
+  </React.StrictMode>
+);

@@ -1,5 +1,6 @@
 // ==========================================
-// COMPONENTE PRINCIPAL DO SISTEMA
+// APP.JSX
+// Página do Professor
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -7,9 +8,14 @@ import api from "./api";
 
 function App() {
 
-  // ==========================================
-  // ESTADOS DA APLICAÇÃO
-  // ==========================================
+  const anoAtual = new Date().getFullYear();
+
+  const semanasProva = {
+    1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
+    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-12` },
+    3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
+    4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
+  };
 
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
@@ -19,86 +25,52 @@ function App() {
 
   const [bimestre, setBimestre] = useState(1);
   const [conteudo, setConteudo] = useState("");
+  const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
   const [mensagem, setMensagem] = useState("");
-
-  // ==========================================
-  // CARREGAR PROFESSORES AO INICIAR
-  // ==========================================
 
   useEffect(() => {
     carregarProfessores();
   }, []);
 
-  const carregarProfessores = async () => {
-    try {
-      const response = await api.get("/professores");
-      setProfessores(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar professores", error);
-    }
-  };
+  useEffect(() => {
+    setDataAvaliacao(semanasProva[bimestre].inicio);
+  }, [bimestre]);
 
-  // ==========================================
-  // CARREGAR ATRIBUIÇÕES AO SELECIONAR PROFESSOR
-  // ==========================================
+  const carregarProfessores = async () => {
+    const response = await api.get("/professores");
+    setProfessores(response.data);
+  };
 
   const carregarAtribuicoes = async (professorId) => {
-    try {
-      const response = await api.get(`/atribuicoes/${professorId}`);
-      setAtribuicoes(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar atribuições", error);
-    }
+    if (!professorId) return;
+
+    const response = await api.get(`/atribuicoes/${professorId}`);
+    setAtribuicoes(response.data);
   };
-
-  // ==========================================
-  // BUSCAR CONTEÚDO
-  // ==========================================
-
-  const buscarConteudo = async () => {
-    try {
-      const response = await api.get("/conteudo", {
-        params: {
-          atribuicao_id: atribuicaoSelecionada,
-          bimestre: bimestre
-        }
-      });
-
-      setConteudo(response.data.conteudo);
-      setMensagem("Conteúdo carregado com sucesso!");
-    } catch (error) {
-      setConteudo("");
-      setMensagem("Nenhum conteúdo encontrado. Você pode criar um novo.");
-    }
-  };
-
-  // ==========================================
-  // SALVAR CONTEÚDO
-  // ==========================================
 
   const salvarConteudo = async () => {
-    try {
-      await api.post("/conteudo", {
-        atribuicao_id: atribuicaoSelecionada,
-        bimestre: bimestre,
-        conteudo: conteudo
-      });
-
-      setMensagem("Conteúdo salvo com sucesso!");
-    } catch (error) {
-      setMensagem("Erro ao salvar conteúdo.");
+    if (!atribuicaoSelecionada) {
+      setMensagem("Selecione uma turma.");
+      return;
     }
+
+    await api.post("/conteudos", {
+      atribuicao_id: atribuicaoSelecionada,
+      bimestre,
+      conteudo,
+      data_avaliacao: dataAvaliacao
+    });
+
+    setMensagem("Conteúdo salvo com sucesso!");
   };
 
   return (
-    <div style={{ padding: "30px", fontFamily: "Arial" }}>
-      <h2>Sistema de Conteúdos Essenciais</h2>
+    <div>
 
-      {/* ==========================================
-          SELEÇÃO DE PROFESSOR
-      ========================================== */}
-      <div>
-        <label>Professor:</label>
+      <h2>Painel do Professor</h2>
+
+      <div style={{ marginTop: "20px" }}>
+        <label>Professor:</label><br />
         <select
           value={professorSelecionado}
           onChange={(e) => {
@@ -115,11 +87,8 @@ function App() {
         </select>
       </div>
 
-      {/* ==========================================
-          SELEÇÃO DE ATRIBUIÇÃO (TURMA + DISCIPLINA)
-      ========================================== */}
-      <div>
-        <label>Turma / Disciplina:</label>
+      <div style={{ marginTop: "20px" }}>
+        <label>Turma / Disciplina:</label><br />
         <select
           value={atribuicaoSelecionada}
           onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
@@ -133,48 +102,48 @@ function App() {
         </select>
       </div>
 
-      {/* ==========================================
-          SELEÇÃO DE BIMESTRE
-      ========================================== */}
-      <div>
-        <label>Bimestre:</label>
+      <div style={{ marginTop: "20px" }}>
+        <label>Bimestre:</label><br />
         <select
           value={bimestre}
           onChange={(e) => setBimestre(Number(e.target.value))}
         >
-          <option value={1}>1º Bimestre</option>
-          <option value={2}>2º Bimestre</option>
-          <option value={3}>3º Bimestre</option>
-          <option value={4}>4º Bimestre</option>
+          <option value={1}>1º</option>
+          <option value={2}>2º</option>
+          <option value={3}>3º</option>
+          <option value={4}>4º</option>
         </select>
-
-        <button onClick={buscarConteudo}>Buscar</button>
       </div>
 
-      {/* ==========================================
-          CAMPO DE TEXTO DO CONTEÚDO
-      ========================================== */}
       <div style={{ marginTop: "20px" }}>
-        <textarea
-          rows="10"
-          cols="80"
-          value={conteudo}
-          onChange={(e) => setConteudo(e.target.value)}
-          placeholder="Digite o conteúdo essencial aqui..."
+        <label>Data da Avaliação:</label><br />
+        <input
+          type="date"
+          value={dataAvaliacao}
+          min={semanasProva[bimestre].inicio}
+          max={semanasProva[bimestre].fim}
+          onChange={(e) => setDataAvaliacao(e.target.value)}
         />
       </div>
 
-      {/* ==========================================
-          BOTÃO SALVAR
-      ========================================== */}
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={salvarConteudo}>Salvar</button>
+      <div style={{ marginTop: "20px" }}>
+        <label>Conteúdo:</label><br />
+        <textarea
+          rows="6"
+          cols="70"
+          value={conteudo}
+          onChange={(e) => setConteudo(e.target.value)}
+        />
       </div>
 
-      {/* ==========================================
-          MENSAGEM DE RETORNO
-      ========================================== */}
+      <div style={{ marginTop: "20px" }}>
+        <button onClick={salvarConteudo}>
+          Salvar
+        </button>
+      </div>
+
       <p>{mensagem}</p>
+
     </div>
   );
 }
