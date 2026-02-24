@@ -7,7 +7,7 @@ import axios from "axios";
 
 // Ajuste essa URL quando fizer deploy
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8000"
+  baseURL: "https://back-conteudo-takaoka.onrender.com/"
 });
 
 export default api;
