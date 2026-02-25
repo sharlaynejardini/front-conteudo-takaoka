@@ -1,111 +1,64 @@
-// ==========================================
-// CRONOGRAMA TURMA
-// Versão final profissional para impressão
-// ==========================================
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import api from "./api";
+import html2canvas from "html2canvas";
+import logoTakaoka from "./assets/logo_takaoka.png"; // 🔥 IMPORT CORRETO
 
 function CronogramaTurma() {
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
+  const [bimestre, setBimestre] = useState(1);
   const [cronograma, setCronograma] = useState([]);
 
-  // ==========================================
-  // CARREGAR TURMAS
-  // ==========================================
+  const printRef = useRef();
 
   useEffect(() => {
+    async function carregarTurmas() {
+      const response = await api.get("/turmas");
+      setTurmas(response.data);
+    }
     carregarTurmas();
   }, []);
 
-  const carregarTurmas = async () => {
-    try {
-      const response = await api.get("/turmas");
-      setTurmas(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar turmas", error);
-    }
-  };
+  const buscarCronograma = async () => {
+    if (!turmaSelecionada) return;
 
-  // ==========================================
-  // CARREGAR CRONOGRAMA DA TURMA
-  // ==========================================
-
-  const carregarCronograma = async (turmaId) => {
-    if (!turmaId) return;
-
-    try {
-      const response = await api.get(`/calendario/${turmaId}`);
-
-      // Ordena por data
-      const ordenado = response.data.sort(
-        (a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
-      );
-
-      setCronograma(ordenado);
-
-    } catch (error) {
-      console.error("Erro ao carregar cronograma", error);
-      setCronograma([]);
-    }
-  };
-
-  // ==========================================
-  // FUNÇÃO PARA IMPRIMIR
-  // ==========================================
-
-  const imprimir = () => {
-    window.print();
-  };
-
-  // ==========================================
-  // CONVERTER CONTEÚDO JSON EM LISTA
-  // ==========================================
-
-  const renderTopicos = (conteudo) => {
-    try {
-      const topicos = JSON.parse(conteudo);
-
-      if (Array.isArray(topicos)) {
-        return (
-          <ul style={{ margin: 0, paddingLeft: "18px" }}>
-            {topicos.map((topico, index) => (
-              <li key={index}>{topico}</li>
-            ))}
-          </ul>
-        );
+    const response = await api.get("/cronograma", {
+      params: {
+        turma_id: turmaSelecionada,
+        bimestre: bimestre
       }
+    });
 
-      return conteudo;
+    setCronograma(response.data);
+  };
 
-    } catch {
-      return conteudo;
-    }
+  const formatarData = (dataISO) => {
+    const data = new Date(dataISO);
+    return data.toLocaleDateString("pt-BR");
+  };
+
+  const gerarImagem = async () => {
+    const canvas = await html2canvas(printRef.current, { scale: 2 });
+
+    const link = document.createElement("a");
+    const turmaNome = turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+    link.download = `${turmaNome}_${bimestre}Bimestre.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
   };
 
   return (
-    <div>
+    <div style={{ padding: "40px", fontFamily: "Arial" }}>
 
-      {/* ================================
-         ÁREA NÃO IMPRESSA
-      ================================== */}
+      <h2>Cronograma de Avaliações</h2>
 
-      <div className="no-print">
-
-        <h2>Cronograma Completo da Turma</h2>
-
-        <label>Selecione a Turma:</label><br />
-
+      <div style={{ marginBottom: "20px" }}>
         <select
           value={turmaSelecionada}
-          onChange={(e) => {
-            setTurmaSelecionada(e.target.value);
-            carregarCronograma(e.target.value);
-          }}
+          onChange={(e) => setTurmaSelecionada(e.target.value)}
         >
-          <option value="">Selecione</option>
+          <option value="">Selecione a Turma</option>
           {turmas.map((turma) => (
             <option key={turma.id} value={turma.id}>
               {turma.nome}
@@ -113,107 +66,85 @@ function CronogramaTurma() {
           ))}
         </select>
 
-        {cronograma.length > 0 && (
-          <div style={{ marginTop: "20px" }}>
-            <button onClick={imprimir}>🖨 Imprimir</button>
-          </div>
-        )}
+        <select
+          value={bimestre}
+          onChange={(e) => setBimestre(Number(e.target.value))}
+          style={{ marginLeft: "10px" }}
+        >
+          <option value={1}>1º Bimestre</option>
+          <option value={2}>2º Bimestre</option>
+          <option value={3}>3º Bimestre</option>
+          <option value={4}>4º Bimestre</option>
+        </select>
 
+        <button onClick={buscarCronograma} style={{ marginLeft: "10px" }}>
+          Buscar
+        </button>
+
+        <button onClick={gerarImagem} style={{ marginLeft: "10px" }}>
+          Baixar Imagem
+        </button>
       </div>
 
-      {/* ================================
-         ÁREA QUE SERÁ IMPRESSA
-      ================================== */}
+      {/* ÁREA EXPORTADA */}
+      <div ref={printRef} style={{ backgroundColor: "white", padding: "40px" }}>
 
-      {cronograma.length > 0 && (
-
-        <div className="area-impressao">
-
-          <h2 style={{ textAlign: "center", marginBottom: "25px" }}>
-            CRONOGRAMA DE AVALIAÇÕES — {turmas.find(t => t.id === turmaSelecionada)?.nome}
-          </h2>
-
-          <table>
-
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Professor</th>
-                <th>Disciplina</th>
-                <th>Bimestre</th>
-                <th>Conteúdo</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {cronograma.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    {new Date(item.data_avaliacao).toLocaleDateString("pt-BR")}
-                  </td>
-                  <td>{item.atribuicao.professor.nome}</td>
-                  <td>{item.atribuicao.disciplina.nome}</td>
-                  <td>{item.bimestre}º</td>
-                  <td>{renderTopicos(item.conteudo)}</td>
-                </tr>
-              ))}
-            </tbody>
-
-          </table>
-
+        {/* 🔥 LOGO CORRIGIDO */}
+        <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          <img
+            src={logoTakaoka}
+            alt="Logo"
+            style={{ maxWidth: "100%" }}
+          />
         </div>
-      )}
 
-      {/* ================================
-         ESTILO
-      ================================== */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+          <strong>
+            Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
+          </strong>
+          <strong>{bimestre}º Bimestre</strong>
+        </div>
 
-      <style>
-        {`
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+          <thead>
+            <tr style={{ backgroundColor: "#2c4a8a", color: "white" }}>
+              <th style={thStyle}>Data</th>
+              <th style={thStyle}>Professor</th>
+              <th style={thStyle}>Disciplina</th>
+              <th style={thStyle}>Conteúdo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cronograma.map((item, index) => (
+              <tr key={item.id} style={{ backgroundColor: index % 2 === 0 ? "#f2f2f2" : "white" }}>
+                <td style={tdStyle}>{formatarData(item.data_avaliacao)}</td>
+                <td style={tdStyle}>{item.atribuicao.professor.nome}</td>
+                <td style={tdStyle}>{item.atribuicao.disciplina.nome}</td>
+                <td style={tdStyle}>
+                  {item.conteudo.map((topico, i) => (
+                    <div key={i}>- {topico}</div>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          font-size: 12px;
-        }
-
-        th, td {
-          border: 1px solid #000;
-          padding: 6px;
-          vertical-align: top;
-        }
-
-        th {
-          background-color: #f2f2f2;
-        }
-
-        @media print {
-
-          /* Esconde tudo */
-          body * {
-            visibility: hidden;
-          }
-
-          /* Mostra apenas o cronograma */
-          .area-impressao,
-          .area-impressao * {
-            visibility: visible;
-          }
-
-          .area-impressao {
-            position: absolute;
-            top: 4.5cm;   /* espaço do logo */
-            left: 2cm;
-            right: 2cm;
-          }
-
-        }
-
-        `}
-      </style>
-
+      </div>
     </div>
   );
 }
+
+const thStyle = {
+  padding: "10px",
+  border: "1px solid #ccc",
+  textAlign: "left"
+};
+
+const tdStyle = {
+  padding: "10px",
+  border: "1px solid #ccc",
+  verticalAlign: "top"
+};
 
 export default CronogramaTurma;
