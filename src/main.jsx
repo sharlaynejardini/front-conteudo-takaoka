@@ -8,6 +8,8 @@ import CronogramaTurma from "./CronogramaTurma";
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
 import AuthCallback from "./AuthCallback";
+import Admin from "./Admin";
+import AdminRoute from "./AdminRoute";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -17,7 +19,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         {/* LOGIN */}
         <Route path="/login" element={<Login />} />
 
-        {/* CALLBACK DO SUPABASE */}
+        {/* CALLBACK */}
         <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* ROTAS PROTEGIDAS */}
@@ -31,6 +33,17 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         >
           <Route index element={<ProfessorConteudo />} />
           <Route path="cronograma" element={<CronogramaTurma />} />
+
+          {/* 🔥 ROTA ADMIN */}
+          <Route
+            path="admin"
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            }
+          />
+
         </Route>
 
       </Routes>

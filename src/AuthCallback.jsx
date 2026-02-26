@@ -9,10 +9,23 @@ function AuthCallback() {
   useEffect(() => {
 
     const handleAuth = async () => {
+
       const { data } = await supabase.auth.getSession();
 
       if (data.session) {
+
+        const user = data.session.user;
+
+        // 🔥 REGISTRA LOGIN
+        await supabase.from("login_logs").insert([
+          {
+            user_id: user.id,
+            email: user.email
+          }
+        ]);
+
         navigate("/");
+
       } else {
         navigate("/login");
       }
