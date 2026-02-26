@@ -1,58 +1,58 @@
 // ==========================================
 // LAYOUT.JSX
-// Estrutura visual principal do sistema
+// Layout global protegido
 // ==========================================
 
-import { Link, Outlet } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
+import { supabase } from "./supabaseClient";
 
 function Layout() {
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
+
   return (
-    <div style={{ fontFamily: "Arial, sans-serif" }}>
+    <div>
 
-      {/* HEADER */}
-      <header
+      <div
         style={{
-          backgroundColor: "#1f2937",
+          backgroundColor: "#1e3a8a",
+          padding: "15px",
           color: "white",
-          padding: "15px 30px",
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
+          justifyContent: "space-between"
         }}
       >
-        <h2 style={{ margin: 0 }}>Sistema de Conteúdos</h2>
+        <div>
+          <Link to="/" style={linkStyle}>Painel</Link>
+          <Link to="/cronograma" style={linkStyle}>Cronograma</Link>
+        </div>
 
-        {/* MENU */}
-        <nav>
-          <Link
-            to="/"
-            style={{ color: "white", marginRight: "20px", textDecoration: "none" }}
-          >
-            Agendamento Av. Bimestral
-          </Link>
+        <button onClick={logout} style={buttonStyle}>
+          Sair
+        </button>
+      </div>
 
-          <Link
-            to="/cronograma"
-            style={{ color: "white", textDecoration: "none" }}
-          >
-            Cronograma Bimestral
-          </Link>
-        </nav>
-      </header>
-
-      {/* CONTEÚDO */}
-      <main
-        style={{
-          padding: "30px",
-          maxWidth: "1100px",
-          margin: "0 auto"
-        }}
-      >
+      <div style={{ padding: "30px" }}>
         <Outlet />
-      </main>
+      </div>
 
     </div>
   );
 }
+
+const linkStyle = {
+  color: "white",
+  marginRight: "20px",
+  textDecoration: "none"
+};
+
+const buttonStyle = {
+  backgroundColor: "white",
+  border: "none",
+  padding: "5px 10px",
+  cursor: "pointer"
+};
 
 export default Layout;
