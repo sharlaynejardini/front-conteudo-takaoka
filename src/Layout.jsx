@@ -28,14 +28,14 @@ function Layout() {
             to="/"
             style={{ color: "white", marginRight: "20px", textDecoration: "none" }}
           >
-            Professor
+            Agendamento Av. Bimestral
           </Link>
 
           <Link
             to="/cronograma"
             style={{ color: "white", textDecoration: "none" }}
           >
-            Cronograma Turma
+            Cronograma Bimestral
           </Link>
         </nav>
       </header>
