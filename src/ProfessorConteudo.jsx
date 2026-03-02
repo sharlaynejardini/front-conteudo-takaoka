@@ -1,6 +1,6 @@
 // ==========================================
 // PROFESSORCONTEUDO.JSX
-// Layout Melhorado + Regra 2 Provas
+// Layout moderno + Regra 2 provas por dia
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -31,27 +31,51 @@ function ProfessorConteudo() {
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState(""); // success | warning | error
 
-  // ==========================================
+  // ==========================
   // CARREGAR PROFESSORES
-  // ==========================================
+  // ==========================
 
   useEffect(() => {
     async function carregar() {
-      const response = await api.get("/professores");
-      setProfessores(response.data);
+      try {
+        const response = await api.get("/professores");
+        setProfessores(response.data);
+      } catch (error) {
+        console.error("Erro ao carregar professores:", error);
+      }
     }
     carregar();
   }, []);
 
+  // ==========================
+  // CARREGAR ATRIBUIÇÕES
+  // ==========================
+
   const carregarAtribuicoes = async (id) => {
-    if (!id) return;
-    const response = await api.get(`/atribuicoes/${id}`);
-    setAtribuicoes(response.data);
+    if (!id) {
+      setAtribuicoes([]);
+      return;
+    }
+
+    try {
+      const response = await api.get(`/atribuicoes/${id}`);
+      setAtribuicoes(response.data);
+    } catch (error) {
+      console.error("Erro ao carregar atribuições:", error);
+    }
   };
+
+  // ==========================
+  // DATA AUTOMÁTICA POR BIMESTRE
+  // ==========================
 
   useEffect(() => {
     setDataAvaliacao(semanasProva[bimestre].inicio);
   }, [bimestre]);
+
+  // ==========================
+  // BUSCAR CONTEÚDO EXISTENTE
+  // ==========================
 
   useEffect(() => {
     if (!atribuicaoSelecionada) return;
@@ -61,7 +85,10 @@ function ProfessorConteudo() {
   const buscarConteudo = async () => {
     try {
       const response = await api.get("/conteudos", {
-        params: { atribuicao_id: atribuicaoSelecionada, bimestre }
+        params: {
+          atribuicao_id: atribuicaoSelecionada,
+          bimestre
+        }
       });
 
       const salvo = response.data;
@@ -86,13 +113,23 @@ function ProfessorConteudo() {
     }
   };
 
-  const adicionarTopico = () => setTopicos([...topicos, ""]);
+  // ==========================
+  // MANIPULAR TÓPICOS
+  // ==========================
 
-  const atualizarTopico = (i, v) => {
+  const adicionarTopico = () => {
+    setTopicos([...topicos, ""]);
+  };
+
+  const atualizarTopico = (index, valor) => {
     const novos = [...topicos];
-    novos[i] = v;
+    novos[index] = valor;
     setTopicos(novos);
   };
+
+  // ==========================
+  // SALVAR COM REGRA DE 2 PROVAS
+  // ==========================
 
   const salvarConteudo = async () => {
 
@@ -104,7 +141,15 @@ function ProfessorConteudo() {
 
     try {
 
-      const atribuicao = atribuicoes.find(a => a.id === atribuicaoSelecionada);
+      const atribuicao = atribuicoes.find(
+        a => String(a.id) === String(atribuicaoSelecionada)
+      );
+
+      if (!atribuicao || !atribuicao.turma?.id) {
+        setMensagem("Erro interno: turma não encontrada.");
+        setTipoMensagem("error");
+        return;
+      }
 
       const responseCronograma = await api.get("/cronograma", {
         params: {
@@ -126,7 +171,7 @@ function ProfessorConteudo() {
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
-        conteudo: JSON.stringify(topicos),
+        conteudo: JSON.stringify(topicos || []),
         data_avaliacao: dataAvaliacao
       });
 
@@ -135,29 +180,30 @@ function ProfessorConteudo() {
       setModoEdicao(false);
       setTopicos([""]);
 
-    } catch {
+    } catch (error) {
+      console.error("Erro real:", error);
       setMensagem("Erro ao salvar conteúdo.");
       setTipoMensagem("error");
     }
   };
 
-  // ==========================================
+  // ==========================
   // ESTILOS
-  // ==========================================
+  // ==========================
+
+  const pageStyle = {
+    backgroundColor: "#f4f6fa",
+    minHeight: "100vh",
+    padding: "40px"
+  };
 
   const cardStyle = {
     maxWidth: "700px",
-    margin: "40px auto",
+    margin: "auto",
     padding: "30px",
     backgroundColor: "white",
     borderRadius: "12px",
     boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
-  };
-
-  const labelStyle = {
-    fontWeight: "600",
-    marginBottom: "5px",
-    display: "block"
   };
 
   const inputStyle = {
@@ -174,8 +220,7 @@ function ProfessorConteudo() {
     color: "white",
     border: "none",
     borderRadius: "6px",
-    cursor: "pointer",
-    marginTop: "10px"
+    cursor: "pointer"
   };
 
   const mensagemStyle = {
@@ -196,24 +241,20 @@ function ProfessorConteudo() {
         : "#721c24"
   };
 
-  // ==========================================
+  // ==========================
   // RENDER
-  // ==========================================
+  // ==========================
 
   return (
-    <div style={{ backgroundColor: "#f4f6fa", minHeight: "100vh", padding: "20px" }}>
-
+    <div style={pageStyle}>
       <div style={cardStyle}>
 
         <h2 style={{ marginBottom: "20px", color: "#2c4a8a" }}>
           Lançamento de Avaliação
         </h2>
 
-        {mensagem && (
-          <div style={mensagemStyle}>{mensagem}</div>
-        )}
+        {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
-        <label style={labelStyle}>Professor</label>
         <select
           style={inputStyle}
           value={professorSelecionado}
@@ -222,19 +263,18 @@ function ProfessorConteudo() {
             carregarAtribuicoes(e.target.value);
           }}
         >
-          <option value="">Selecione</option>
+          <option value="">Selecione Professor</option>
           {professores.map(p => (
             <option key={p.id} value={p.id}>{p.nome}</option>
           ))}
         </select>
 
-        <label style={labelStyle}>Turma / Disciplina</label>
         <select
           style={inputStyle}
           value={atribuicaoSelecionada}
           onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
         >
-          <option value="">Selecione</option>
+          <option value="">Selecione Turma / Disciplina</option>
           {atribuicoes.map(a => (
             <option key={a.id} value={a.id}>
               {a.turma.nome} - {a.disciplina.nome}
@@ -242,19 +282,17 @@ function ProfessorConteudo() {
           ))}
         </select>
 
-        <label style={labelStyle}>Bimestre</label>
         <select
           style={inputStyle}
           value={bimestre}
           onChange={(e) => setBimestre(Number(e.target.value))}
         >
-          <option value={1}>1º</option>
-          <option value={2}>2º</option>
-          <option value={3}>3º</option>
-          <option value={4}>4º</option>
+          <option value={1}>1º Bimestre</option>
+          <option value={2}>2º Bimestre</option>
+          <option value={3}>3º Bimestre</option>
+          <option value={4}>4º Bimestre</option>
         </select>
 
-        <label style={labelStyle}>Data da Avaliação</label>
         <input
           type="date"
           style={inputStyle}
@@ -263,8 +301,6 @@ function ProfessorConteudo() {
           max={semanasProva[bimestre].fim}
           onChange={(e) => setDataAvaliacao(e.target.value)}
         />
-
-        <label style={labelStyle}>Conteúdos</label>
 
         {topicos.map((t, i) => (
           <input
@@ -276,18 +312,18 @@ function ProfessorConteudo() {
           />
         ))}
 
-        <button style={{ ...buttonStyle, backgroundColor: "#6c757d" }} onClick={adicionarTopico}>
+        <button
+          style={{ ...buttonStyle, backgroundColor: "#6c757d", marginRight: "10px" }}
+          onClick={adicionarTopico}
+        >
           + Adicionar Tópico
         </button>
-
-        <br />
 
         <button style={buttonStyle} onClick={salvarConteudo}>
           {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
         </button>
 
       </div>
-
     </div>
   );
 }
