@@ -31,28 +31,6 @@ function ProfessorConteudo() {
   const [modoEdicao, setModoEdicao] = useState(false);
 
   // ==========================================
-  // GERAR LISTA DE DATAS VÁLIDAS
-  // ==========================================
-
-  const gerarDatasValidas = (inicio, fim) => {
-    const datas = [];
-    let atual = new Date(inicio);
-    const dataFim = new Date(fim);
-
-    while (atual <= dataFim) {
-      datas.push(atual.toISOString().split("T")[0]);
-      atual.setDate(atual.getDate() + 1);
-    }
-
-    return datas;
-  };
-
-  const datasValidas = gerarDatasValidas(
-    semanasProva[bimestre].inicio,
-    semanasProva[bimestre].fim
-  );
-
-  // ==========================================
   // CARREGAR PROFESSORES
   // ==========================================
 
@@ -93,20 +71,61 @@ function ProfessorConteudo() {
   }, [bimestre]);
 
   // ==========================================
-  // VALIDAR DATA AO ALTERAR
+  // BUSCAR CONTEÚDO EXISTENTE
   // ==========================================
 
-  const handleDataChange = (valor) => {
+  useEffect(() => {
+    if (!atribuicaoSelecionada) return;
+    buscarConteudoAutomatico();
+  }, [atribuicaoSelecionada, bimestre]);
 
-    if (!datasValidas.includes(valor)) {
-      alert(
-        "Data inválida.\n\n" +
-        "As avaliações só podem ser agendadas dentro da semana oficial do bimestre."
-      );
-      return;
+  const buscarConteudoAutomatico = async () => {
+    try {
+      const response = await api.get("/conteudos", {
+        params: {
+          atribuicao_id: atribuicaoSelecionada,
+          bimestre
+        }
+      });
+
+      const conteudoSalvo = response.data;
+
+      setDataAvaliacao(conteudoSalvo.data_avaliacao);
+
+      try {
+        const convertido = JSON.parse(conteudoSalvo.conteudo);
+        setTopicos(Array.isArray(convertido) ? convertido : [conteudoSalvo.conteudo]);
+      } catch {
+        setTopicos([conteudoSalvo.conteudo]);
+      }
+
+      setModoEdicao(true);
+      setMensagem("Você está editando um conteúdo já existente.");
+
+    } catch {
+      setTopicos([""]);
+      setModoEdicao(false);
+      setMensagem("");
     }
+  };
 
-    setDataAvaliacao(valor);
+  // ==========================================
+  // MANIPULAR TÓPICOS
+  // ==========================================
+
+  const adicionarTopico = () => {
+    setTopicos([...topicos, ""]);
+  };
+
+  const atualizarTopico = (index, valor) => {
+    const novos = [...topicos];
+    novos[index] = valor;
+    setTopicos(novos);
+  };
+
+  const removerTopico = (index) => {
+    const novos = topicos.filter((_, i) => i !== index);
+    setTopicos(novos.length ? novos : [""]);
   };
 
   // ==========================================
@@ -114,21 +133,12 @@ function ProfessorConteudo() {
   // ==========================================
 
   const salvarConteudo = async () => {
-
     if (!atribuicaoSelecionada) {
-      alert("Selecione uma turma/disciplina antes de salvar.");
-      return;
-    }
-
-    if (!datasValidas.includes(dataAvaliacao)) {
-      alert(
-        "A data escolhida não pertence à semana oficial de provas."
-      );
+      setMensagem("Selecione uma turma/disciplina.");
       return;
     }
 
     try {
-
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
@@ -138,7 +148,6 @@ function ProfessorConteudo() {
 
       setModoEdicao(true);
       setMensagem("Conteúdo salvo com sucesso!");
-
     } catch (error) {
 
       const detalhe = error.response?.data?.detail || "";
@@ -147,10 +156,6 @@ function ProfessorConteudo() {
         alert(
           "Já existem duas avaliações cadastradas para esta turma neste mesmo dia.\n\n" +
           "O máximo permitido é 2 avaliações por dia."
-        );
-      } else if (detalhe.includes("semana oficial")) {
-        alert(
-          "A avaliação deve ser marcada dentro da semana oficial do bimestre."
         );
       } else {
         alert("Erro ao salvar conteúdo.");
@@ -168,6 +173,21 @@ function ProfessorConteudo() {
     <div style={{ maxWidth: "900px", margin: "auto" }}>
 
       <h2>Painel do Professor</h2>
+
+      {modoEdicao && (
+        <div
+          style={{
+            backgroundColor: "#fff3cd",
+            border: "1px solid #ffeeba",
+            padding: "10px",
+            borderRadius: "5px",
+            color: "#856404",
+            marginBottom: "20px"
+          }}
+        >
+          ⚠ Você está editando um conteúdo já existente.
+        </div>
+      )}
 
       {/* PROFESSOR */}
       <div style={{ marginBottom: "20px" }}>
@@ -218,19 +238,16 @@ function ProfessorConteudo() {
         </select>
       </div>
 
-      {/* DATA COM BLOQUEIO REAL */}
+      {/* DATA */}
       <div style={{ marginBottom: "20px" }}>
         <label>Data da Avaliação:</label><br />
-        <select
+        <input
+          type="date"
           value={dataAvaliacao}
-          onChange={(e) => handleDataChange(e.target.value)}
-        >
-          {datasValidas.map((data) => (
-            <option key={data} value={data}>
-              {new Date(data).toLocaleDateString("pt-BR")}
-            </option>
-          ))}
-        </select>
+          min={semanasProva[bimestre].inicio}
+          max={semanasProva[bimestre].fim}
+          onChange={(e) => setDataAvaliacao(e.target.value)}
+        />
       </div>
 
       {/* CONTEÚDOS */}
@@ -242,17 +259,11 @@ function ProfessorConteudo() {
             <input
               type="text"
               value={topico}
-              onChange={(e) => {
-                const novos = [...topicos];
-                novos[index] = e.target.value;
-                setTopicos(novos);
-              }}
+              onChange={(e) => atualizarTopico(index, e.target.value)}
               style={{ width: "70%" }}
             />
             <button
-              onClick={() =>
-                setTopicos(topicos.filter((_, i) => i !== index))
-              }
+              onClick={() => removerTopico(index)}
               style={{ marginLeft: "10px" }}
             >
               ❌
@@ -261,7 +272,7 @@ function ProfessorConteudo() {
         ))}
 
         <div style={{ marginTop: "10px" }}>
-          <button onClick={() => setTopicos([...topicos, ""])}>
+          <button onClick={adicionarTopico}>
             ➕ Adicionar Tópico
           </button>
         </div>
