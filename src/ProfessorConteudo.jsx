@@ -54,41 +54,48 @@ function ProfessorConteudo() {
     }
 
     const response = await api.get(`/atribuicoes/${id}`);
-
-    const ordenadas = [...response.data].sort((a, b) => {
-      const turmaCompare = a.turma.nome.localeCompare(
-        b.turma.nome,
-        "pt-BR",
-        { sensitivity: "base" }
-      );
-
-      if (turmaCompare !== 0) return turmaCompare;
-
-      return a.disciplina.nome.localeCompare(
-        b.disciplina.nome,
-        "pt-BR",
-        { sensitivity: "base" }
-      );
-    });
-
-    setAtribuicoes(ordenadas);
+    setAtribuicoes(response.data);
   };
 
   // ==========================
-  // LIMPAR
+  // CONVERSÃO SEGURA DO CONTEÚDO
   // ==========================
 
-  const limparFormulario = () => {
-    setAtribuicaoSelecionada("");
-    setTopicos([""]);
-    setModoEdicao(false);
-    setMensagem("");
-    setTipoMensagem("");
-  };
+  const converterConteudoParaArray = (conteudo) => {
 
-  useEffect(() => {
-    setDataAvaliacao(semanasProva[bimestre].inicio);
-  }, [bimestre]);
+    if (!conteudo) return [""];
+
+    // Se já for array
+    if (Array.isArray(conteudo)) return conteudo;
+
+    // Se for string
+    if (typeof conteudo === "string") {
+
+      // Tenta converter JSON
+      try {
+        const convertido = JSON.parse(conteudo);
+
+        if (Array.isArray(convertido)) {
+          return convertido;
+        }
+
+        return [convertido];
+
+      } catch {
+        // Se não for JSON válido
+        if (conteudo.includes(",")) {
+          return conteudo
+            .split(",")
+            .map(t => t.trim())
+            .filter(t => t.length > 0);
+        }
+
+        return [conteudo];
+      }
+    }
+
+    return [String(conteudo)];
+  };
 
   // ==========================
   // BUSCAR CONTEÚDO EXISTENTE
@@ -110,18 +117,11 @@ function ProfessorConteudo() {
 
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
 
-        let listaFinal = [];
+        const listaConvertida =
+          converterConteudoParaArray(salvo.conteudo);
 
-        try {
-          const convertido = JSON.parse(salvo.conteudo);
-          listaFinal = Array.isArray(convertido)
-            ? convertido
-            : [salvo.conteudo];
-        } catch {
-          listaFinal = [salvo.conteudo];
-        }
+        setTopicos(listaConvertida.length ? listaConvertida : [""]);
 
-        setTopicos(listaFinal.length ? listaFinal : [""]);
         setModoEdicao(true);
         setMensagem("Você está editando um conteúdo existente.");
         setTipoMensagem("warning");
@@ -161,37 +161,7 @@ function ProfessorConteudo() {
   // ==========================
 
   const salvarConteudo = async () => {
-
-    if (!atribuicaoSelecionada) {
-      setMensagem("Selecione uma turma/disciplina.");
-      setTipoMensagem("error");
-      return;
-    }
-
     try {
-
-      const atribuicao = atribuicoes.find(
-        a => String(a.id) === String(atribuicaoSelecionada)
-      );
-
-      const responseCronograma = await api.get("/cronograma", {
-        params: {
-          turma_id: atribuicao.turma.id,
-          bimestre
-        }
-      });
-
-      const provasMesmoDia = responseCronograma.data.filter(item => {
-        const dataBackend = item.data_avaliacao?.split("T")[0];
-        return dataBackend === dataAvaliacao;
-      });
-
-      if (!modoEdicao && provasMesmoDia.length >= 2) {
-        setMensagem("Já existem 2 provas agendadas para esse dia.");
-        setTipoMensagem("error");
-        return;
-      }
-
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
@@ -201,10 +171,6 @@ function ProfessorConteudo() {
 
       setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
-
-      setTimeout(() => {
-        limparFormulario();
-      }, 900);
 
     } catch {
       setMensagem("Erro ao salvar conteúdo.");
@@ -216,147 +182,90 @@ function ProfessorConteudo() {
   // ESTILOS
   // ==========================
 
-  const pageStyle = {
-    backgroundColor: "#f2f5fa",
-    minHeight: "100vh",
-    padding: "50px 20px"
-  };
-
-  const cardStyle = {
-    maxWidth: "650px",
-    margin: "auto",
-    backgroundColor: "white",
-    padding: "30px",
-    borderRadius: "14px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
-  };
-
   const inputStyle = {
     width: "100%",
     padding: "10px",
     borderRadius: "8px",
-    border: "1px solid #d0d7e2",
+    border: "1px solid #ccc",
     marginBottom: "10px"
   };
 
-  const buttonPrimary = {
-    backgroundColor: "#2c4a8a",
-    color: "white",
-    padding: "10px 16px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    marginTop: "10px"
-  };
-
-  const buttonSecondary = {
-    backgroundColor: "#6c757d",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-    marginBottom: "15px"
-  };
-
-  const mensagemStyle = {
-    padding: "12px",
-    borderRadius: "8px",
-    marginBottom: "20px",
-    backgroundColor:
-      tipoMensagem === "success"
-        ? "#d4edda"
-        : tipoMensagem === "warning"
-        ? "#fff3cd"
-        : "#f8d7da"
-  };
-
   return (
-    <div style={pageStyle}>
-      <div style={cardStyle}>
+    <div style={{ padding: "40px", maxWidth: "600px", margin: "auto" }}>
 
-        <h2 style={{ textAlign: "center", color: "#2c4a8a", marginBottom: "25px" }}>
-          Lançamento de Avaliação
-        </h2>
+      <h2>Lançamento de Avaliação</h2>
 
-        {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
+      {mensagem && <div>{mensagem}</div>}
 
-        <select
-          style={inputStyle}
-          value={professorSelecionado}
-          onChange={(e) => {
-            setProfessorSelecionado(e.target.value);
-            carregarAtribuicoes(e.target.value);
-            limparFormulario();
-          }}
-        >
-          <option value="">Selecione Professor</option>
-          {professores.map(p => (
-            <option key={p.id} value={p.id}>{p.nome}</option>
-          ))}
-        </select>
-
-        <select
-          style={inputStyle}
-          value={atribuicaoSelecionada}
-          onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
-        >
-          <option value="">Selecione Turma / Disciplina</option>
-          {atribuicoes.map(a => (
-            <option key={a.id} value={a.id}>
-              {a.turma.nome} - {a.disciplina.nome}
-            </option>
-          ))}
-        </select>
-
-        <select
-          style={inputStyle}
-          value={bimestre}
-          onChange={(e) => setBimestre(Number(e.target.value))}
-        >
-          <option value={1}>1º Bimestre</option>
-          <option value={2}>2º Bimestre</option>
-          <option value={3}>3º Bimestre</option>
-          <option value={4}>4º Bimestre</option>
-        </select>
-
-        <input
-          type="date"
-          style={inputStyle}
-          value={dataAvaliacao}
-          min={semanasProva[bimestre].inicio}
-          max={semanasProva[bimestre].fim}
-          onChange={(e) => setDataAvaliacao(e.target.value)}
-        />
-
-        <h4>Conteúdos:</h4>
-
-        {topicos.map((topico, index) => (
-          <div key={index} style={{ display: "flex", gap: "10px" }}>
-            <input
-              type="text"
-              value={topico}
-              onChange={(e) => atualizarTopico(index, e.target.value)}
-              style={{ ...inputStyle, marginBottom: "5px" }}
-            />
-            <button
-              onClick={() => removerTopico(index)}
-              style={{ backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}
-            >
-              ❌
-            </button>
-          </div>
+      <select
+        style={inputStyle}
+        value={professorSelecionado}
+        onChange={(e) => {
+          setProfessorSelecionado(e.target.value);
+          carregarAtribuicoes(e.target.value);
+        }}
+      >
+        <option value="">Selecione Professor</option>
+        {professores.map(p => (
+          <option key={p.id} value={p.id}>{p.nome}</option>
         ))}
+      </select>
 
-        <button style={buttonSecondary} onClick={adicionarTopico}>
-          + Adicionar Tópico
-        </button>
+      <select
+        style={inputStyle}
+        value={atribuicaoSelecionada}
+        onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
+      >
+        <option value="">Selecione Turma / Disciplina</option>
+        {atribuicoes.map(a => (
+          <option key={a.id} value={a.id}>
+            {a.turma.nome} - {a.disciplina.nome}
+          </option>
+        ))}
+      </select>
 
-        <button style={buttonPrimary} onClick={salvarConteudo}>
-          {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
-        </button>
+      <select
+        style={inputStyle}
+        value={bimestre}
+        onChange={(e) => setBimestre(Number(e.target.value))}
+      >
+        <option value={1}>1º</option>
+        <option value={2}>2º</option>
+        <option value={3}>3º</option>
+        <option value={4}>4º</option>
+      </select>
 
-      </div>
+      <input
+        type="date"
+        style={inputStyle}
+        value={dataAvaliacao}
+        onChange={(e) => setDataAvaliacao(e.target.value)}
+      />
+
+      <h4>Conteúdos:</h4>
+
+      {topicos.map((topico, index) => (
+        <div key={index} style={{ display: "flex", gap: "10px" }}>
+          <input
+            type="text"
+            value={topico}
+            onChange={(e) => atualizarTopico(index, e.target.value)}
+            style={{ ...inputStyle, marginBottom: "5px" }}
+          />
+          <button onClick={() => removerTopico(index)}>❌</button>
+        </div>
+      ))}
+
+      <button onClick={adicionarTopico}>
+        + Adicionar Tópico
+      </button>
+
+      <br /><br />
+
+      <button onClick={salvarConteudo}>
+        {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
+      </button>
+
     </div>
   );
 }
