@@ -61,27 +61,40 @@ function CronogramaTurma() {
     link.click();
   };
 
-  // 🔥 FUNÇÃO QUE CONVERTE O CONTEÚDO EM LISTA
+  // 🔥 FUNÇÃO 100% SEGURA
   const transformarConteudoEmLista = (conteudo) => {
 
     if (!conteudo) return [];
 
-    try {
-      const convertido = JSON.parse(conteudo);
-
-      if (Array.isArray(convertido)) {
-        return convertido;
-      }
-
-      return [convertido];
-
-    } catch {
-      // Caso esteja salvo como texto simples separado por vírgula
-      return conteudo
-        .split(",")
-        .map(item => item.trim())
-        .filter(item => item.length > 0);
+    // Se já for array
+    if (Array.isArray(conteudo)) {
+      return conteudo;
     }
+
+    // Se for string
+    if (typeof conteudo === "string") {
+
+      // Tentar converter JSON
+      try {
+        const convertido = JSON.parse(conteudo);
+
+        if (Array.isArray(convertido)) {
+          return convertido;
+        }
+
+        return [convertido];
+
+      } catch {
+        // Se não for JSON, separar por vírgula
+        return conteudo
+          .split(",")
+          .map(item => item.trim())
+          .filter(item => item.length > 0);
+      }
+    }
+
+    // Caso inesperado
+    return [String(conteudo)];
   };
 
   return (
@@ -167,7 +180,8 @@ function CronogramaTurma() {
           <tbody>
             {cronograma.map((item, index) => {
 
-              const listaTopicos = transformarConteudoEmLista(item.conteudo);
+              const listaTopicos =
+                transformarConteudoEmLista(item.conteudo);
 
               return (
                 <tr
