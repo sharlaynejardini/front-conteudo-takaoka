@@ -12,19 +12,39 @@ function ProfessorConteudo() {
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
+  const estadoInicial = {
+    professorSelecionado: "",
+    atribuicaoSelecionada: "",
+    bimestre: 1,
+    topicos: [""],
+    dataAvaliacao: semanasProva[1].inicio
+  };
+
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
 
-  const [professorSelecionado, setProfessorSelecionado] = useState("");
-  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
-
-  const [bimestre, setBimestre] = useState(1);
-  const [topicos, setTopicos] = useState([""]);
-  const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
+  const [professorSelecionado, setProfessorSelecionado] = useState(estadoInicial.professorSelecionado);
+  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState(estadoInicial.atribuicaoSelecionada);
+  const [bimestre, setBimestre] = useState(estadoInicial.bimestre);
+  const [topicos, setTopicos] = useState(estadoInicial.topicos);
+  const [dataAvaliacao, setDataAvaliacao] = useState(estadoInicial.dataAvaliacao);
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
-  const [tipoMensagem, setTipoMensagem] = useState(""); // success | error | warning
+  const [tipoMensagem, setTipoMensagem] = useState("");
+
+  // ==========================
+  // LIMPAR COMPLETAMENTE
+  // ==========================
+
+  const limparTudo = () => {
+    setProfessorSelecionado("");
+    setAtribuicaoSelecionada("");
+    setBimestre(1);
+    setTopicos([""]);
+    setDataAvaliacao(semanasProva[1].inicio);
+    setModoEdicao(false);
+  };
 
   // ==========================
   // CARREGAR PROFESSORES
@@ -78,22 +98,18 @@ function ProfessorConteudo() {
 
     if (Array.isArray(conteudo)) return conteudo;
 
-    if (typeof conteudo === "string") {
-      try {
-        const convertido = JSON.parse(conteudo);
-        return Array.isArray(convertido) ? convertido : [convertido];
-      } catch {
-        return conteudo.includes(",")
-          ? conteudo.split(",").map(t => t.trim())
-          : [conteudo];
-      }
+    try {
+      const convertido = JSON.parse(conteudo);
+      return Array.isArray(convertido) ? convertido : [convertido];
+    } catch {
+      return conteudo.includes(",")
+        ? conteudo.split(",").map(t => t.trim())
+        : [conteudo];
     }
-
-    return [String(conteudo)];
   };
 
   // ==========================
-  // BUSCAR CONTEÚDO EXISTENTE
+  // BUSCAR PARA EDIÇÃO
   // ==========================
 
   useEffect(() => {
@@ -129,7 +145,7 @@ function ProfessorConteudo() {
   }, [atribuicaoSelecionada, bimestre]);
 
   // ==========================
-  // MANIPULAR TÓPICOS
+  // TÓPICOS
   // ==========================
 
   const adicionarTopico = () => setTopicos([...topicos, ""]);
@@ -146,10 +162,11 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // SALVAR
+  // SALVAR / ATUALIZAR
   // ==========================
 
   const salvarConteudo = async () => {
+
     if (!atribuicaoSelecionada) {
       setMensagem("Selecione uma turma/disciplina.");
       setTipoMensagem("error");
@@ -164,46 +181,23 @@ function ProfessorConteudo() {
         data_avaliacao: dataAvaliacao
       });
 
-      setMensagem("Conteúdo salvo com sucesso!");
+      setMensagem(
+        modoEdicao
+          ? "Conteúdo atualizado com sucesso!"
+          : "Conteúdo salvo com sucesso!"
+      );
+
       setTipoMensagem("success");
-      setModoEdicao(false);
+
+      // 🔥 LIMPA TUDO APÓS SALVAR
+      setTimeout(() => {
+        limparTudo();
+        setMensagem("");
+      }, 1200);
 
     } catch {
       setMensagem("Erro ao salvar conteúdo.");
       setTipoMensagem("error");
-    }
-  };
-
-  // ==========================
-  // ESTILO DA MENSAGEM
-  // ==========================
-
-  const mensagemBase = {
-    padding: "14px 18px",
-    borderRadius: "10px",
-    marginBottom: "20px",
-    fontWeight: "500",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    animation: "fadeIn 0.3s ease-in-out"
-  };
-
-  const estilosMensagem = {
-    success: {
-      backgroundColor: "#d4edda",
-      color: "#155724",
-      border: "1px solid #c3e6cb"
-    },
-    error: {
-      backgroundColor: "#f8d7da",
-      color: "#721c24",
-      border: "1px solid #f5c6cb"
-    },
-    warning: {
-      backgroundColor: "#fff3cd",
-      color: "#856404",
-      border: "1px solid #ffeeba"
     }
   };
 
@@ -215,36 +209,26 @@ function ProfessorConteudo() {
     marginBottom: "10px"
   };
 
+  const mensagemStyle = {
+    padding: "12px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    backgroundColor:
+      tipoMensagem === "success"
+        ? "#d4edda"
+        : tipoMensagem === "warning"
+        ? "#fff3cd"
+        : "#f8d7da"
+  };
+
   return (
     <div style={{ padding: "40px", maxWidth: "600px", margin: "auto" }}>
 
       <h2>Lançamento de Avaliação</h2>
 
       {mensagem && (
-        <div
-          style={{
-            ...mensagemBase,
-            ...estilosMensagem[tipoMensagem]
-          }}
-        >
-          <span>
-            {tipoMensagem === "success" && "✔ "}
-            {tipoMensagem === "error" && "✖ "}
-            {tipoMensagem === "warning" && "⚠ "}
-            {mensagem}
-          </span>
-
-          <button
-            onClick={() => setMensagem("")}
-            style={{
-              background: "transparent",
-              border: "none",
-              fontSize: "16px",
-              cursor: "pointer"
-            }}
-          >
-            ✖
-          </button>
+        <div style={mensagemStyle}>
+          {mensagem}
         </div>
       )}
 
