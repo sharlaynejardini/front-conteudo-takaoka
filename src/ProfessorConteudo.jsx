@@ -12,21 +12,29 @@ function ProfessorConteudo() {
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
+  const estadoInicial = {
+    professorSelecionado: "",
+    atribuicaoSelecionada: "",
+    bimestre: 1,
+    topicos: [""],
+    dataAvaliacao: semanasProva[1].inicio
+  };
+
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
 
-  const [professorSelecionado, setProfessorSelecionado] = useState("");
-  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
-  const [bimestre, setBimestre] = useState(1);
-  const [topicos, setTopicos] = useState([""]);
-  const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
+  const [professorSelecionado, setProfessorSelecionado] = useState(estadoInicial.professorSelecionado);
+  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState(estadoInicial.atribuicaoSelecionada);
+  const [bimestre, setBimestre] = useState(estadoInicial.bimestre);
+  const [topicos, setTopicos] = useState(estadoInicial.topicos);
+  const [dataAvaliacao, setDataAvaliacao] = useState(estadoInicial.dataAvaliacao);
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
 
   // ==========================
-  // LIMPAR
+  // LIMPAR COMPLETAMENTE
   // ==========================
 
   const limparTudo = () => {
@@ -82,15 +90,26 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // ALTERA DATA QUANDO MUDA BIMESTRE
+  // CONVERTER CONTEÚDO
   // ==========================
 
-  useEffect(() => {
-    setDataAvaliacao(semanasProva[bimestre].inicio);
-  }, [bimestre]);
+  const converterConteudoParaArray = (conteudo) => {
+    if (!conteudo) return [""];
+
+    if (Array.isArray(conteudo)) return conteudo;
+
+    try {
+      const convertido = JSON.parse(conteudo);
+      return Array.isArray(convertido) ? convertido : [convertido];
+    } catch {
+      return conteudo.includes(",")
+        ? conteudo.split(",").map(t => t.trim())
+        : [conteudo];
+    }
+  };
 
   // ==========================
-  // BUSCAR CONTEÚDO EXISTENTE
+  // BUSCAR PARA EDIÇÃO
   // ==========================
 
   useEffect(() => {
@@ -108,13 +127,7 @@ function ProfessorConteudo() {
         const salvo = response.data;
 
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
-
-        try {
-          const convertido = JSON.parse(salvo.conteudo);
-          setTopicos(Array.isArray(convertido) ? convertido : [salvo.conteudo]);
-        } catch {
-          setTopicos([salvo.conteudo]);
-        }
+        setTopicos(converterConteudoParaArray(salvo.conteudo));
 
         setModoEdicao(true);
         setMensagem("Você está editando um conteúdo existente.");
@@ -132,7 +145,7 @@ function ProfessorConteudo() {
   }, [atribuicaoSelecionada, bimestre]);
 
   // ==========================
-  // MANIPULAR TÓPICOS
+  // TÓPICOS
   // ==========================
 
   const adicionarTopico = () => setTopicos([...topicos, ""]);
@@ -149,7 +162,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // SALVAR COM VALIDAÇÕES
+  // SALVAR / ATUALIZAR
   // ==========================
 
   const salvarConteudo = async () => {
@@ -160,41 +173,7 @@ function ProfessorConteudo() {
       return;
     }
 
-    // 🔒 Validação da semana
-    const inicio = semanasProva[bimestre].inicio;
-    const fim = semanasProva[bimestre].fim;
-
-    if (dataAvaliacao < inicio || dataAvaliacao > fim) {
-      setMensagem("A data deve estar dentro da semana oficial do bimestre.");
-      setTipoMensagem("error");
-      return;
-    }
-
     try {
-
-      const atribuicao = atribuicoes.find(
-        a => String(a.id) === String(atribuicaoSelecionada)
-      );
-
-      const responseCronograma = await api.get("/cronograma", {
-        params: {
-          turma_id: atribuicao.turma.id,
-          bimestre
-        }
-      });
-
-      const provasMesmoDia = responseCronograma.data.filter(item => {
-        const dataBackend = item.data_avaliacao?.split("T")[0];
-        return dataBackend === dataAvaliacao;
-      });
-
-      // 🔒 Máximo 2 provas
-      if (!modoEdicao && provasMesmoDia.length >= 2) {
-        setMensagem("Já existem 2 provas agendadas para este dia nesta turma.");
-        setTipoMensagem("error");
-        return;
-      }
-
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
@@ -210,13 +189,13 @@ function ProfessorConteudo() {
 
       setTipoMensagem("success");
 
+      // 🔥 LIMPA TUDO APÓS SALVAR
       setTimeout(() => {
         limparTudo();
         setMensagem("");
       }, 1200);
 
-    } catch (error) {
-      console.error(error);
+    } catch {
       setMensagem("Erro ao salvar conteúdo.");
       setTipoMensagem("error");
     }
@@ -247,7 +226,11 @@ function ProfessorConteudo() {
 
       <h2>Lançamento de Avaliação</h2>
 
-      {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
+      {mensagem && (
+        <div style={mensagemStyle}>
+          {mensagem}
+        </div>
+      )}
 
       <select
         style={inputStyle}
@@ -276,22 +259,9 @@ function ProfessorConteudo() {
         ))}
       </select>
 
-      <select
-        style={inputStyle}
-        value={bimestre}
-        onChange={(e) => setBimestre(Number(e.target.value))}
-      >
-        <option value={1}>1º</option>
-        <option value={2}>2º</option>
-        <option value={3}>3º</option>
-        <option value={4}>4º</option>
-      </select>
-
       <input
         type="date"
         style={inputStyle}
-        min={semanasProva[bimestre].inicio}
-        max={semanasProva[bimestre].fim}
         value={dataAvaliacao}
         onChange={(e) => setDataAvaliacao(e.target.value)}
       />
