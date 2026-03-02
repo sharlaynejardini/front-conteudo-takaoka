@@ -1,6 +1,6 @@
 // ==========================================
 // PROFESSORCONTEUDO.JSX
-// Lançamento de Conteúdo por Professor
+// Layout Melhorado + Regra 2 Provas
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -27,134 +27,102 @@ function ProfessorConteudo() {
   const [topicos, setTopicos] = useState([""]);
   const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
 
-  const [mensagem, setMensagem] = useState("");
   const [modoEdicao, setModoEdicao] = useState(false);
-  const [salvouAgora, setSalvouAgora] = useState(false);
-
-  // ==========================================
-  // RESETAR TELA
-  // ==========================================
-
-  const resetarTela = () => {
-    setProfessorSelecionado("");
-    setAtribuicoes([]);
-    setAtribuicaoSelecionada("");
-    setTopicos([""]);
-    setModoEdicao(false);
-    setMensagem("");
-    setSalvouAgora(false);
-  };
+  const [mensagem, setMensagem] = useState("");
+  const [tipoMensagem, setTipoMensagem] = useState(""); // success | warning | error
 
   // ==========================================
   // CARREGAR PROFESSORES
   // ==========================================
 
   useEffect(() => {
-    carregarProfessores();
-  }, []);
-
-  const carregarProfessores = async () => {
-    try {
+    async function carregar() {
       const response = await api.get("/professores");
       setProfessores(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar professores", error);
     }
+    carregar();
+  }, []);
+
+  const carregarAtribuicoes = async (id) => {
+    if (!id) return;
+    const response = await api.get(`/atribuicoes/${id}`);
+    setAtribuicoes(response.data);
   };
-
-  // ==========================================
-  // CARREGAR ATRIBUIÇÕES
-  // ==========================================
-
-  const carregarAtribuicoes = async (professorId) => {
-    if (!professorId) return;
-
-    try {
-      const response = await api.get(`/atribuicoes/${professorId}`);
-      setAtribuicoes(response.data);
-    } catch (error) {
-      console.error("Erro ao carregar atribuições", error);
-    }
-  };
-
-  // ==========================================
-  // ATUALIZAR DATA
-  // ==========================================
 
   useEffect(() => {
     setDataAvaliacao(semanasProva[bimestre].inicio);
   }, [bimestre]);
 
-  // ==========================================
-  // BUSCAR CONTEÚDO EXISTENTE
-  // ==========================================
-
   useEffect(() => {
     if (!atribuicaoSelecionada) return;
-    buscarConteudoAutomatico();
+    buscarConteudo();
   }, [atribuicaoSelecionada, bimestre]);
 
-  const buscarConteudoAutomatico = async () => {
+  const buscarConteudo = async () => {
     try {
       const response = await api.get("/conteudos", {
-        params: {
-          atribuicao_id: atribuicaoSelecionada,
-          bimestre
-        }
+        params: { atribuicao_id: atribuicaoSelecionada, bimestre }
       });
 
-      const conteudoSalvo = response.data;
+      const salvo = response.data;
 
-      setDataAvaliacao(conteudoSalvo.data_avaliacao);
+      setDataAvaliacao(salvo.data_avaliacao);
 
       try {
-        const convertido = JSON.parse(conteudoSalvo.conteudo);
-        setTopicos(Array.isArray(convertido) ? convertido : [conteudoSalvo.conteudo]);
+        const convertido = JSON.parse(salvo.conteudo);
+        setTopicos(Array.isArray(convertido) ? convertido : [salvo.conteudo]);
       } catch {
-        setTopicos([conteudoSalvo.conteudo]);
+        setTopicos([salvo.conteudo]);
       }
 
       setModoEdicao(true);
-      setMensagem("⚠ Você está editando um conteúdo já existente.");
+      setMensagem("Você está editando um conteúdo existente.");
+      setTipoMensagem("warning");
 
     } catch {
-      setTopicos([""]);
       setModoEdicao(false);
+      setTopicos([""]);
       setMensagem("");
     }
   };
 
-  // ==========================================
-  // TÓPICOS
-  // ==========================================
+  const adicionarTopico = () => setTopicos([...topicos, ""]);
 
-  const adicionarTopico = () => {
-    setTopicos([...topicos, ""]);
-  };
-
-  const atualizarTopico = (index, valor) => {
+  const atualizarTopico = (i, v) => {
     const novos = [...topicos];
-    novos[index] = valor;
+    novos[i] = v;
     setTopicos(novos);
   };
-
-  const removerTopico = (index) => {
-    const novos = topicos.filter((_, i) => i !== index);
-    setTopicos(novos.length ? novos : [""]);
-  };
-
-  // ==========================================
-  // SALVAR
-  // ==========================================
 
   const salvarConteudo = async () => {
 
     if (!atribuicaoSelecionada) {
       setMensagem("Selecione uma turma/disciplina.");
+      setTipoMensagem("error");
       return;
     }
 
     try {
+
+      const atribuicao = atribuicoes.find(a => a.id === atribuicaoSelecionada);
+
+      const responseCronograma = await api.get("/cronograma", {
+        params: {
+          turma_id: atribuicao.turma.id,
+          bimestre
+        }
+      });
+
+      const provasMesmoDia = responseCronograma.data.filter(
+        item => item.data_avaliacao === dataAvaliacao
+      );
+
+      if (!modoEdicao && provasMesmoDia.length >= 2) {
+        setMensagem("Já existem 2 provas agendadas para esse dia nesta turma.");
+        setTipoMensagem("error");
+        return;
+      }
+
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
@@ -162,14 +130,70 @@ function ProfessorConteudo() {
         data_avaliacao: dataAvaliacao
       });
 
-      setMensagem("✅ Conteúdo salvo com sucesso! (Clique aqui para voltar)");
-      setSalvouAgora(true);
+      setMensagem("Conteúdo salvo com sucesso!");
+      setTipoMensagem("success");
       setModoEdicao(false);
+      setTopicos([""]);
 
-    } catch (error) {
-      console.error("Erro ao salvar", error);
+    } catch {
       setMensagem("Erro ao salvar conteúdo.");
+      setTipoMensagem("error");
     }
+  };
+
+  // ==========================================
+  // ESTILOS
+  // ==========================================
+
+  const cardStyle = {
+    maxWidth: "700px",
+    margin: "40px auto",
+    padding: "30px",
+    backgroundColor: "white",
+    borderRadius: "12px",
+    boxShadow: "0 8px 25px rgba(0,0,0,0.08)"
+  };
+
+  const labelStyle = {
+    fontWeight: "600",
+    marginBottom: "5px",
+    display: "block"
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "8px",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+    marginBottom: "15px"
+  };
+
+  const buttonStyle = {
+    padding: "10px 15px",
+    backgroundColor: "#2c4a8a",
+    color: "white",
+    border: "none",
+    borderRadius: "6px",
+    cursor: "pointer",
+    marginTop: "10px"
+  };
+
+  const mensagemStyle = {
+    padding: "10px",
+    borderRadius: "6px",
+    marginBottom: "20px",
+    backgroundColor:
+      tipoMensagem === "success"
+        ? "#d4edda"
+        : tipoMensagem === "warning"
+        ? "#fff3cd"
+        : "#f8d7da",
+    color:
+      tipoMensagem === "success"
+        ? "#155724"
+        : tipoMensagem === "warning"
+        ? "#856404"
+        : "#721c24"
   };
 
   // ==========================================
@@ -177,30 +201,21 @@ function ProfessorConteudo() {
   // ==========================================
 
   return (
-    <div style={{ maxWidth: "900px", margin: "auto" }}>
+    <div style={{ backgroundColor: "#f4f6fa", minHeight: "100vh", padding: "20px" }}>
 
-      <h2>Painel do Professor</h2>
+      <div style={cardStyle}>
 
-      {mensagem && (
-        <div
-          onClick={salvouAgora ? resetarTela : undefined}
-          style={{
-            backgroundColor: salvouAgora ? "#d4edda" : "#fff3cd",
-            border: "1px solid #ccc",
-            padding: "10px",
-            borderRadius: "5px",
-            marginBottom: "20px",
-            cursor: salvouAgora ? "pointer" : "default"
-          }}
-        >
-          {mensagem}
-        </div>
-      )}
+        <h2 style={{ marginBottom: "20px", color: "#2c4a8a" }}>
+          Lançamento de Avaliação
+        </h2>
 
-      {/* PROFESSOR */}
-      <div style={{ marginBottom: "20px" }}>
-        <label>Professor:</label><br />
+        {mensagem && (
+          <div style={mensagemStyle}>{mensagem}</div>
+        )}
+
+        <label style={labelStyle}>Professor</label>
         <select
+          style={inputStyle}
           value={professorSelecionado}
           onChange={(e) => {
             setProfessorSelecionado(e.target.value);
@@ -208,34 +223,28 @@ function ProfessorConteudo() {
           }}
         >
           <option value="">Selecione</option>
-          {professores.map((prof) => (
-            <option key={prof.id} value={prof.id}>
-              {prof.nome}
-            </option>
+          {professores.map(p => (
+            <option key={p.id} value={p.id}>{p.nome}</option>
           ))}
         </select>
-      </div>
 
-      {/* TURMA */}
-      <div style={{ marginBottom: "20px" }}>
-        <label>Turma / Disciplina:</label><br />
+        <label style={labelStyle}>Turma / Disciplina</label>
         <select
+          style={inputStyle}
           value={atribuicaoSelecionada}
           onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
         >
           <option value="">Selecione</option>
-          {atribuicoes.map((atr) => (
-            <option key={atr.id} value={atr.id}>
-              {atr.turma.nome} - {atr.disciplina.nome}
+          {atribuicoes.map(a => (
+            <option key={a.id} value={a.id}>
+              {a.turma.nome} - {a.disciplina.nome}
             </option>
           ))}
         </select>
-      </div>
 
-      {/* BIMESTRE */}
-      <div style={{ marginBottom: "20px" }}>
-        <label>Bimestre:</label><br />
+        <label style={labelStyle}>Bimestre</label>
         <select
+          style={inputStyle}
           value={bimestre}
           onChange={(e) => setBimestre(Number(e.target.value))}
         >
@@ -244,51 +253,40 @@ function ProfessorConteudo() {
           <option value={3}>3º</option>
           <option value={4}>4º</option>
         </select>
-      </div>
 
-      {/* DATA */}
-      <div style={{ marginBottom: "20px" }}>
-        <label>Data da Avaliação:</label><br />
+        <label style={labelStyle}>Data da Avaliação</label>
         <input
           type="date"
+          style={inputStyle}
           value={dataAvaliacao}
           min={semanasProva[bimestre].inicio}
           max={semanasProva[bimestre].fim}
           onChange={(e) => setDataAvaliacao(e.target.value)}
         />
-      </div>
 
-      {/* CONTEÚDOS */}
-      <div style={{ marginBottom: "20px" }}>
-        <label>Conteúdos (Tópicos):</label>
+        <label style={labelStyle}>Conteúdos</label>
 
-        {topicos.map((topico, index) => (
-          <div key={index} style={{ marginTop: "10px" }}>
-            <input
-              type="text"
-              value={topico}
-              onChange={(e) => atualizarTopico(index, e.target.value)}
-              style={{ width: "70%" }}
-            />
-            <button
-              onClick={() => removerTopico(index)}
-              style={{ marginLeft: "10px" }}
-            >
-              ❌
-            </button>
-          </div>
+        {topicos.map((t, i) => (
+          <input
+            key={i}
+            type="text"
+            style={inputStyle}
+            value={t}
+            onChange={(e) => atualizarTopico(i, e.target.value)}
+          />
         ))}
 
-        <div style={{ marginTop: "10px" }}>
-          <button onClick={adicionarTopico}>
-            ➕ Adicionar Tópico
-          </button>
-        </div>
-      </div>
+        <button style={{ ...buttonStyle, backgroundColor: "#6c757d" }} onClick={adicionarTopico}>
+          + Adicionar Tópico
+        </button>
 
-      <button onClick={salvarConteudo}>
-        {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
-      </button>
+        <br />
+
+        <button style={buttonStyle} onClick={salvarConteudo}>
+          {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
+        </button>
+
+      </div>
 
     </div>
   );
