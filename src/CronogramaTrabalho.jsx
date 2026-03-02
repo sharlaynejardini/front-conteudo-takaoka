@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import api from "./api";
+import html2canvas from "html2canvas";
+import logoTakaoka from "./assets/logo_takaoka.png";
 
 function CronogramaTrabalho() {
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [cronograma, setCronograma] = useState([]);
+
+  const printRef = useRef();
 
   // ==========================
   // CARREGAR TURMAS ORDENADAS
@@ -31,7 +35,7 @@ function CronogramaTrabalho() {
   }, []);
 
   // ==========================
-  // BUSCAR CRONOGRAMA
+  // BUSCAR TRABALHOS
   // ==========================
 
   const buscarCronograma = async () => {
@@ -49,30 +53,230 @@ function CronogramaTrabalho() {
       setCronograma(ordenado);
 
     } catch (error) {
-      console.error("Erro ao buscar cronograma:", error);
+      console.error("Erro ao buscar trabalhos:", error);
+      setCronograma([]);
     }
   };
 
+  const formatarData = (dataISO) => {
+    if (!dataISO) return "";
+    return new Date(dataISO).toLocaleDateString("pt-BR");
+  };
+
+  const gerarImagem = async () => {
+    const canvas = await html2canvas(printRef.current, { scale: 2 });
+
+    const link = document.createElement("a");
+    const turmaNome =
+      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+    link.download = `${turmaNome}_Trabalhos.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+
+  const transformarConteudoEmLista = (conteudo) => {
+    if (!conteudo) return [];
+    if (Array.isArray(conteudo)) return conteudo;
+
+    try {
+      const convertido = JSON.parse(conteudo);
+      return Array.isArray(convertido) ? convertido : [convertido];
+    } catch {
+      return [conteudo];
+    }
+  };
+
+  // ==========================
+  // CORES POR DATA
+  // ==========================
+
+  const coresAlternadas = [
+    "#e3f2fd",
+    "#fce4ec",
+    "#e8f5e9",
+    "#fff3e0",
+    "#ede7f6"
+  ];
+
+  const mapaCores = {};
+  let indiceCor = 0;
+
+  const datasOrdenadas = [
+    ...new Set(cronograma.map(item => item.data_entrega))
+  ].sort((a, b) => new Date(a) - new Date(b));
+
+  datasOrdenadas.forEach(data => {
+    mapaCores[data] =
+      coresAlternadas[indiceCor % coresAlternadas.length];
+    indiceCor++;
+  });
+
+  // ==========================
+  // ESTILOS
+  // ==========================
+
+  const pageStyle = {
+    backgroundColor: "#f2f5fa",
+    minHeight: "100vh",
+    padding: "50px 20px"
+  };
+
+  const cardStyle = {
+    maxWidth: "1000px",
+    margin: "auto",
+    backgroundColor: "white",
+    padding: "40px",
+    borderRadius: "16px",
+    boxShadow: "0 15px 35px rgba(0,0,0,0.08)"
+  };
+
+  const selectStyle = {
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #d0d7e2",
+    marginRight: "10px",
+    minWidth: "200px"
+  };
+
+  const buttonStyle = {
+    padding: "10px 16px",
+    backgroundColor: "#1e3a8a",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginRight: "10px"
+  };
+
+  const thStyle = {
+    padding: "12px",
+    border: "1px solid #ddd",
+    textAlign: "left",
+    backgroundColor: "#1e3a8a",
+    color: "white"
+  };
+
+  const tdStyle = {
+    padding: "12px",
+    border: "1px solid #ddd",
+    verticalAlign: "top"
+  };
+
+  // ==========================
+  // RENDER
+  // ==========================
+
   return (
-    <div style={{ padding: "40px", maxWidth: "900px", margin: "auto" }}>
+    <div style={pageStyle}>
+      <div style={cardStyle}>
 
-      <h2>Cronograma de Trabalhos</h2>
+        <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "30px" }}>
+          Cronograma de Trabalhos Mensais
+        </h2>
 
-      <select
-        value={turmaSelecionada}
-        onChange={(e) => setTurmaSelecionada(e.target.value)}
-        style={{ padding: "10px", marginBottom: "20px" }}
-      >
-        <option value="">Selecione a Turma</option>
-        {turmas.map(t => (
-          <option key={t.id} value={t.id}>{t.nome}</option>
-        ))}
-      </select>
+        <div style={{ marginBottom: "30px", textAlign: "center" }}>
+          <select
+            style={selectStyle}
+            value={turmaSelecionada}
+            onChange={(e) => setTurmaSelecionada(e.target.value)}
+          >
+            <option value="">Selecione a Turma</option>
+            {turmas.map((turma) => (
+              <option key={turma.id} value={turma.id}>
+                {turma.nome}
+              </option>
+            ))}
+          </select>
 
-      <button onClick={buscarCronograma}>
-        Buscar
-      </button>
+          <button style={buttonStyle} onClick={buscarCronograma}>
+            Buscar
+          </button>
 
+          <button style={buttonStyle} onClick={gerarImagem}>
+            Baixar Imagem
+          </button>
+        </div>
+
+        <div ref={printRef}>
+
+          {/* LOGO GRANDE */}
+          <div style={{ textAlign: "center", marginBottom: "20px" }}>
+            <img
+              src={logoTakaoka}
+              alt="Logo"
+              style={{ width: "100%", maxWidth: "900px" }}
+            />
+          </div>
+
+          {/* TÍTULO */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "20px",
+            fontWeight: "bold"
+          }}>
+            <div>
+              Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
+            </div>
+            <div>TRABALHO MENSAL</div>
+          </div>
+
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Data Entrega</th>
+                <th style={thStyle}>Professor</th>
+                <th style={thStyle}>Disciplina</th>
+                <th style={thStyle}>Conteúdo</th>
+                <th style={thStyle}>Instruções</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {cronograma.map((item) => {
+
+                const listaTopicos =
+                  transformarConteudoEmLista(item.conteudo);
+
+                const corLinha =
+                  mapaCores[item.data_entrega] || "white";
+
+                return (
+                  <tr
+                    key={item.id}
+                    style={{ backgroundColor: corLinha }}
+                  >
+                    <td style={tdStyle}>
+                      {formatarData(item.data_entrega)}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao?.professor?.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao?.disciplina?.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {listaTopicos.map((topico, i) => (
+                        <div key={i}>• {topico}</div>
+                      ))}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.instrucoes}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+        </div>
+
+      </div>
     </div>
   );
 }
