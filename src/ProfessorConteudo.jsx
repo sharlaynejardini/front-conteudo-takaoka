@@ -1,6 +1,6 @@
 // ==========================================
 // PROFESSORCONTEUDO.JSX
-// Layout moderno e elegante
+// Layout moderno + limpeza automática
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -62,6 +62,20 @@ function ProfessorConteudo() {
   }, [atribuicaoSelecionada, bimestre]);
 
   // ==========================
+  // LIMPAR FORMULÁRIO
+  // ==========================
+
+  const limparFormulario = () => {
+    setAtribuicaoSelecionada("");
+    setBimestre(1);
+    setDataAvaliacao(semanasProva[1].inicio);
+    setTopicos([""]);
+    setModoEdicao(false);
+    setMensagem("");
+    setTipoMensagem("");
+  };
+
+  // ==========================
   // RECONSTRUÇÃO DOS TÓPICOS
   // ==========================
 
@@ -93,7 +107,6 @@ function ProfessorConteudo() {
       }
 
       setTopicos(listaFinal.length ? listaFinal : [""]);
-
       setModoEdicao(true);
       setMensagem("Você está editando um conteúdo existente.");
       setTipoMensagem("warning");
@@ -113,6 +126,10 @@ function ProfessorConteudo() {
     setTopicos(novos);
   };
 
+  // ==========================
+  // SALVAR
+  // ==========================
+
   const salvarConteudo = async () => {
     try {
       await api.post("/conteudos", {
@@ -124,8 +141,11 @@ function ProfessorConteudo() {
 
       setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
-      setModoEdicao(false);
-      setTopicos([""]);
+
+      // 🔥 LIMPA APÓS SALVAR
+      setTimeout(() => {
+        limparFormulario();
+      }, 800);
 
     } catch {
       setMensagem("Erro ao salvar conteúdo.");
@@ -152,19 +172,12 @@ function ProfessorConteudo() {
     boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
   };
 
-  const titleStyle = {
-    color: "#2c4a8a",
-    marginBottom: "25px",
-    textAlign: "center"
-  };
-
   const inputStyle = {
     width: "100%",
     padding: "10px",
     borderRadius: "8px",
     border: "1px solid #d0d7e2",
-    marginBottom: "15px",
-    fontSize: "14px"
+    marginBottom: "15px"
   };
 
   const buttonPrimary = {
@@ -190,7 +203,6 @@ function ProfessorConteudo() {
     padding: "12px",
     borderRadius: "8px",
     marginBottom: "20px",
-    fontSize: "14px",
     backgroundColor:
       tipoMensagem === "success"
         ? "#d4edda"
@@ -207,7 +219,9 @@ function ProfessorConteudo() {
     <div style={pageStyle}>
       <div style={cardStyle}>
 
-        <h2 style={titleStyle}>Lançamento de Avaliação</h2>
+        <h2 style={{ textAlign: "center", color: "#2c4a8a", marginBottom: "25px" }}>
+          Lançamento de Avaliação
+        </h2>
 
         {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
@@ -217,6 +231,7 @@ function ProfessorConteudo() {
           onChange={(e) => {
             setProfessorSelecionado(e.target.value);
             carregarAtribuicoes(e.target.value);
+            limparFormulario(); // 🔥 limpa ao trocar professor
           }}
         >
           <option value="">Selecione Professor</option>
