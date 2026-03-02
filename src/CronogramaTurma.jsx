@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import api from "./api";
 import html2canvas from "html2canvas";
-import logoTakaoka from "./assets/logo_takaoka.png"; // 🔥 IMPORT CORRETO
+import logoTakaoka from "./assets/logo_takaoka.png";
 
 function CronogramaTurma() {
 
@@ -12,41 +12,76 @@ function CronogramaTurma() {
 
   const printRef = useRef();
 
+  // ==========================================
+  // CARREGAR TURMAS
+  // ==========================================
+
   useEffect(() => {
     async function carregarTurmas() {
-      const response = await api.get("/turmas");
-      setTurmas(response.data);
+      try {
+        const response = await api.get("/turmas");
+        setTurmas(response.data);
+      } catch (error) {
+        console.error("Erro ao carregar turmas:", error);
+      }
     }
     carregarTurmas();
   }, []);
 
+  // ==========================================
+  // BUSCAR CRONOGRAMA
+  // ==========================================
+
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
 
-    const response = await api.get("/cronograma", {
-      params: {
-        turma_id: turmaSelecionada,
-        bimestre: bimestre
-      }
-    });
+    try {
+      const response = await api.get("/cronograma", {
+        params: {
+          turma_id: turmaSelecionada,
+          bimestre: bimestre
+        }
+      });
 
-    setCronograma(response.data);
+      setCronograma(response.data);
+
+    } catch (error) {
+      console.error("Erro ao buscar cronograma:", error);
+      setCronograma([]);
+    }
   };
 
+  // ==========================================
+  // FORMATAR DATA
+  // ==========================================
+
   const formatarData = (dataISO) => {
+    if (!dataISO) return "";
     const data = new Date(dataISO);
     return data.toLocaleDateString("pt-BR");
   };
 
+  // ==========================================
+  // GERAR IMAGEM
+  // ==========================================
+
   const gerarImagem = async () => {
+    if (!printRef.current) return;
+
     const canvas = await html2canvas(printRef.current, { scale: 2 });
 
     const link = document.createElement("a");
-    const turmaNome = turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+    const turmaNome =
+      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
     link.download = `${turmaNome}_${bimestre}Bimestre.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
+
+  // ==========================================
+  // RENDER
+  // ==========================================
 
   return (
     <div style={{ padding: "40px", fontFamily: "Arial" }}>
@@ -87,9 +122,11 @@ function CronogramaTurma() {
       </div>
 
       {/* ÁREA EXPORTADA */}
-      <div ref={printRef} style={{ backgroundColor: "white", padding: "40px" }}>
+      <div
+        ref={printRef}
+        style={{ backgroundColor: "white", padding: "40px" }}
+      >
 
-        {/* 🔥 LOGO CORRIGIDO */}
         <div style={{ textAlign: "center", marginBottom: "30px" }}>
           <img
             src={logoTakaoka}
@@ -98,14 +135,26 @@ function CronogramaTurma() {
           />
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "20px"
+          }}
+        >
           <strong>
             Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
           </strong>
           <strong>{bimestre}º Bimestre</strong>
         </div>
 
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            fontSize: "14px"
+          }}
+        >
           <thead>
             <tr style={{ backgroundColor: "#2c4a8a", color: "white" }}>
               <th style={thStyle}>Data</th>
@@ -114,19 +163,49 @@ function CronogramaTurma() {
               <th style={thStyle}>Conteúdo</th>
             </tr>
           </thead>
+
           <tbody>
-            {cronograma.map((item, index) => (
-              <tr key={item.id} style={{ backgroundColor: index % 2 === 0 ? "#f2f2f2" : "white" }}>
-                <td style={tdStyle}>{formatarData(item.data_avaliacao)}</td>
-                <td style={tdStyle}>{item.atribuicao.professor.nome}</td>
-                <td style={tdStyle}>{item.atribuicao.disciplina.nome}</td>
-                <td style={tdStyle}>
-                  {item.conteudo.map((topico, i) => (
-                    <div key={i}>- {topico}</div>
-                  ))}
-                </td>
-              </tr>
-            ))}
+            {cronograma.map((item, index) => {
+
+              let listaTopicos = [];
+
+              try {
+                const convertido = JSON.parse(item.conteudo);
+                listaTopicos = Array.isArray(convertido)
+                  ? convertido
+                  : [item.conteudo];
+              } catch {
+                listaTopicos = [item.conteudo];
+              }
+
+              return (
+                <tr
+                  key={item.id}
+                  style={{
+                    backgroundColor:
+                      index % 2 === 0 ? "#f2f2f2" : "white"
+                  }}
+                >
+                  <td style={tdStyle}>
+                    {formatarData(item.data_avaliacao)}
+                  </td>
+
+                  <td style={tdStyle}>
+                    {item.atribuicao?.professor?.nome}
+                  </td>
+
+                  <td style={tdStyle}>
+                    {item.atribuicao?.disciplina?.nome}
+                  </td>
+
+                  <td style={tdStyle}>
+                    {listaTopicos.map((topico, i) => (
+                      <div key={i}>- {topico}</div>
+                    ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
