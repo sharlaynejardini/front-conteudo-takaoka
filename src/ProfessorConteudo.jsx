@@ -71,7 +71,7 @@ function ProfessorConteudo() {
   }, [bimestre]);
 
   // ==========================================
-  // BUSCAR CONTEÚDO EXISTENTE
+  // BUSCAR CONTEÚDO EXISTENTE AUTOMATICAMENTE
   // ==========================================
 
   useEffect(() => {
@@ -149,19 +149,8 @@ function ProfessorConteudo() {
       setModoEdicao(true);
       setMensagem("Conteúdo salvo com sucesso!");
     } catch (error) {
-
-      const detalhe = error.response?.data?.detail || "";
-
-      if (detalhe.includes("duas avaliações")) {
-        alert(
-          "Já existem duas avaliações cadastradas para esta turma neste mesmo dia.\n\n" +
-          "O máximo permitido é 2 avaliações por dia."
-        );
-      } else {
-        alert("Erro ao salvar conteúdo.");
-      }
-
       console.error("Erro ao salvar", error);
+      setMensagem("Erro ao salvar conteúdo.");
     }
   };
 
