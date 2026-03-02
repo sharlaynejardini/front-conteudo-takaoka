@@ -87,46 +87,31 @@ function CronogramaTurma() {
   };
 
   // ==========================
-  // MAPEAR DATAS COM 2 PROVAS
+  // CORES POR DATA
   // ==========================
 
-  const contarProvasPorData = () => {
-    const mapa = {};
-    cronograma.forEach(item => {
-      mapa[item.data_avaliacao] =
-        (mapa[item.data_avaliacao] || 0) + 1;
-    });
-    return mapa;
-  };
+  const coresAlternadas = [
+    "#e3f2fd",
+    "#fce4ec",
+    "#e8f5e9",
+    "#fff3e0",
+    "#ede7f6"
+  ];
 
-  const mapaDatas = contarProvasPorData();
+  const mapaCores = {};
+  let indiceCor = 0;
 
-  // 🔥 CORES QUE VÃO ALTERNAR
-// 🔥 CORES QUE VÃO ALTERNAR POR DATA
-const coresAlternadas = [
-  "#e3f2fd",  // azul claro
-  "#fce4ec",  // rosa claro
-  "#e8f5e9",  // verde claro
-  "#fff3e0",  // laranja claro
-  "#ede7f6"   // lilás claro
-];
+  const datasOrdenadas = [
+    ...new Set(
+      cronograma.map(item => item.data_avaliacao)
+    )
+  ].sort((a, b) => new Date(a) - new Date(b));
 
-const mapaCores = {};
-let indiceCor = 0;
-
-// Pega todas as datas únicas ordenadas
-const datasOrdenadas = [
-  ...new Set(
-    cronograma.map(item => item.data_avaliacao)
-  )
-].sort((a, b) => new Date(a) - new Date(b));
-
-// Atribui cor para cada data
-datasOrdenadas.forEach(data => {
-  mapaCores[data] =
-    coresAlternadas[indiceCor % coresAlternadas.length];
-  indiceCor++;
-});
+  datasOrdenadas.forEach(data => {
+    mapaCores[data] =
+      coresAlternadas[indiceCor % coresAlternadas.length];
+    indiceCor++;
+  });
 
   // ==========================
   // ESTILOS
@@ -226,6 +211,15 @@ datasOrdenadas.forEach(data => {
         </div>
 
         <div ref={printRef}>
+
+          {/* 🔵 IMAGEM RESTAURADA */}
+          <div style={{ textAlign: "center", marginBottom: "30px" }}>
+            <img
+              src={logoTakaoka}
+              alt="Logo"
+              style={{ maxWidth: "250px" }}
+            />
+          </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
