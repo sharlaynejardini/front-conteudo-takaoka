@@ -1,8 +1,3 @@
-// ==========================================
-// PROFESSORCONTEUDO.JSX
-// Versão final estável
-// ==========================================
-
 import { useEffect, useState } from "react";
 import api from "./api";
 
@@ -32,7 +27,7 @@ function ProfessorConteudo() {
   const [tipoMensagem, setTipoMensagem] = useState("");
 
   // ==========================
-  // CARREGAR PROFESSORES ORDENADOS
+  // CARREGAR PROFESSORES
   // ==========================
 
   useEffect(() => {
@@ -49,7 +44,7 @@ function ProfessorConteudo() {
   }, []);
 
   // ==========================
-  // CARREGAR ATRIBUIÇÕES ORDENADAS
+  // CARREGAR ATRIBUIÇÕES
   // ==========================
 
   const carregarAtribuicoes = async (id) => {
@@ -80,26 +75,20 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // DATA AUTOMÁTICA
-  // ==========================
-
-  useEffect(() => {
-    setDataAvaliacao(semanasProva[bimestre].inicio);
-  }, [bimestre]);
-
-  // ==========================
-  // LIMPAR FORMULÁRIO
+  // LIMPAR
   // ==========================
 
   const limparFormulario = () => {
     setAtribuicaoSelecionada("");
-    setBimestre(1);
-    setDataAvaliacao(semanasProva[1].inicio);
     setTopicos([""]);
     setModoEdicao(false);
     setMensagem("");
     setTipoMensagem("");
   };
+
+  useEffect(() => {
+    setDataAvaliacao(semanasProva[bimestre].inicio);
+  }, [bimestre]);
 
   // ==========================
   // BUSCAR CONTEÚDO EXISTENTE
@@ -118,6 +107,7 @@ function ProfessorConteudo() {
         });
 
         const salvo = response.data;
+
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
 
         let listaFinal = [];
@@ -148,7 +138,26 @@ function ProfessorConteudo() {
   }, [atribuicaoSelecionada, bimestre]);
 
   // ==========================
-  // SALVAR COM REGRA DAS 2 PROVAS
+  // MANIPULAR TÓPICOS
+  // ==========================
+
+  const adicionarTopico = () => {
+    setTopicos([...topicos, ""]);
+  };
+
+  const atualizarTopico = (index, valor) => {
+    const novos = [...topicos];
+    novos[index] = valor;
+    setTopicos(novos);
+  };
+
+  const removerTopico = (index) => {
+    const novos = topicos.filter((_, i) => i !== index);
+    setTopicos(novos.length ? novos : [""]);
+  };
+
+  // ==========================
+  // SALVAR
   // ==========================
 
   const salvarConteudo = async () => {
@@ -165,12 +174,6 @@ function ProfessorConteudo() {
         a => String(a.id) === String(atribuicaoSelecionada)
       );
 
-      if (!atribuicao) {
-        setMensagem("Erro interno ao identificar a turma.");
-        setTipoMensagem("error");
-        return;
-      }
-
       const responseCronograma = await api.get("/cronograma", {
         params: {
           turma_id: atribuicao.turma.id,
@@ -179,13 +182,12 @@ function ProfessorConteudo() {
       });
 
       const provasMesmoDia = responseCronograma.data.filter(item => {
-        if (!item.data_avaliacao) return false;
-        const dataBackend = item.data_avaliacao.split("T")[0];
+        const dataBackend = item.data_avaliacao?.split("T")[0];
         return dataBackend === dataAvaliacao;
       });
 
       if (!modoEdicao && provasMesmoDia.length >= 2) {
-        setMensagem("Já existem 2 provas agendadas para esse dia nesta turma.");
+        setMensagem("Já existem 2 provas agendadas para esse dia.");
         setTipoMensagem("error");
         return;
       }
@@ -204,8 +206,7 @@ function ProfessorConteudo() {
         limparFormulario();
       }, 900);
 
-    } catch (error) {
-      console.error(error);
+    } catch {
       setMensagem("Erro ao salvar conteúdo.");
       setTipoMensagem("error");
     }
@@ -235,16 +236,27 @@ function ProfessorConteudo() {
     padding: "10px",
     borderRadius: "8px",
     border: "1px solid #d0d7e2",
-    marginBottom: "15px"
+    marginBottom: "10px"
   };
 
-  const buttonStyle = {
+  const buttonPrimary = {
     backgroundColor: "#2c4a8a",
     color: "white",
     padding: "10px 16px",
     borderRadius: "8px",
     border: "none",
-    cursor: "pointer"
+    cursor: "pointer",
+    marginTop: "10px"
+  };
+
+  const buttonSecondary = {
+    backgroundColor: "#6c757d",
+    color: "white",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    border: "none",
+    cursor: "pointer",
+    marginBottom: "15px"
   };
 
   const mensagemStyle = {
@@ -258,10 +270,6 @@ function ProfessorConteudo() {
         ? "#fff3cd"
         : "#f8d7da"
   };
-
-  // ==========================
-  // RENDER
-  // ==========================
 
   return (
     <div style={pageStyle}>
@@ -321,22 +329,30 @@ function ProfessorConteudo() {
           onChange={(e) => setDataAvaliacao(e.target.value)}
         />
 
-        {topicos.map((t, i) => (
-          <input
-            key={i}
-            type="text"
-            placeholder={`Tópico ${i + 1}`}
-            style={inputStyle}
-            value={t}
-            onChange={(e) => {
-              const novos = [...topicos];
-              novos[i] = e.target.value;
-              setTopicos(novos);
-            }}
-          />
+        <h4>Conteúdos:</h4>
+
+        {topicos.map((topico, index) => (
+          <div key={index} style={{ display: "flex", gap: "10px" }}>
+            <input
+              type="text"
+              value={topico}
+              onChange={(e) => atualizarTopico(index, e.target.value)}
+              style={{ ...inputStyle, marginBottom: "5px" }}
+            />
+            <button
+              onClick={() => removerTopico(index)}
+              style={{ backgroundColor: "#dc3545", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}
+            >
+              ❌
+            </button>
+          </div>
         ))}
 
-        <button style={buttonStyle} onClick={salvarConteudo}>
+        <button style={buttonSecondary} onClick={adicionarTopico}>
+          + Adicionar Tópico
+        </button>
+
+        <button style={buttonPrimary} onClick={salvarConteudo}>
           {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
         </button>
 
