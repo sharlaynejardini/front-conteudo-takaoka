@@ -12,10 +12,6 @@ function CronogramaTurma() {
 
   const printRef = useRef();
 
-  // ==========================
-  // CARREGAR TURMAS ORDENADAS
-  // ==========================
-
   useEffect(() => {
     async function carregarTurmas() {
       const response = await api.get("/turmas");
@@ -28,10 +24,6 @@ function CronogramaTurma() {
     }
     carregarTurmas();
   }, []);
-
-  // ==========================
-  // BUSCAR CRONOGRAMA ORDENADO
-  // ==========================
 
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
@@ -86,10 +78,6 @@ function CronogramaTurma() {
     return [String(conteudo)];
   };
 
-  // ==========================
-  // CORES POR DATA
-  // ==========================
-
   const coresAlternadas = [
     "#e3f2fd",
     "#fce4ec",
@@ -112,10 +100,6 @@ function CronogramaTurma() {
       coresAlternadas[indiceCor % coresAlternadas.length];
     indiceCor++;
   });
-
-  // ==========================
-  // ESTILOS
-  // ==========================
 
   const pageStyle = {
     backgroundColor: "#f2f5fa",
@@ -164,10 +148,6 @@ function CronogramaTurma() {
     verticalAlign: "top"
   };
 
-  // ==========================
-  // RENDER
-  // ==========================
-
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
@@ -212,17 +192,36 @@ function CronogramaTurma() {
 
         <div ref={printRef}>
 
-          {/* 🔵 IMAGEM DO CABEÇALHO MAIOR */}
-          <div style={{ textAlign: "center", marginBottom: "30px" }}>
+          {/* IMAGEM DO CABEÇALHO */}
+          <div style={{ textAlign: "center", marginBottom: "20px" }}>
             <img
               src={logoTakaoka}
               alt="Cabeçalho"
-              style={{
-                width: "100%",
-                maxWidth: "100%",
-                height: "auto"
-              }}
+              style={{ width: "100%", height: "auto" }}
             />
+          </div>
+
+          {/* TURMA + TÍTULO + BIMESTRE */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "20px",
+              fontWeight: "bold",
+              fontSize: "18px"
+            }}
+          >
+            <div>
+              Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
+            </div>
+
+            <div>
+              AVALIAÇÃO BIMESTRAL
+            </div>
+
+            <div>
+              {bimestre}º Bimestre
+            </div>
           </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
