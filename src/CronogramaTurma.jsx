@@ -12,17 +12,30 @@ function CronogramaTurma() {
 
   const printRef = useRef();
 
+  // ==========================
+  // CARREGAR TURMAS ORDENADAS
+  // ==========================
+
   useEffect(() => {
     async function carregarTurmas() {
       try {
         const response = await api.get("/turmas");
-        setTurmas(response.data);
+
+        const ordenadas = [...response.data].sort((a, b) =>
+          a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+        );
+
+        setTurmas(ordenadas);
       } catch (error) {
         console.error("Erro ao carregar turmas:", error);
       }
     }
     carregarTurmas();
   }, []);
+
+  // ==========================
+  // BUSCAR CRONOGRAMA ORDENADO POR DATA
+  // ==========================
 
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
@@ -35,7 +48,11 @@ function CronogramaTurma() {
         }
       });
 
-      setCronograma(response.data);
+      const ordenado = [...response.data].sort((a, b) =>
+        new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
+      );
+
+      setCronograma(ordenado);
 
     } catch (error) {
       console.error("Erro ao buscar cronograma:", error);
@@ -61,31 +78,16 @@ function CronogramaTurma() {
     link.click();
   };
 
-  // 🔥 FUNÇÃO 100% SEGURA
   const transformarConteudoEmLista = (conteudo) => {
-
     if (!conteudo) return [];
 
-    // Se já for array
-    if (Array.isArray(conteudo)) {
-      return conteudo;
-    }
+    if (Array.isArray(conteudo)) return conteudo;
 
-    // Se for string
     if (typeof conteudo === "string") {
-
-      // Tentar converter JSON
       try {
         const convertido = JSON.parse(conteudo);
-
-        if (Array.isArray(convertido)) {
-          return convertido;
-        }
-
-        return [convertido];
-
+        return Array.isArray(convertido) ? convertido : [convertido];
       } catch {
-        // Se não for JSON, separar por vírgula
         return conteudo
           .split(",")
           .map(item => item.trim())
@@ -93,144 +95,188 @@ function CronogramaTurma() {
       }
     }
 
-    // Caso inesperado
     return [String(conteudo)];
   };
 
+  // ==========================
+  // ESTILOS
+  // ==========================
+
+  const pageStyle = {
+    backgroundColor: "#f2f5fa",
+    minHeight: "100vh",
+    padding: "50px 20px"
+  };
+
+  const cardStyle = {
+    maxWidth: "1000px",
+    margin: "auto",
+    backgroundColor: "white",
+    padding: "40px",
+    borderRadius: "16px",
+    boxShadow: "0 15px 35px rgba(0,0,0,0.08)"
+  };
+
+  const selectStyle = {
+    padding: "10px",
+    borderRadius: "8px",
+    border: "1px solid #d0d7e2",
+    marginRight: "10px",
+    minWidth: "180px"
+  };
+
+  const buttonStyle = {
+    padding: "10px 16px",
+    backgroundColor: "#2c4a8a",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    marginRight: "10px"
+  };
+
+  const tableHeaderStyle = {
+    backgroundColor: "#2c4a8a",
+    color: "white"
+  };
+
+  const thStyle = {
+    padding: "12px",
+    border: "1px solid #ddd",
+    textAlign: "left"
+  };
+
+  const tdStyle = {
+    padding: "12px",
+    border: "1px solid #ddd",
+    verticalAlign: "top"
+  };
+
+  // ==========================
+  // RENDER
+  // ==========================
+
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
+    <div style={pageStyle}>
+      <div style={cardStyle}>
 
-      <h2>Cronograma de Avaliações</h2>
+        <h2 style={{ textAlign: "center", color: "#2c4a8a", marginBottom: "30px" }}>
+          Cronograma de Avaliações
+        </h2>
 
-      <div style={{ marginBottom: "20px" }}>
-        <select
-          value={turmaSelecionada}
-          onChange={(e) => setTurmaSelecionada(e.target.value)}
-        >
-          <option value="">Selecione a Turma</option>
-          {turmas.map((turma) => (
-            <option key={turma.id} value={turma.id}>
-              {turma.nome}
-            </option>
-          ))}
-        </select>
+        <div style={{ marginBottom: "30px", textAlign: "center" }}>
+          <select
+            style={selectStyle}
+            value={turmaSelecionada}
+            onChange={(e) => setTurmaSelecionada(e.target.value)}
+          >
+            <option value="">Selecione a Turma</option>
+            {turmas.map((turma) => (
+              <option key={turma.id} value={turma.id}>
+                {turma.nome}
+              </option>
+            ))}
+          </select>
 
-        <select
-          value={bimestre}
-          onChange={(e) => setBimestre(Number(e.target.value))}
-          style={{ marginLeft: "10px" }}
-        >
-          <option value={1}>1º Bimestre</option>
-          <option value={2}>2º Bimestre</option>
-          <option value={3}>3º Bimestre</option>
-          <option value={4}>4º Bimestre</option>
-        </select>
+          <select
+            style={selectStyle}
+            value={bimestre}
+            onChange={(e) => setBimestre(Number(e.target.value))}
+          >
+            <option value={1}>1º Bimestre</option>
+            <option value={2}>2º Bimestre</option>
+            <option value={3}>3º Bimestre</option>
+            <option value={4}>4º Bimestre</option>
+          </select>
 
-        <button onClick={buscarCronograma} style={{ marginLeft: "10px" }}>
-          Buscar
-        </button>
+          <button style={buttonStyle} onClick={buscarCronograma}>
+            Buscar
+          </button>
 
-        <button onClick={gerarImagem} style={{ marginLeft: "10px" }}>
-          Baixar Imagem
-        </button>
-      </div>
-
-      <div
-        ref={printRef}
-        style={{ backgroundColor: "white", padding: "40px" }}
-      >
-
-        <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <img
-            src={logoTakaoka}
-            alt="Logo"
-            style={{ maxWidth: "100%" }}
-          />
+          <button style={buttonStyle} onClick={gerarImagem}>
+            Baixar Imagem
+          </button>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "20px"
-          }}
-        >
-          <strong>
-            Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
-          </strong>
+        <div ref={printRef} style={{ padding: "20px" }}>
 
-          <strong> AVALIAÇÃO BIMESTRAL</strong>
-          <strong>{bimestre}º Bimestre</strong>
+          <div style={{ textAlign: "center", marginBottom: "30px" }}>
+            <img
+              src={logoTakaoka}
+              alt="Logo"
+              style={{ maxWidth: "400px" }}
+            />
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "20px",
+              fontWeight: "bold"
+            }}
+          >
+            <span>
+              Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
+            </span>
+
+            <span>AVALIAÇÃO BIMESTRAL</span>
+
+            <span>{bimestre}º Bimestre</span>
+          </div>
+
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={tableHeaderStyle}>
+                <th style={thStyle}>Data</th>
+                <th style={thStyle}>Professor</th>
+                <th style={thStyle}>Disciplina</th>
+                <th style={thStyle}>Conteúdo</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {cronograma.map((item, index) => {
+
+                const listaTopicos =
+                  transformarConteudoEmLista(item.conteudo);
+
+                return (
+                  <tr
+                    key={item.id}
+                    style={{
+                      backgroundColor:
+                        index % 2 === 0 ? "#f9fafc" : "white"
+                    }}
+                  >
+                    <td style={tdStyle}>
+                      {formatarData(item.data_avaliacao)}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao?.professor?.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao?.disciplina?.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {listaTopicos.map((topico, i) => (
+                        <div key={i}>• {topico}</div>
+                      ))}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
         </div>
-
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            fontSize: "14px"
-          }}
-        >
-          <thead>
-            <tr style={{ backgroundColor: "#2c4a8a", color: "white" }}>
-              <th style={thStyle}>Data</th>
-              <th style={thStyle}>Professor</th>
-              <th style={thStyle}>Disciplina</th>
-              <th style={thStyle}>Conteúdo</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {cronograma.map((item, index) => {
-
-              const listaTopicos =
-                transformarConteudoEmLista(item.conteudo);
-
-              return (
-                <tr
-                  key={item.id}
-                  style={{
-                    backgroundColor:
-                      index % 2 === 0 ? "#f2f2f2" : "white"
-                  }}
-                >
-                  <td style={tdStyle}>
-                    {formatarData(item.data_avaliacao)}
-                  </td>
-
-                  <td style={tdStyle}>
-                    {item.atribuicao?.professor?.nome}
-                  </td>
-
-                  <td style={tdStyle}>
-                    {item.atribuicao?.disciplina?.nome}
-                  </td>
-
-                  <td style={tdStyle}>
-                    {listaTopicos.map((topico, i) => (
-                      <div key={i}>- {topico}</div>
-                    ))}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
 
       </div>
     </div>
   );
 }
-
-const thStyle = {
-  padding: "10px",
-  border: "1px solid #ccc",
-  textAlign: "left"
-};
-
-const tdStyle = {
-  padding: "10px",
-  border: "1px solid #ccc",
-  verticalAlign: "top"
-};
 
 export default CronogramaTurma;
