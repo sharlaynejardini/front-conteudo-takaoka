@@ -12,10 +12,6 @@ function CronogramaTurma() {
 
   const printRef = useRef();
 
-  // ==========================================
-  // CARREGAR TURMAS
-  // ==========================================
-
   useEffect(() => {
     async function carregarTurmas() {
       try {
@@ -27,10 +23,6 @@ function CronogramaTurma() {
     }
     carregarTurmas();
   }, []);
-
-  // ==========================================
-  // BUSCAR CRONOGRAMA
-  // ==========================================
 
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
@@ -51,23 +43,13 @@ function CronogramaTurma() {
     }
   };
 
-  // ==========================================
-  // FORMATAR DATA
-  // ==========================================
-
   const formatarData = (dataISO) => {
     if (!dataISO) return "";
     const data = new Date(dataISO);
     return data.toLocaleDateString("pt-BR");
   };
 
-  // ==========================================
-  // GERAR IMAGEM
-  // ==========================================
-
   const gerarImagem = async () => {
-    if (!printRef.current) return;
-
     const canvas = await html2canvas(printRef.current, { scale: 2 });
 
     const link = document.createElement("a");
@@ -79,9 +61,28 @@ function CronogramaTurma() {
     link.click();
   };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
+  // 🔥 FUNÇÃO QUE CONVERTE O CONTEÚDO EM LISTA
+  const transformarConteudoEmLista = (conteudo) => {
+
+    if (!conteudo) return [];
+
+    try {
+      const convertido = JSON.parse(conteudo);
+
+      if (Array.isArray(convertido)) {
+        return convertido;
+      }
+
+      return [convertido];
+
+    } catch {
+      // Caso esteja salvo como texto simples separado por vírgula
+      return conteudo
+        .split(",")
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+    }
+  };
 
   return (
     <div style={{ padding: "40px", fontFamily: "Arial" }}>
@@ -121,7 +122,6 @@ function CronogramaTurma() {
         </button>
       </div>
 
-      {/* ÁREA EXPORTADA */}
       <div
         ref={printRef}
         style={{ backgroundColor: "white", padding: "40px" }}
@@ -145,7 +145,6 @@ function CronogramaTurma() {
           <strong>
             Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
           </strong>
-          <strong>AVALIAÇÃO BIMESTRAL</strong>
           <strong>{bimestre}º Bimestre</strong>
         </div>
 
@@ -168,16 +167,7 @@ function CronogramaTurma() {
           <tbody>
             {cronograma.map((item, index) => {
 
-              let listaTopicos = [];
-
-              try {
-                const convertido = JSON.parse(item.conteudo);
-                listaTopicos = Array.isArray(convertido)
-                  ? convertido
-                  : [item.conteudo];
-              } catch {
-                listaTopicos = [item.conteudo];
-              }
+              const listaTopicos = transformarConteudoEmLista(item.conteudo);
 
               return (
                 <tr
