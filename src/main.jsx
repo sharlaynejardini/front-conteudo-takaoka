@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./Layout";
 import ProfessorConteudo from "./ProfessorConteudo";
 import CronogramaTurma from "./CronogramaTurma";
+import ProfessorTrabalho from "./ProfessorTrabalho";
+import CronogramaTrabalho from "./CronogramaTrabalho";
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
 import AuthCallback from "./AuthCallback";
@@ -31,26 +33,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             </ProtectedRoute>
           }
         >
-          {/* PROVAS (agendamento prova bimestral) */}
+          {/* PROVAS BIMESTRAIS */}
           <Route index element={<ProfessorConteudo />} />
+          <Route path="cronograma" element={<CronogramaTurma />} />
 
-          {/* CRONOGRAMA PROVA BIMESTRAL */}
-          <Route
-            path="cronograma-prova"
-            element={<CronogramaTurma />}
-          />
-
-          {/* AGENDAMENTO TRABALHO MENSAL */}
-          <Route
-            path="agendamento-trabalho"
-            element={<ProfessorConteudo />}
-          />
-
-          {/* CRONOGRAMA TRABALHO MENSAL */}
-          <Route
-            path="cronograma-trabalho"
-            element={<CronogramaTurma />}
-          />
+          {/* TRABALHOS MENSAIS */}
+          <Route path="trabalho" element={<ProfessorTrabalho />} />
+          <Route path="cronograma-trabalho" element={<CronogramaTrabalho />} />
 
           {/* ADMIN */}
           <Route
@@ -61,7 +50,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               </AdminRoute>
             }
           />
-
         </Route>
 
       </Routes>

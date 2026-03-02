@@ -48,15 +48,17 @@ function Layout() {
       >
         <div style={{ display: "flex", gap: "25px" }}>
 
+          {/* PROVAS */}
           <Link to="/" style={linkStyle}>
             Provas
           </Link>
 
-          <Link to="/cronograma-prova" style={linkStyle}>
+          <Link to="/cronograma" style={linkStyle}>
             Cronograma Provas
           </Link>
 
-          <Link to="/agendamento-trabalho" style={linkStyle}>
+          {/* TRABALHOS */}
+          <Link to="/trabalho" style={linkStyle}>
             Trabalhos
           </Link>
 
