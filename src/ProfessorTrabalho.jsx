@@ -25,8 +25,29 @@ function ProfessorTrabalho() {
     boxSizing: "border-box"
   };
 
+  const mensagemStyle = {
+    padding: "12px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    backgroundColor:
+      tipoMensagem === "success"
+        ? "#d4edda"
+        : tipoMensagem === "warning"
+        ? "#fff3cd"
+        : "#f8d7da"
+  };
+
+  const limparTudo = () => {
+    setProfessorSelecionado("");
+    setAtribuicaoSelecionada("");
+    setTopicos([""]);
+    setInstrucoes("");
+    setDataEntrega("");
+    setModoEdicao(false);
+  };
+
   // ==========================
-  // CARREGAR PROFESSORES ORDENADOS
+  // CARREGAR PROFESSORES
   // ==========================
 
   useEffect(() => {
@@ -39,9 +60,8 @@ function ProfessorTrabalho() {
         );
 
         setProfessores(ordenados);
-
       } catch (error) {
-        console.error("Erro ao carregar professores:", error);
+        console.error(error);
       }
     }
 
@@ -49,7 +69,7 @@ function ProfessorTrabalho() {
   }, []);
 
   // ==========================
-  // CARREGAR ATRIBUIÇÕES ORDENADAS
+  // CARREGAR ATRIBUIÇÕES
   // ==========================
 
   const carregarAtribuicoes = async (id) => {
@@ -79,13 +99,108 @@ function ProfessorTrabalho() {
       setAtribuicoes(ordenadas);
 
     } catch (error) {
-      console.error("Erro ao carregar atribuições:", error);
+      console.error(error);
+    }
+  };
+
+  // ==========================
+  // BUSCAR PARA EDIÇÃO
+  // ==========================
+
+  useEffect(() => {
+    if (!atribuicaoSelecionada) return;
+
+    async function buscarTrabalho() {
+      try {
+        const response = await api.get("/trabalhos", {
+          params: { atribuicao_id: atribuicaoSelecionada }
+        });
+
+        const salvo = response.data;
+
+        setDataEntrega(salvo.data_entrega?.split("T")[0]);
+        setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
+        setInstrucoes(salvo.instrucoes || "");
+
+        setModoEdicao(true);
+        setMensagem("Você está editando um trabalho existente.");
+        setTipoMensagem("warning");
+
+      } catch {
+        setModoEdicao(false);
+        setTopicos([""]);
+        setInstrucoes("");
+        setMensagem("");
+      }
+    }
+
+    buscarTrabalho();
+
+  }, [atribuicaoSelecionada]);
+
+  // ==========================
+  // TÓPICOS
+  // ==========================
+
+  const adicionarTopico = () => setTopicos([...topicos, ""]);
+
+  const atualizarTopico = (index, valor) => {
+    const novos = [...topicos];
+    novos[index] = valor;
+    setTopicos(novos);
+  };
+
+  const removerTopico = (index) => {
+    const novos = topicos.filter((_, i) => i !== index);
+    setTopicos(novos.length ? novos : [""]);
+  };
+
+  // ==========================
+  // SALVAR
+  // ==========================
+
+  const salvarTrabalho = async () => {
+
+    if (!atribuicaoSelecionada) {
+      setMensagem("Selecione uma turma/disciplina.");
+      setTipoMensagem("error");
+      return;
+    }
+
+    try {
+      await api.post("/trabalhos", {
+        atribuicao_id: atribuicaoSelecionada,
+        conteudo: JSON.stringify(topicos),
+        instrucoes,
+        data_entrega: dataEntrega
+      });
+
+      setMensagem(
+        modoEdicao
+          ? "Trabalho atualizado com sucesso!"
+          : "Trabalho salvo com sucesso!"
+      );
+
+      setTipoMensagem("success");
+
+      setTimeout(() => {
+        limparTudo();
+        setMensagem("");
+      }, 1200);
+
+    } catch (error) {
+      console.error(error);
+      setMensagem("Erro ao salvar trabalho.");
+      setTipoMensagem("error");
     }
   };
 
   return (
     <div style={{ padding: "40px", maxWidth: "600px", margin: "auto" }}>
+
       <h2>Lançamento de Trabalho Mensal</h2>
+
+      {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
       <select
         style={inputStyle}
@@ -113,6 +228,46 @@ function ProfessorTrabalho() {
           </option>
         ))}
       </select>
+
+      <input
+        type="date"
+        style={inputStyle}
+        value={dataEntrega}
+        onChange={(e) => setDataEntrega(e.target.value)}
+      />
+
+      <h4>Conteúdo:</h4>
+
+      {topicos.map((topico, index) => (
+        <div key={index} style={{ display: "flex", gap: "10px" }}>
+          <input
+            type="text"
+            value={topico}
+            onChange={(e) => atualizarTopico(index, e.target.value)}
+            style={{ ...inputStyle, marginBottom: "5px" }}
+          />
+          <button onClick={() => removerTopico(index)}>❌</button>
+        </div>
+      ))}
+
+      <button onClick={adicionarTopico}>
+        + Adicionar Tópico
+      </button>
+
+      <h4 style={{ marginTop: "20px" }}>Instruções:</h4>
+
+      <textarea
+        style={{ ...inputStyle, height: "100px" }}
+        value={instrucoes}
+        onChange={(e) => setInstrucoes(e.target.value)}
+      />
+
+      <br />
+
+      <button onClick={salvarTrabalho}>
+        {modoEdicao ? "Atualizar Trabalho" : "Salvar Trabalho"}
+      </button>
+
     </div>
   );
 }
