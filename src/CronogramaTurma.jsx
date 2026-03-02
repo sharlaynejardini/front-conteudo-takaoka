@@ -145,6 +145,7 @@ function CronogramaTurma() {
           <strong>
             Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
           </strong>
+          <strong>AVALIAÇÃO BIMESTRAL</strong>
           <strong>{bimestre}º Bimestre</strong>
         </div>
 
