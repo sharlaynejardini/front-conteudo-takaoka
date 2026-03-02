@@ -39,29 +39,29 @@ function Layout() {
       <div
         style={{
           backgroundColor: "#1e3a8a",
-          padding: "15px",
+          padding: "15px 30px",
           color: "white",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center"
         }}
       >
-        <div>
+        <div style={{ display: "flex", gap: "25px" }}>
 
           <Link to="/" style={linkStyle}>
-            Agendamento Prova Bimestral
+            Provas
           </Link>
 
           <Link to="/cronograma-prova" style={linkStyle}>
-            Cronograma Prova Bimestral
+            Cronograma
           </Link>
 
           <Link to="/agendamento-trabalho" style={linkStyle}>
-            Agendamento Trabalho Mensal
+            Trabalhos
           </Link>
 
           <Link to="/cronograma-trabalho" style={linkStyle}>
-            Cronograma Trabalho Mensal
+            Cronograma Trabalhos
           </Link>
 
           {isAdmin && (
@@ -87,9 +87,9 @@ function Layout() {
 
 const linkStyle = {
   color: "white",
-  marginRight: "20px",
   textDecoration: "none",
-  fontWeight: "500"
+  fontWeight: "500",
+  fontSize: "15px"
 };
 
 const buttonStyle = {
