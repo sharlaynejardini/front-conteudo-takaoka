@@ -1,6 +1,7 @@
 // ==========================================
 // PROFESSORCONTEUDO.JSX
-// Layout moderno + limpeza + ordenação A-Z
+// Layout moderno + ordenação + limpeza +
+// REGRA: máximo 2 provas por dia
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -32,7 +33,7 @@ function ProfessorConteudo() {
   const [tipoMensagem, setTipoMensagem] = useState("");
 
   // ==========================
-  // CARREGAR PROFESSORES (ORDENADOS)
+  // CARREGAR PROFESSORES ORDENADOS
   // ==========================
 
   useEffect(() => {
@@ -49,7 +50,7 @@ function ProfessorConteudo() {
   }, []);
 
   // ==========================
-  // CARREGAR ATRIBUIÇÕES (ORDENADAS)
+  // CARREGAR ATRIBUIÇÕES ORDENADAS
   // ==========================
 
   const carregarAtribuicoes = async (id) => {
@@ -61,7 +62,6 @@ function ProfessorConteudo() {
     const response = await api.get(`/atribuicoes/${id}`);
 
     const ordenadas = [...response.data].sort((a, b) => {
-
       const turmaCompare = a.turma.nome.localeCompare(
         b.turma.nome,
         "pt-BR",
@@ -80,14 +80,13 @@ function ProfessorConteudo() {
     setAtribuicoes(ordenadas);
   };
 
+  // ==========================
+  // DATA AUTOMÁTICA
+  // ==========================
+
   useEffect(() => {
     setDataAvaliacao(semanasProva[bimestre].inicio);
   }, [bimestre]);
-
-  useEffect(() => {
-    if (!atribuicaoSelecionada) return;
-    buscarConteudo();
-  }, [atribuicaoSelecionada, bimestre]);
 
   // ==========================
   // LIMPAR FORMULÁRIO
@@ -104,62 +103,48 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // BUSCAR CONTEÚDO EXISTENTE
+  // SALVAR COM REGRA DE 2 PROVAS
   // ==========================
 
-  const buscarConteudo = async () => {
+  const salvarConteudo = async () => {
+
+    if (!atribuicaoSelecionada) {
+      setMensagem("Selecione uma turma/disciplina.");
+      setTipoMensagem("error");
+      return;
+    }
+
     try {
-      const response = await api.get("/conteudos", {
+
+      const atribuicao = atribuicoes.find(
+        a => String(a.id) === String(atribuicaoSelecionada)
+      );
+
+      if (!atribuicao) {
+        setMensagem("Erro interno ao identificar a turma.");
+        setTipoMensagem("error");
+        return;
+      }
+
+      // 🔥 Buscar cronograma da turma
+      const responseCronograma = await api.get("/cronograma", {
         params: {
-          atribuicao_id: atribuicaoSelecionada,
+          turma_id: atribuicao.turma.id,
           bimestre
         }
       });
 
-      const salvo = response.data;
-      setDataAvaliacao(salvo.data_avaliacao);
+      const provasMesmoDia = responseCronograma.data.filter(
+        item => item.data_avaliacao === dataAvaliacao
+      );
 
-      let listaFinal = [];
-
-      if (Array.isArray(salvo.conteudo)) {
-        listaFinal = salvo.conteudo;
-      } else if (typeof salvo.conteudo === "string") {
-        try {
-          const convertido = JSON.parse(salvo.conteudo);
-          listaFinal = Array.isArray(convertido) ? convertido : [salvo.conteudo];
-        } catch {
-          listaFinal = [salvo.conteudo];
-        }
-      } else {
-        listaFinal = [String(salvo.conteudo)];
+      // 🔒 REGRA AQUI
+      if (!modoEdicao && provasMesmoDia.length >= 2) {
+        setMensagem("Já existem 2 provas agendadas para esse dia nesta turma.");
+        setTipoMensagem("error");
+        return;
       }
 
-      setTopicos(listaFinal.length ? listaFinal : [""]);
-      setModoEdicao(true);
-      setMensagem("Você está editando um conteúdo existente.");
-      setTipoMensagem("warning");
-
-    } catch {
-      setModoEdicao(false);
-      setTopicos([""]);
-      setMensagem("");
-    }
-  };
-
-  const adicionarTopico = () => setTopicos([...topicos, ""]);
-
-  const atualizarTopico = (i, v) => {
-    const novos = [...topicos];
-    novos[i] = v;
-    setTopicos(novos);
-  };
-
-  // ==========================
-  // SALVAR
-  // ==========================
-
-  const salvarConteudo = async () => {
-    try {
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
@@ -174,7 +159,8 @@ function ProfessorConteudo() {
         limparFormulario();
       }, 800);
 
-    } catch {
+    } catch (error) {
+      console.error(error);
       setMensagem("Erro ao salvar conteúdo.");
       setTipoMensagem("error");
     }
@@ -297,7 +283,11 @@ function ProfessorConteudo() {
             placeholder={`Tópico ${i + 1}`}
             style={inputStyle}
             value={t}
-            onChange={(e) => atualizarTopico(i, e.target.value)}
+            onChange={(e) => {
+              const novos = [...topicos];
+              novos[i] = e.target.value;
+              setTopicos(novos);
+            }}
           />
         ))}
 
