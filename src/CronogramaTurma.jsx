@@ -18,52 +18,41 @@ function CronogramaTurma() {
 
   useEffect(() => {
     async function carregarTurmas() {
-      try {
-        const response = await api.get("/turmas");
+      const response = await api.get("/turmas");
 
-        const ordenadas = [...response.data].sort((a, b) =>
-          a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
-        );
+      const ordenadas = [...response.data].sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+      );
 
-        setTurmas(ordenadas);
-      } catch (error) {
-        console.error("Erro ao carregar turmas:", error);
-      }
+      setTurmas(ordenadas);
     }
     carregarTurmas();
   }, []);
 
   // ==========================
-  // BUSCAR CRONOGRAMA ORDENADO POR DATA
+  // BUSCAR CRONOGRAMA ORDENADO
   // ==========================
 
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
 
-    try {
-      const response = await api.get("/cronograma", {
-        params: {
-          turma_id: turmaSelecionada,
-          bimestre: bimestre
-        }
-      });
+    const response = await api.get("/cronograma", {
+      params: {
+        turma_id: turmaSelecionada,
+        bimestre
+      }
+    });
 
-      const ordenado = [...response.data].sort((a, b) =>
-        new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
-      );
+    const ordenado = [...response.data].sort(
+      (a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
+    );
 
-      setCronograma(ordenado);
-
-    } catch (error) {
-      console.error("Erro ao buscar cronograma:", error);
-      setCronograma([]);
-    }
+    setCronograma(ordenado);
   };
 
   const formatarData = (dataISO) => {
     if (!dataISO) return "";
-    const data = new Date(dataISO);
-    return data.toLocaleDateString("pt-BR");
+    return new Date(dataISO).toLocaleDateString("pt-BR");
   };
 
   const gerarImagem = async () => {
@@ -80,7 +69,6 @@ function CronogramaTurma() {
 
   const transformarConteudoEmLista = (conteudo) => {
     if (!conteudo) return [];
-
     if (Array.isArray(conteudo)) return conteudo;
 
     if (typeof conteudo === "string") {
@@ -97,6 +85,37 @@ function CronogramaTurma() {
 
     return [String(conteudo)];
   };
+
+  // ==========================
+  // MAPEAR DATAS COM 2 PROVAS
+  // ==========================
+
+  const contarProvasPorData = () => {
+    const mapa = {};
+    cronograma.forEach(item => {
+      mapa[item.data_avaliacao] =
+        (mapa[item.data_avaliacao] || 0) + 1;
+    });
+    return mapa;
+  };
+
+  const mapaDatas = contarProvasPorData();
+
+  // 🔥 CORES QUE VÃO ALTERNAR
+  const coresAlternadas = ["#e3f2fd", "#fce4ec"];
+
+  const mapaCores = {};
+  let indiceCor = 0;
+
+  Object.keys(mapaDatas)
+    .sort((a, b) => new Date(a) - new Date(b))
+    .forEach(data => {
+      if (mapaDatas[data] >= 2) {
+        mapaCores[data] =
+          coresAlternadas[indiceCor % coresAlternadas.length];
+        indiceCor++;
+      }
+    });
 
   // ==========================
   // ESTILOS
@@ -135,15 +154,12 @@ function CronogramaTurma() {
     marginRight: "10px"
   };
 
-  const tableHeaderStyle = {
-    backgroundColor: "#2c4a8a",
-    color: "white"
-  };
-
   const thStyle = {
     padding: "12px",
     border: "1px solid #ddd",
-    textAlign: "left"
+    textAlign: "left",
+    backgroundColor: "#2c4a8a",
+    color: "white"
   };
 
   const tdStyle = {
@@ -198,36 +214,11 @@ function CronogramaTurma() {
           </button>
         </div>
 
-        <div ref={printRef} style={{ padding: "20px" }}>
-
-          <div style={{ textAlign: "center", marginBottom: "30px" }}>
-            <img
-              src={logoTakaoka}
-              alt="Logo"
-              style={{ maxWidth: "400px" }}
-            />
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "20px",
-              fontWeight: "bold"
-            }}
-          >
-            <span>
-              Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
-            </span>
-
-            <span>AVALIAÇÃO BIMESTRAL</span>
-
-            <span>{bimestre}º Bimestre</span>
-          </div>
+        <div ref={printRef}>
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={tableHeaderStyle}>
+              <tr>
                 <th style={thStyle}>Data</th>
                 <th style={thStyle}>Professor</th>
                 <th style={thStyle}>Disciplina</th>
@@ -236,18 +227,18 @@ function CronogramaTurma() {
             </thead>
 
             <tbody>
-              {cronograma.map((item, index) => {
+              {cronograma.map((item) => {
 
                 const listaTopicos =
                   transformarConteudoEmLista(item.conteudo);
 
+                const corLinha =
+                  mapaCores[item.data_avaliacao] || "white";
+
                 return (
                   <tr
                     key={item.id}
-                    style={{
-                      backgroundColor:
-                        index % 2 === 0 ? "#f9fafc" : "white"
-                    }}
+                    style={{ backgroundColor: corLinha }}
                   >
                     <td style={tdStyle}>
                       {formatarData(item.data_avaliacao)}
