@@ -1,7 +1,6 @@
 // ==========================================
 // PROFESSORCONTEUDO.JSX
-// Layout moderno + ordenação + limpeza +
-// REGRA: máximo 2 provas por dia
+// Versão final estável
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -103,7 +102,53 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // SALVAR COM REGRA DE 2 PROVAS
+  // BUSCAR CONTEÚDO EXISTENTE
+  // ==========================
+
+  useEffect(() => {
+    if (!atribuicaoSelecionada) return;
+
+    async function buscarConteudo() {
+      try {
+        const response = await api.get("/conteudos", {
+          params: {
+            atribuicao_id: atribuicaoSelecionada,
+            bimestre
+          }
+        });
+
+        const salvo = response.data;
+        setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
+
+        let listaFinal = [];
+
+        try {
+          const convertido = JSON.parse(salvo.conteudo);
+          listaFinal = Array.isArray(convertido)
+            ? convertido
+            : [salvo.conteudo];
+        } catch {
+          listaFinal = [salvo.conteudo];
+        }
+
+        setTopicos(listaFinal.length ? listaFinal : [""]);
+        setModoEdicao(true);
+        setMensagem("Você está editando um conteúdo existente.");
+        setTipoMensagem("warning");
+
+      } catch {
+        setModoEdicao(false);
+        setTopicos([""]);
+        setMensagem("");
+      }
+    }
+
+    buscarConteudo();
+
+  }, [atribuicaoSelecionada, bimestre]);
+
+  // ==========================
+  // SALVAR COM REGRA DAS 2 PROVAS
   // ==========================
 
   const salvarConteudo = async () => {
@@ -126,7 +171,6 @@ function ProfessorConteudo() {
         return;
       }
 
-      // 🔥 Buscar cronograma da turma
       const responseCronograma = await api.get("/cronograma", {
         params: {
           turma_id: atribuicao.turma.id,
@@ -134,11 +178,12 @@ function ProfessorConteudo() {
         }
       });
 
-      const provasMesmoDia = responseCronograma.data.filter(
-        item => item.data_avaliacao === dataAvaliacao
-      );
+      const provasMesmoDia = responseCronograma.data.filter(item => {
+        if (!item.data_avaliacao) return false;
+        const dataBackend = item.data_avaliacao.split("T")[0];
+        return dataBackend === dataAvaliacao;
+      });
 
-      // 🔒 REGRA AQUI
       if (!modoEdicao && provasMesmoDia.length >= 2) {
         setMensagem("Já existem 2 provas agendadas para esse dia nesta turma.");
         setTipoMensagem("error");
@@ -157,7 +202,7 @@ function ProfessorConteudo() {
 
       setTimeout(() => {
         limparFormulario();
-      }, 800);
+      }, 900);
 
     } catch (error) {
       console.error(error);
@@ -193,7 +238,7 @@ function ProfessorConteudo() {
     marginBottom: "15px"
   };
 
-  const buttonPrimary = {
+  const buttonStyle = {
     backgroundColor: "#2c4a8a",
     color: "white",
     padding: "10px 16px",
@@ -291,7 +336,7 @@ function ProfessorConteudo() {
           />
         ))}
 
-        <button style={buttonPrimary} onClick={salvarConteudo}>
+        <button style={buttonStyle} onClick={salvarConteudo}>
           {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
         </button>
 
