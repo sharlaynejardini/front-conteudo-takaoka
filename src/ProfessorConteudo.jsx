@@ -1,6 +1,6 @@
 // ==========================================
 // PROFESSORCONTEUDO.JSX
-// Layout moderno + limpeza automática
+// Layout moderno + limpeza + ordenação A-Z
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -32,24 +32,52 @@ function ProfessorConteudo() {
   const [tipoMensagem, setTipoMensagem] = useState("");
 
   // ==========================
-  // CARREGAR PROFESSORES
+  // CARREGAR PROFESSORES (ORDENADOS)
   // ==========================
 
   useEffect(() => {
     async function carregar() {
       const response = await api.get("/professores");
-      setProfessores(response.data);
+
+      const ordenados = [...response.data].sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+      );
+
+      setProfessores(ordenados);
     }
     carregar();
   }, []);
+
+  // ==========================
+  // CARREGAR ATRIBUIÇÕES (ORDENADAS)
+  // ==========================
 
   const carregarAtribuicoes = async (id) => {
     if (!id) {
       setAtribuicoes([]);
       return;
     }
+
     const response = await api.get(`/atribuicoes/${id}`);
-    setAtribuicoes(response.data);
+
+    const ordenadas = [...response.data].sort((a, b) => {
+
+      const turmaCompare = a.turma.nome.localeCompare(
+        b.turma.nome,
+        "pt-BR",
+        { sensitivity: "base" }
+      );
+
+      if (turmaCompare !== 0) return turmaCompare;
+
+      return a.disciplina.nome.localeCompare(
+        b.disciplina.nome,
+        "pt-BR",
+        { sensitivity: "base" }
+      );
+    });
+
+    setAtribuicoes(ordenadas);
   };
 
   useEffect(() => {
@@ -76,7 +104,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // RECONSTRUÇÃO DOS TÓPICOS
+  // BUSCAR CONTEÚDO EXISTENTE
   // ==========================
 
   const buscarConteudo = async () => {
@@ -142,7 +170,6 @@ function ProfessorConteudo() {
       setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
 
-      // 🔥 LIMPA APÓS SALVAR
       setTimeout(() => {
         limparFormulario();
       }, 800);
@@ -186,16 +213,6 @@ function ProfessorConteudo() {
     padding: "10px 16px",
     borderRadius: "8px",
     border: "none",
-    cursor: "pointer",
-    marginRight: "10px"
-  };
-
-  const buttonSecondary = {
-    backgroundColor: "#6c757d",
-    color: "white",
-    padding: "10px 16px",
-    borderRadius: "8px",
-    border: "none",
     cursor: "pointer"
   };
 
@@ -231,7 +248,7 @@ function ProfessorConteudo() {
           onChange={(e) => {
             setProfessorSelecionado(e.target.value);
             carregarAtribuicoes(e.target.value);
-            limparFormulario(); // 🔥 limpa ao trocar professor
+            limparFormulario();
           }}
         >
           <option value="">Selecione Professor</option>
@@ -283,12 +300,6 @@ function ProfessorConteudo() {
             onChange={(e) => atualizarTopico(i, e.target.value)}
           />
         ))}
-
-        <button style={buttonSecondary} onClick={adicionarTopico}>
-          + Adicionar Tópico
-        </button>
-
-        <br /><br />
 
         <button style={buttonPrimary} onClick={salvarConteudo}>
           {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
