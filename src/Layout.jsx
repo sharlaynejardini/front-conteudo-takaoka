@@ -53,7 +53,7 @@ function Layout() {
           </Link>
 
           <Link to="/cronograma-prova" style={linkStyle}>
-            Cronograma
+            Cronograma Provas
           </Link>
 
           <Link to="/agendamento-trabalho" style={linkStyle}>

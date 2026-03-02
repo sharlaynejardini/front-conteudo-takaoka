@@ -31,10 +31,28 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             </ProtectedRoute>
           }
         >
+          {/* PROVAS (agendamento prova bimestral) */}
           <Route index element={<ProfessorConteudo />} />
-          <Route path="cronograma" element={<CronogramaTurma />} />
 
-          {/* 🔥 ROTA ADMIN */}
+          {/* CRONOGRAMA PROVA BIMESTRAL */}
+          <Route
+            path="cronograma-prova"
+            element={<CronogramaTurma />}
+          />
+
+          {/* AGENDAMENTO TRABALHO MENSAL */}
+          <Route
+            path="agendamento-trabalho"
+            element={<ProfessorConteudo />}
+          />
+
+          {/* CRONOGRAMA TRABALHO MENSAL */}
+          <Route
+            path="cronograma-trabalho"
+            element={<CronogramaTurma />}
+          />
+
+          {/* ADMIN */}
           <Route
             path="admin"
             element={
