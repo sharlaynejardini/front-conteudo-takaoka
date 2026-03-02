@@ -24,9 +24,10 @@ function ProfessorConteudo() {
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
+  const [tipoMensagem, setTipoMensagem] = useState(""); // success | error | warning
 
   // ==========================
-  // CARREGAR PROFESSORES ORDENADOS
+  // CARREGAR PROFESSORES
   // ==========================
 
   useEffect(() => {
@@ -42,10 +43,6 @@ function ProfessorConteudo() {
     carregar();
   }, []);
 
-  // ==========================
-  // CARREGAR ATRIBUIÇÕES ORDENADAS
-  // ==========================
-
   const carregarAtribuicoes = async (id) => {
     if (!id) {
       setAtribuicoes([]);
@@ -55,17 +52,13 @@ function ProfessorConteudo() {
     const response = await api.get(`/atribuicoes/${id}`);
 
     const ordenadas = [...response.data].sort((a, b) => {
-
-      // Primeiro ordena por turma
       const turmaCompare = a.turma.nome.localeCompare(
         b.turma.nome,
         "pt-BR",
         { sensitivity: "base" }
       );
-
       if (turmaCompare !== 0) return turmaCompare;
 
-      // Depois por disciplina
       return a.disciplina.nome.localeCompare(
         b.disciplina.nome,
         "pt-BR",
@@ -77,11 +70,10 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // CONVERSÃO SEGURA DE TÓPICOS
+  // CONVERTER CONTEÚDO
   // ==========================
 
   const converterConteudoParaArray = (conteudo) => {
-
     if (!conteudo) return [""];
 
     if (Array.isArray(conteudo)) return conteudo;
@@ -89,16 +81,11 @@ function ProfessorConteudo() {
     if (typeof conteudo === "string") {
       try {
         const convertido = JSON.parse(conteudo);
-        if (Array.isArray(convertido)) return convertido;
-        return [convertido];
+        return Array.isArray(convertido) ? convertido : [convertido];
       } catch {
-        if (conteudo.includes(",")) {
-          return conteudo
-            .split(",")
-            .map(t => t.trim())
-            .filter(t => t.length > 0);
-        }
-        return [conteudo];
+        return conteudo.includes(",")
+          ? conteudo.split(",").map(t => t.trim())
+          : [conteudo];
       }
     }
 
@@ -106,7 +93,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // BUSCAR CONTEÚDO PARA EDIÇÃO
+  // BUSCAR CONTEÚDO EXISTENTE
   // ==========================
 
   useEffect(() => {
@@ -124,13 +111,11 @@ function ProfessorConteudo() {
         const salvo = response.data;
 
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
+        setTopicos(converterConteudoParaArray(salvo.conteudo));
 
-        const listaConvertida =
-          converterConteudoParaArray(salvo.conteudo);
-
-        setTopicos(listaConvertida.length ? listaConvertida : [""]);
         setModoEdicao(true);
-        setMensagem("Editando conteúdo existente.");
+        setMensagem("Você está editando um conteúdo existente.");
+        setTipoMensagem("warning");
 
       } catch {
         setModoEdicao(false);
@@ -147,9 +132,7 @@ function ProfessorConteudo() {
   // MANIPULAR TÓPICOS
   // ==========================
 
-  const adicionarTopico = () => {
-    setTopicos([...topicos, ""]);
-  };
+  const adicionarTopico = () => setTopicos([...topicos, ""]);
 
   const atualizarTopico = (index, valor) => {
     const novos = [...topicos];
@@ -167,6 +150,12 @@ function ProfessorConteudo() {
   // ==========================
 
   const salvarConteudo = async () => {
+    if (!atribuicaoSelecionada) {
+      setMensagem("Selecione uma turma/disciplina.");
+      setTipoMensagem("error");
+      return;
+    }
+
     try {
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
@@ -176,10 +165,45 @@ function ProfessorConteudo() {
       });
 
       setMensagem("Conteúdo salvo com sucesso!");
+      setTipoMensagem("success");
       setModoEdicao(false);
 
     } catch {
       setMensagem("Erro ao salvar conteúdo.");
+      setTipoMensagem("error");
+    }
+  };
+
+  // ==========================
+  // ESTILO DA MENSAGEM
+  // ==========================
+
+  const mensagemBase = {
+    padding: "14px 18px",
+    borderRadius: "10px",
+    marginBottom: "20px",
+    fontWeight: "500",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    animation: "fadeIn 0.3s ease-in-out"
+  };
+
+  const estilosMensagem = {
+    success: {
+      backgroundColor: "#d4edda",
+      color: "#155724",
+      border: "1px solid #c3e6cb"
+    },
+    error: {
+      backgroundColor: "#f8d7da",
+      color: "#721c24",
+      border: "1px solid #f5c6cb"
+    },
+    warning: {
+      backgroundColor: "#fff3cd",
+      color: "#856404",
+      border: "1px solid #ffeeba"
     }
   };
 
@@ -196,7 +220,33 @@ function ProfessorConteudo() {
 
       <h2>Lançamento de Avaliação</h2>
 
-      {mensagem && <div>{mensagem}</div>}
+      {mensagem && (
+        <div
+          style={{
+            ...mensagemBase,
+            ...estilosMensagem[tipoMensagem]
+          }}
+        >
+          <span>
+            {tipoMensagem === "success" && "✔ "}
+            {tipoMensagem === "error" && "✖ "}
+            {tipoMensagem === "warning" && "⚠ "}
+            {mensagem}
+          </span>
+
+          <button
+            onClick={() => setMensagem("")}
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: "16px",
+              cursor: "pointer"
+            }}
+          >
+            ✖
+          </button>
+        </div>
+      )}
 
       <select
         style={inputStyle}
@@ -223,17 +273,6 @@ function ProfessorConteudo() {
             {a.turma.nome} - {a.disciplina.nome}
           </option>
         ))}
-      </select>
-
-      <select
-        style={inputStyle}
-        value={bimestre}
-        onChange={(e) => setBimestre(Number(e.target.value))}
-      >
-        <option value={1}>1º</option>
-        <option value={2}>2º</option>
-        <option value={3}>3º</option>
-        <option value={4}>4º</option>
       </select>
 
       <input
