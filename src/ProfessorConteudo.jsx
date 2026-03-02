@@ -24,10 +24,9 @@ function ProfessorConteudo() {
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
-  const [tipoMensagem, setTipoMensagem] = useState("");
 
   // ==========================
-  // CARREGAR PROFESSORES
+  // CARREGAR PROFESSORES ORDENADOS
   // ==========================
 
   useEffect(() => {
@@ -44,7 +43,7 @@ function ProfessorConteudo() {
   }, []);
 
   // ==========================
-  // CARREGAR ATRIBUIÇÕES
+  // CARREGAR ATRIBUIÇÕES ORDENADAS
   // ==========================
 
   const carregarAtribuicoes = async (id) => {
@@ -54,42 +53,51 @@ function ProfessorConteudo() {
     }
 
     const response = await api.get(`/atribuicoes/${id}`);
-    setAtribuicoes(response.data);
+
+    const ordenadas = [...response.data].sort((a, b) => {
+
+      // Primeiro ordena por turma
+      const turmaCompare = a.turma.nome.localeCompare(
+        b.turma.nome,
+        "pt-BR",
+        { sensitivity: "base" }
+      );
+
+      if (turmaCompare !== 0) return turmaCompare;
+
+      // Depois por disciplina
+      return a.disciplina.nome.localeCompare(
+        b.disciplina.nome,
+        "pt-BR",
+        { sensitivity: "base" }
+      );
+    });
+
+    setAtribuicoes(ordenadas);
   };
 
   // ==========================
-  // CONVERSÃO SEGURA DO CONTEÚDO
+  // CONVERSÃO SEGURA DE TÓPICOS
   // ==========================
 
   const converterConteudoParaArray = (conteudo) => {
 
     if (!conteudo) return [""];
 
-    // Se já for array
     if (Array.isArray(conteudo)) return conteudo;
 
-    // Se for string
     if (typeof conteudo === "string") {
-
-      // Tenta converter JSON
       try {
         const convertido = JSON.parse(conteudo);
-
-        if (Array.isArray(convertido)) {
-          return convertido;
-        }
-
+        if (Array.isArray(convertido)) return convertido;
         return [convertido];
-
       } catch {
-        // Se não for JSON válido
         if (conteudo.includes(",")) {
           return conteudo
             .split(",")
             .map(t => t.trim())
             .filter(t => t.length > 0);
         }
-
         return [conteudo];
       }
     }
@@ -98,7 +106,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // BUSCAR CONTEÚDO EXISTENTE
+  // BUSCAR CONTEÚDO PARA EDIÇÃO
   // ==========================
 
   useEffect(() => {
@@ -121,10 +129,8 @@ function ProfessorConteudo() {
           converterConteudoParaArray(salvo.conteudo);
 
         setTopicos(listaConvertida.length ? listaConvertida : [""]);
-
         setModoEdicao(true);
-        setMensagem("Você está editando um conteúdo existente.");
-        setTipoMensagem("warning");
+        setMensagem("Editando conteúdo existente.");
 
       } catch {
         setModoEdicao(false);
@@ -170,17 +176,12 @@ function ProfessorConteudo() {
       });
 
       setMensagem("Conteúdo salvo com sucesso!");
-      setTipoMensagem("success");
+      setModoEdicao(false);
 
     } catch {
       setMensagem("Erro ao salvar conteúdo.");
-      setTipoMensagem("error");
     }
   };
-
-  // ==========================
-  // ESTILOS
-  // ==========================
 
   const inputStyle = {
     width: "100%",
