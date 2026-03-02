@@ -29,6 +29,21 @@ function ProfessorConteudo() {
 
   const [mensagem, setMensagem] = useState("");
   const [modoEdicao, setModoEdicao] = useState(false);
+  const [salvouAgora, setSalvouAgora] = useState(false);
+
+  // ==========================================
+  // RESETAR TELA
+  // ==========================================
+
+  const resetarTela = () => {
+    setProfessorSelecionado("");
+    setAtribuicoes([]);
+    setAtribuicaoSelecionada("");
+    setTopicos([""]);
+    setModoEdicao(false);
+    setMensagem("");
+    setSalvouAgora(false);
+  };
 
   // ==========================================
   // CARREGAR PROFESSORES
@@ -63,7 +78,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================================
-  // ATUALIZAR DATA QUANDO MUDAR BIMESTRE
+  // ATUALIZAR DATA
   // ==========================================
 
   useEffect(() => {
@@ -100,7 +115,7 @@ function ProfessorConteudo() {
       }
 
       setModoEdicao(true);
-      setMensagem("Você está editando um conteúdo já existente.");
+      setMensagem("⚠ Você está editando um conteúdo já existente.");
 
     } catch {
       setTopicos([""]);
@@ -110,7 +125,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================================
-  // MANIPULAR TÓPICOS
+  // TÓPICOS
   // ==========================================
 
   const adicionarTopico = () => {
@@ -147,12 +162,9 @@ function ProfessorConteudo() {
         data_avaliacao: dataAvaliacao
       });
 
-      alert("Salvo com sucesso!");
-
-      // 🔥 ZERAR CAMPOS APÓS SALVAR
-      setTopicos([""]);
+      setMensagem("✅ Conteúdo salvo com sucesso! (Clique aqui para voltar)");
+      setSalvouAgora(true);
       setModoEdicao(false);
-      setMensagem("");
 
     } catch (error) {
       console.error("Erro ao salvar", error);
@@ -169,18 +181,19 @@ function ProfessorConteudo() {
 
       <h2>Painel do Professor</h2>
 
-      {modoEdicao && (
+      {mensagem && (
         <div
+          onClick={salvouAgora ? resetarTela : undefined}
           style={{
-            backgroundColor: "#fff3cd",
-            border: "1px solid #ffeeba",
+            backgroundColor: salvouAgora ? "#d4edda" : "#fff3cd",
+            border: "1px solid #ccc",
             padding: "10px",
             borderRadius: "5px",
-            color: "#856404",
-            marginBottom: "20px"
+            marginBottom: "20px",
+            cursor: salvouAgora ? "pointer" : "default"
           }}
         >
-          ⚠ Você está editando um conteúdo já existente.
+          {mensagem}
         </div>
       )}
 
@@ -276,8 +289,6 @@ function ProfessorConteudo() {
       <button onClick={salvarConteudo}>
         {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
       </button>
-
-      <p style={{ marginTop: "20px" }}>{mensagem}</p>
 
     </div>
   );
