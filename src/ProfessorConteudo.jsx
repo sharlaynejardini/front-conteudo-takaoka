@@ -22,12 +22,11 @@ function ProfessorConteudo() {
   const [topicos, setTopicos] = useState([""]);
   const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
 
-  const [mensagem, setMensagem] = useState("");
   const [modoEdicao, setModoEdicao] = useState(false);
 
-  // ==========================================
+  // ==========================
   // CARREGAR PROFESSORES
-  // ==========================================
+  // ==========================
 
   useEffect(() => {
     carregarProfessores();
@@ -42,50 +41,44 @@ function ProfessorConteudo() {
     }
   };
 
-  // ==========================================
-  // CARREGAR ATRIBUIÇÕES
-  // ==========================================
+  const trocarProfessor = async (id) => {
+    setProfessorSelecionado(id);
+    setAtribuicoes([]);
+    setAtribuicaoSelecionada("");
+    setTopicos([""]);
+    setModoEdicao(false);
 
-  const carregarAtribuicoes = async (professorId) => {
-    if (!professorId) return;
+    if (!id) return;
 
     try {
-      const response = await api.get(`/atribuicoes/${professorId}`);
+      const response = await api.get(`/atribuicoes/${id}`);
       setAtribuicoes(response.data);
     } catch (error) {
       console.error("Erro ao carregar atribuições", error);
     }
   };
 
-  // 🔥 CORREÇÃO IMPORTANTE AQUI
-  const trocarProfessor = (id) => {
-    setProfessorSelecionado(id);
-    setAtribuicoes([]);
-    setAtribuicaoSelecionada("");
-    setTopicos([""]);
-    setModoEdicao(false);
-    setMensagem("");
-    carregarAtribuicoes(id);
-  };
-
-  // ==========================================
-  // ATUALIZAR DATA QUANDO MUDAR BIMESTRE
-  // ==========================================
+  // ==========================
+  // DATA POR BIMESTRE
+  // ==========================
 
   useEffect(() => {
     setDataAvaliacao(semanasProva[bimestre].inicio);
   }, [bimestre]);
 
-  // ==========================================
-  // BUSCAR CONTEÚDO AUTOMÁTICO
-  // ==========================================
+  // ==========================
+  // BUSCAR CONTEÚDO EXISTENTE
+  // ==========================
 
   useEffect(() => {
     if (!atribuicaoSelecionada) return;
-    buscarConteudoAutomatico();
+    buscarConteudo();
   }, [atribuicaoSelecionada, bimestre]);
 
-  const buscarConteudoAutomatico = async () => {
+  const buscarConteudo = async () => {
+
+    setModoEdicao(false);
+
     try {
       const response = await api.get("/conteudos", {
         params: {
@@ -95,8 +88,6 @@ function ProfessorConteudo() {
       });
 
       const conteudoSalvo = response.data;
-
-      if (!conteudoSalvo) return;
 
       setDataAvaliacao(conteudoSalvo.data_avaliacao);
 
@@ -108,14 +99,21 @@ function ProfessorConteudo() {
       }
 
       setModoEdicao(true);
-      setMensagem("Você está editando um conteúdo já existente.");
 
-    } catch {
-      setTopicos([""]);
-      setModoEdicao(false);
-      setMensagem("");
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // NÃO EXISTE → CAMPOS EM BRANCO
+        setTopicos([""]);
+        setModoEdicao(false);
+      } else {
+        console.error("Erro inesperado:", error);
+      }
     }
   };
+
+  // ==========================
+  // MANIPULAR TÓPICOS
+  // ==========================
 
   const adicionarTopico = () => {
     setTopicos([...topicos, ""]);
@@ -132,9 +130,14 @@ function ProfessorConteudo() {
     setTopicos(novos.length ? novos : [""]);
   };
 
+  // ==========================
+  // SALVAR
+  // ==========================
+
   const salvarConteudo = async () => {
+
     if (!atribuicaoSelecionada) {
-      setMensagem("Selecione uma turma/disciplina.");
+      alert("Selecione uma turma/disciplina.");
       return;
     }
 
@@ -146,17 +149,28 @@ function ProfessorConteudo() {
         data_avaliacao: dataAvaliacao
       });
 
+      if (!modoEdicao) {
+        // PRIMEIRA VEZ
+        alert("Salvo com sucesso!");
+        setTopicos([""]);
+      } else {
+        alert("Atualizado com sucesso!");
+      }
+
       setModoEdicao(true);
-      setMensagem("Conteúdo salvo com sucesso!");
+
     } catch (error) {
-      console.error("Erro ao salvar", error);
-      setMensagem("Erro ao salvar conteúdo.");
+      console.error("Erro ao salvar:", error.response?.data || error);
+      alert("Erro ao salvar conteúdo.");
     }
   };
 
+  // ==========================
+  // RENDER
+  // ==========================
+
   return (
     <div style={{ maxWidth: "900px", margin: "auto" }}>
-
       <h2>Painel do Professor</h2>
 
       {modoEdicao && (
@@ -172,92 +186,62 @@ function ProfessorConteudo() {
         </div>
       )}
 
-      <div style={{ marginBottom: "20px" }}>
-        <label>Professor:</label><br />
-        <select
-          value={professorSelecionado}
-          onChange={(e) => trocarProfessor(e.target.value)}
-        >
-          <option value="">Selecione</option>
-          {professores.map((prof) => (
-            <option key={prof.id} value={prof.id}>
-              {prof.nome}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ marginBottom: "20px" }}>
-        <label>Turma / Disciplina:</label><br />
-        <select
-          value={atribuicaoSelecionada}
-          onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
-        >
-          <option value="">Selecione</option>
-          {atribuicoes.map((atr) => (
-            <option key={atr.id} value={atr.id}>
-              {atr.turma.nome} - {atr.disciplina.nome}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ marginBottom: "20px" }}>
-        <label>Bimestre:</label><br />
-        <select
-          value={bimestre}
-          onChange={(e) => setBimestre(Number(e.target.value))}
-        >
-          <option value={1}>1º</option>
-          <option value={2}>2º</option>
-          <option value={3}>3º</option>
-          <option value={4}>4º</option>
-        </select>
-      </div>
-
-      <div style={{ marginBottom: "20px" }}>
-        <label>Data da Avaliação:</label><br />
-        <input
-          type="date"
-          value={dataAvaliacao}
-          min={semanasProva[bimestre].inicio}
-          max={semanasProva[bimestre].fim}
-          onChange={(e) => setDataAvaliacao(e.target.value)}
-        />
-      </div>
-
-      <div style={{ marginBottom: "20px" }}>
-        <label>Conteúdos (Tópicos):</label>
-
-        {topicos.map((topico, index) => (
-          <div key={index} style={{ marginTop: "10px" }}>
-            <input
-              type="text"
-              value={topico}
-              onChange={(e) => atualizarTopico(index, e.target.value)}
-              style={{ width: "70%" }}
-            />
-            <button
-              onClick={() => removerTopico(index)}
-              style={{ marginLeft: "10px" }}
-            >
-              ❌
-            </button>
-          </div>
+      <select
+        value={professorSelecionado}
+        onChange={(e) => trocarProfessor(e.target.value)}
+      >
+        <option value="">Selecione Professor</option>
+        {professores.map(p => (
+          <option key={p.id} value={p.id}>{p.nome}</option>
         ))}
+      </select>
 
-        <div style={{ marginTop: "10px" }}>
-          <button onClick={adicionarTopico}>
-            ➕ Adicionar Tópico
-          </button>
+      <br /><br />
+
+      <select
+        value={atribuicaoSelecionada}
+        onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
+      >
+        <option value="">Selecione Turma / Disciplina</option>
+        {atribuicoes.map(a => (
+          <option key={a.id} value={a.id}>
+            {a.turma.nome} - {a.disciplina.nome}
+          </option>
+        ))}
+      </select>
+
+      <br /><br />
+
+      <select
+        value={bimestre}
+        onChange={(e) => setBimestre(Number(e.target.value))}
+      >
+        <option value={1}>1º</option>
+        <option value={2}>2º</option>
+        <option value={3}>3º</option>
+        <option value={4}>4º</option>
+      </select>
+
+      <br /><br />
+
+      {topicos.map((t, i) => (
+        <div key={i}>
+          <input
+            type="text"
+            value={t}
+            onChange={(e) => atualizarTopico(i, e.target.value)}
+          />
+          <button onClick={() => removerTopico(i)}>❌</button>
         </div>
-      </div>
+      ))}
+
+      <button onClick={adicionarTopico}>➕ Adicionar</button>
+
+      <br /><br />
 
       <button onClick={salvarConteudo}>
         {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
       </button>
-
-      <p style={{ marginTop: "20px" }}>{mensagem}</p>
 
     </div>
   );
