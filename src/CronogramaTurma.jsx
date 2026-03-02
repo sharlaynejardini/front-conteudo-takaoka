@@ -102,20 +102,31 @@ function CronogramaTurma() {
   const mapaDatas = contarProvasPorData();
 
   // 🔥 CORES QUE VÃO ALTERNAR
-  const coresAlternadas = ["#e3f2fd", "#fce4ec"];
+// 🔥 CORES QUE VÃO ALTERNAR POR DATA
+const coresAlternadas = [
+  "#e3f2fd",  // azul claro
+  "#fce4ec",  // rosa claro
+  "#e8f5e9",  // verde claro
+  "#fff3e0",  // laranja claro
+  "#ede7f6"   // lilás claro
+];
 
-  const mapaCores = {};
-  let indiceCor = 0;
+const mapaCores = {};
+let indiceCor = 0;
 
-  Object.keys(mapaDatas)
-    .sort((a, b) => new Date(a) - new Date(b))
-    .forEach(data => {
-      if (mapaDatas[data] >= 2) {
-        mapaCores[data] =
-          coresAlternadas[indiceCor % coresAlternadas.length];
-        indiceCor++;
-      }
-    });
+// Pega todas as datas únicas ordenadas
+const datasOrdenadas = [
+  ...new Set(
+    cronograma.map(item => item.data_avaliacao)
+  )
+].sort((a, b) => new Date(a) - new Date(b));
+
+// Atribui cor para cada data
+datasOrdenadas.forEach(data => {
+  mapaCores[data] =
+    coresAlternadas[indiceCor % coresAlternadas.length];
+  indiceCor++;
+});
 
   // ==========================
   // ESTILOS

@@ -196,7 +196,7 @@ function ProfessorConteudo() {
       }, 1200);
 
     } catch {
-      setMensagem("Erro ao salvar conteúdo.");
+      setMensagem("Já existem 2 provas para essa turma nesse dia.");
       setTipoMensagem("error");
     }
   };

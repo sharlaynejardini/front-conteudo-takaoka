@@ -42,16 +42,34 @@ function Layout() {
           padding: "15px",
           color: "white",
           display: "flex",
-          justifyContent: "space-between"
+          justifyContent: "space-between",
+          alignItems: "center"
         }}
       >
         <div>
-          <Link to="/" style={linkStyle}>Painel</Link>
-          <Link to="/cronograma" style={linkStyle}>Cronograma</Link>
+
+          <Link to="/" style={linkStyle}>
+            Agendamento Prova Bimestral
+          </Link>
+
+          <Link to="/cronograma-prova" style={linkStyle}>
+            Cronograma Prova Bimestral
+          </Link>
+
+          <Link to="/agendamento-trabalho" style={linkStyle}>
+            Agendamento Trabalho Mensal
+          </Link>
+
+          <Link to="/cronograma-trabalho" style={linkStyle}>
+            Cronograma Trabalho Mensal
+          </Link>
 
           {isAdmin && (
-            <Link to="/admin" style={linkStyle}>Admin</Link>
+            <Link to="/admin" style={linkStyle}>
+              Admin
+            </Link>
           )}
+
         </div>
 
         <button onClick={logout} style={buttonStyle}>
@@ -70,13 +88,15 @@ function Layout() {
 const linkStyle = {
   color: "white",
   marginRight: "20px",
-  textDecoration: "none"
+  textDecoration: "none",
+  fontWeight: "500"
 };
 
 const buttonStyle = {
   backgroundColor: "white",
   border: "none",
-  padding: "5px 10px",
+  padding: "6px 12px",
+  borderRadius: "6px",
   cursor: "pointer"
 };
 
