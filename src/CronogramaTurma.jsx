@@ -212,12 +212,16 @@ function CronogramaTurma() {
 
         <div ref={printRef}>
 
-          {/* 🔵 IMAGEM RESTAURADA */}
+          {/* 🔵 IMAGEM DO CABEÇALHO MAIOR */}
           <div style={{ textAlign: "center", marginBottom: "30px" }}>
             <img
               src={logoTakaoka}
-              alt="Logo"
-              style={{ maxWidth: "250px" }}
+              alt="Cabeçalho"
+              style={{
+                width: "100%",
+                maxWidth: "100%",
+                height: "auto"
+              }}
             />
           </div>
 
