@@ -11,10 +11,10 @@ function ProfessorConteudo() {
   const anoAtual = new Date().getFullYear();
 
   const semanasProva = {
-    1: { inicio: `${anoAtual}-04-13, fim: ${anoAtual}-04-17` },
-    2: { inicio: `${anoAtual}-06-08, fim: ${anoAtual}-06-12` },
-    3: { inicio: `${anoAtual}-09-14, fim: ${anoAtual}-09-18` },
-    4: { inicio: `${anoAtual}-11-13, fim: ${anoAtual}-11-19` }
+    1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
+    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-12` },
+    3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
+    4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
   const [professores, setProfessores] = useState([]);
@@ -71,7 +71,7 @@ function ProfessorConteudo() {
   }, [bimestre]);
 
   // ==========================================
-  // BUSCAR CONTEÚDO EXISTENTE AUTOMATICAMENTE
+  // BUSCAR CONTEÚDO EXISTENTE
   // ==========================================
 
   useEffect(() => {
@@ -133,12 +133,14 @@ function ProfessorConteudo() {
   // ==========================================
 
   const salvarConteudo = async () => {
+
     if (!atribuicaoSelecionada) {
-      setMensagem("Selecione uma turma/disciplina.");
+      alert("Selecione uma turma/disciplina antes de salvar.");
       return;
     }
 
     try {
+
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
@@ -148,9 +150,30 @@ function ProfessorConteudo() {
 
       setModoEdicao(true);
       setMensagem("Conteúdo salvo com sucesso!");
+
     } catch (error) {
+
+      const detalhe = error.response?.data?.detail || "";
+
+      // 🔥 ALERT ESPECÍFICO DA REGRA
+      if (detalhe.includes("duas avaliações")) {
+
+        alert(
+          "Não é possível salvar.\n\n" +
+          "Já existem duas avaliações cadastradas para esta turma neste mesmo dia.\n\n" +
+          "A regra da escola permite no máximo 2 avaliações por dia."
+        );
+
+      } else {
+
+        alert(
+          "Ocorreu um erro ao salvar o conteúdo.\n\n" +
+          "Se o problema persistir, entre em contato com a coordenação."
+        );
+
+      }
+
       console.error("Erro ao salvar", error);
-      setMensagem("Erro ao salvar conteúdo.");
     }
   };
 
@@ -162,21 +185,6 @@ function ProfessorConteudo() {
     <div style={{ maxWidth: "900px", margin: "auto" }}>
 
       <h2>Painel do Professor</h2>
-
-      {modoEdicao && (
-        <div
-          style={{
-            backgroundColor: "#fff3cd",
-            border: "1px solid #ffeeba",
-            padding: "10px",
-            borderRadius: "5px",
-            color: "#856404",
-            marginBottom: "20px"
-          }}
-        >
-          ⚠ Você está editando um conteúdo já existente.
-        </div>
-      )}
 
       {/* PROFESSOR */}
       <div style={{ marginBottom: "20px" }}>

@@ -1,12 +1,33 @@
-// ==========================================
-// LAYOUT.JSX
-// Layout global protegido
-// ==========================================
-
 import { Outlet, Link } from "react-router-dom";
 import { supabase } from "./supabaseClient";
+import { useEffect, useState } from "react";
 
 function Layout() {
+
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+
+    const checkAdmin = async () => {
+
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (!sessionData.session) return;
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", sessionData.session.user.id)
+        .single();
+
+      if (data?.role === "admin") {
+        setIsAdmin(true);
+      }
+    };
+
+    checkAdmin();
+
+  }, []);
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -27,6 +48,10 @@ function Layout() {
         <div>
           <Link to="/" style={linkStyle}>Painel</Link>
           <Link to="/cronograma" style={linkStyle}>Cronograma</Link>
+
+          {isAdmin && (
+            <Link to="/admin" style={linkStyle}>Admin</Link>
+          )}
         </div>
 
         <button onClick={logout} style={buttonStyle}>
