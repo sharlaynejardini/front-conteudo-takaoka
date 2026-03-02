@@ -1,8 +1,3 @@
-// ==========================================
-// PROFESSORCONTEUDO.JSX
-// Lançamento de Conteúdo por Professor
-// ==========================================
-
 import { useEffect, useState } from "react";
 import api from "./api";
 
@@ -62,6 +57,17 @@ function ProfessorConteudo() {
     }
   };
 
+  // 🔥 CORREÇÃO IMPORTANTE AQUI
+  const trocarProfessor = (id) => {
+    setProfessorSelecionado(id);
+    setAtribuicoes([]);
+    setAtribuicaoSelecionada("");
+    setTopicos([""]);
+    setModoEdicao(false);
+    setMensagem("");
+    carregarAtribuicoes(id);
+  };
+
   // ==========================================
   // ATUALIZAR DATA QUANDO MUDAR BIMESTRE
   // ==========================================
@@ -71,7 +77,7 @@ function ProfessorConteudo() {
   }, [bimestre]);
 
   // ==========================================
-  // BUSCAR CONTEÚDO EXISTENTE AUTOMATICAMENTE
+  // BUSCAR CONTEÚDO AUTOMÁTICO
   // ==========================================
 
   useEffect(() => {
@@ -89,6 +95,8 @@ function ProfessorConteudo() {
       });
 
       const conteudoSalvo = response.data;
+
+      if (!conteudoSalvo) return;
 
       setDataAvaliacao(conteudoSalvo.data_avaliacao);
 
@@ -109,10 +117,6 @@ function ProfessorConteudo() {
     }
   };
 
-  // ==========================================
-  // MANIPULAR TÓPICOS
-  // ==========================================
-
   const adicionarTopico = () => {
     setTopicos([...topicos, ""]);
   };
@@ -127,10 +131,6 @@ function ProfessorConteudo() {
     const novos = topicos.filter((_, i) => i !== index);
     setTopicos(novos.length ? novos : [""]);
   };
-
-  // ==========================================
-  // SALVAR
-  // ==========================================
 
   const salvarConteudo = async () => {
     if (!atribuicaoSelecionada) {
@@ -154,39 +154,29 @@ function ProfessorConteudo() {
     }
   };
 
-  // ==========================================
-  // RENDER
-  // ==========================================
-
   return (
     <div style={{ maxWidth: "900px", margin: "auto" }}>
 
       <h2>Painel do Professor</h2>
 
       {modoEdicao && (
-        <div
-          style={{
-            backgroundColor: "#fff3cd",
-            border: "1px solid #ffeeba",
-            padding: "10px",
-            borderRadius: "5px",
-            color: "#856404",
-            marginBottom: "20px"
-          }}
-        >
+        <div style={{
+          backgroundColor: "#fff3cd",
+          border: "1px solid #ffeeba",
+          padding: "10px",
+          borderRadius: "5px",
+          color: "#856404",
+          marginBottom: "20px"
+        }}>
           ⚠ Você está editando um conteúdo já existente.
         </div>
       )}
 
-      {/* PROFESSOR */}
       <div style={{ marginBottom: "20px" }}>
         <label>Professor:</label><br />
         <select
           value={professorSelecionado}
-          onChange={(e) => {
-            setProfessorSelecionado(e.target.value);
-            carregarAtribuicoes(e.target.value);
-          }}
+          onChange={(e) => trocarProfessor(e.target.value)}
         >
           <option value="">Selecione</option>
           {professores.map((prof) => (
@@ -197,7 +187,6 @@ function ProfessorConteudo() {
         </select>
       </div>
 
-      {/* TURMA */}
       <div style={{ marginBottom: "20px" }}>
         <label>Turma / Disciplina:</label><br />
         <select
@@ -213,7 +202,6 @@ function ProfessorConteudo() {
         </select>
       </div>
 
-      {/* BIMESTRE */}
       <div style={{ marginBottom: "20px" }}>
         <label>Bimestre:</label><br />
         <select
@@ -227,7 +215,6 @@ function ProfessorConteudo() {
         </select>
       </div>
 
-      {/* DATA */}
       <div style={{ marginBottom: "20px" }}>
         <label>Data da Avaliação:</label><br />
         <input
@@ -239,7 +226,6 @@ function ProfessorConteudo() {
         />
       </div>
 
-      {/* CONTEÚDOS */}
       <div style={{ marginBottom: "20px" }}>
         <label>Conteúdos (Tópicos):</label>
 
