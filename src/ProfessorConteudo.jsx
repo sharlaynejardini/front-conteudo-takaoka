@@ -52,11 +52,10 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // LIMPAR
+  // LIMPAR FORMULÁRIO (SEM mexer na seleção)
   // ==========================
 
-  const limparTudo = () => {
-    setAtribuicaoSelecionada("");
+  const limparFormulario = () => {
     setTopicos([""]);
     setDataAvaliacao(semanasProva[bimestre].inicio);
     setModoEdicao(false);
@@ -108,7 +107,10 @@ function ProfessorConteudo() {
     });
 
     setAtribuicoes(ordenadas);
-    limparTudo();
+
+    // limpa apenas a turma e formulário quando troca professor
+    setAtribuicaoSelecionada("");
+    limparFormulario();
   };
 
   // ==========================
@@ -147,7 +149,7 @@ function ProfessorConteudo() {
         setTipoMensagem("warning");
 
       } catch {
-        limparTudo();
+        limparFormulario();
         setMensagem("");
       }
     }
@@ -214,7 +216,7 @@ function ProfessorConteudo() {
       setTipoMensagem("success");
 
       setTimeout(() => {
-        limparTudo();
+        limparFormulario();
         setMensagem("");
       }, 1200);
 
@@ -249,6 +251,7 @@ function ProfessorConteudo() {
         style={inputStyle}
         value={atribuicaoSelecionada}
         onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
+        disabled={!professorSelecionado}
       >
         <option value="">Selecione Turma / Disciplina</option>
         {atribuicoes.map(a => (
