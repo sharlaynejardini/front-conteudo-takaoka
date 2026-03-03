@@ -1,64 +1,178 @@
+// ==========================================
+// ADMIN.JSX
+// Painel Administrativo
+// ==========================================
+
 import { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 
 function Admin() {
 
-  const [logs, setLogs] = useState([]);
+  const [logins, setLogins] = useState([]);
+  const [actions, setActions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filtroEmail, setFiltroEmail] = useState("");
+  const [filtroData, setFiltroData] = useState("");
 
   useEffect(() => {
-    carregarLogs();
+    carregarDados();
   }, []);
 
-  async function carregarLogs() {
+  async function carregarDados() {
+    setLoading(true);
 
-    const { data, error } = await supabase
+    const { data: loginData } = await supabase
+      .from("login_logs")
+      .select("*")
+      .order("login_at", { ascending: false });
+
+    const { data: actionData } = await supabase
       .from("action_logs")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error(error);
-      return;
-    }
+    setLogins(loginData || []);
+    setActions(actionData || []);
+    setLoading(false);
+  }
 
-    setLogs(data);
+  const filtrarLogs = (logs, campoData) => {
+    return logs.filter(log => {
+      const matchEmail =
+        !filtroEmail || log.email?.toLowerCase().includes(filtroEmail.toLowerCase());
+
+      const matchData =
+        !filtroData || log[campoData]?.startsWith(filtroData);
+
+      return matchEmail && matchData;
+    });
+  };
+
+  const exportarCSV = () => {
+    const linhas = [
+      ["Tipo", "Email", "Ação", "Turma", "Disciplina", "Bimestre", "Detalhes", "Data"]
+    ];
+
+    actions.forEach(a => {
+      linhas.push([
+        "AÇÃO",
+        a.email,
+        a.action,
+        a.turma || "",
+        a.disciplina || "",
+        a.bimestre ? `${a.bimestre}º` : "",
+        a.detalhes || "",
+        new Date(a.created_at).toLocaleString()
+      ]);
+    });
+
+    logins.forEach(l => {
+      linhas.push([
+        "LOGIN",
+        l.email,
+        "Login no sistema",
+        "",
+        "",
+        "",
+        "",
+        new Date(l.login_at).toLocaleString()
+      ]);
+    });
+
+    const csv = linhas.map(l => l.join(";")).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "relatorio_logs.csv";
+    a.click();
+  };
+
+  if (loading) {
+    return <div style={{ padding: "40px" }}>Carregando dados...</div>;
   }
 
   return (
-    <div style={{ padding: "40px" }}>
+    <div style={{ padding: "40px", maxWidth: "1200px", margin: "auto" }}>
 
-      <h2>Histórico de Ações</h2>
+      <h2 style={{ marginBottom: "20px" }}>Painel Administrativo</h2>
 
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          marginTop: "20px"
-        }}
-      >
+      {/* FILTROS */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+        <input
+          type="text"
+          placeholder="Filtrar por email"
+          value={filtroEmail}
+          onChange={(e) => setFiltroEmail(e.target.value)}
+          style={inputStyle}
+        />
+
+        <input
+          type="date"
+          value={filtroData}
+          onChange={(e) => setFiltroData(e.target.value)}
+          style={inputStyle}
+        />
+
+        <button onClick={exportarCSV} style={buttonStyle}>
+          Exportar CSV
+        </button>
+      </div>
+
+      {/* LOGINS */}
+      <h3>Histórico de Logins</h3>
+
+      <table style={tableStyle}>
         <thead>
-          <tr style={{ backgroundColor: "#2f4591", color: "white" }}>
-            <th style={{ padding: "10px" }}>Email</th>
-            <th style={{ padding: "10px" }}>Ação</th>
-            <th style={{ padding: "10px" }}>Turma</th>
-            <th style={{ padding: "10px" }}>Disciplina</th>
-            <th style={{ padding: "10px" }}>Bimestre</th>
-            <th style={{ padding: "10px" }}>Data</th>
+          <tr>
+            <th style={thStyle}>Email</th>
+            <th style={thStyle}>Data</th>
           </tr>
         </thead>
-
         <tbody>
-          {logs.map((log) => (
-            <tr key={log.id} style={{ borderBottom: "1px solid #ddd" }}>
-              <td style={{ padding: "10px" }}>{log.email}</td>
-              <td style={{ padding: "10px" }}>{log.action}</td>
-              <td style={{ padding: "10px" }}>{log.turma || "-"}</td>
-              <td style={{ padding: "10px" }}>{log.disciplina || "-"}</td>
-              <td style={{ padding: "10px" }}>
+          {filtrarLogs(logins, "login_at").map(log => (
+            <tr key={log.id}>
+              <td style={tdStyle}>{log.email}</td>
+              <td style={tdStyle}>
+                {new Date(log.login_at).toLocaleString()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <br /><br />
+
+      {/* AÇÕES */}
+      <h3>Histórico de Ações</h3>
+
+      <table style={tableStyle}>
+        <thead>
+          <tr>
+            <th style={thStyle}>Email</th>
+            <th style={thStyle}>Ação</th>
+            <th style={thStyle}>Turma</th>
+            <th style={thStyle}>Disciplina</th>
+            <th style={thStyle}>Bimestre</th>
+            <th style={thStyle}>Detalhes</th>
+            <th style={thStyle}>Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtrarLogs(actions, "created_at").map(log => (
+            <tr key={log.id}>
+              <td style={tdStyle}>{log.email}</td>
+              <td style={tdStyle}>{log.action}</td>
+              <td style={tdStyle}>{log.turma || "-"}</td>
+              <td style={tdStyle}>{log.disciplina || "-"}</td>
+              <td style={tdStyle}>
                 {log.bimestre ? `${log.bimestre}º` : "-"}
               </td>
-              <td style={{ padding: "10px" }}>
-                {new Date(log.created_at).toLocaleString("pt-BR")}
+              <td style={tdStyle}>{log.detalhes || "-"}</td>
+              <td style={tdStyle}>
+                {new Date(log.created_at).toLocaleString()}
               </td>
             </tr>
           ))}
@@ -68,5 +182,40 @@ function Admin() {
     </div>
   );
 }
+
+const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse",
+  backgroundColor: "white",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.05)"
+};
+
+const thStyle = {
+  border: "1px solid #ddd",
+  padding: "10px",
+  backgroundColor: "#1e3a8a",
+  color: "white",
+  textAlign: "left"
+};
+
+const tdStyle = {
+  border: "1px solid #ddd",
+  padding: "10px"
+};
+
+const inputStyle = {
+  padding: "8px",
+  borderRadius: "6px",
+  border: "1px solid #ccc"
+};
+
+const buttonStyle = {
+  padding: "8px 14px",
+  backgroundColor: "#1e3a8a",
+  color: "white",
+  border: "none",
+  borderRadius: "6px",
+  cursor: "pointer"
+};
 
 export default Admin;
