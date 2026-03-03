@@ -9,6 +9,7 @@ function ProfessorTrabalho() {
 
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
+  const [bimestre, setBimestre] = useState(1); // 🔥 ADICIONADO
   const [topicos, setTopicos] = useState([""]);
   const [instrucoes, setInstrucoes] = useState("");
   const [dataEntrega, setDataEntrega] = useState("");
@@ -47,10 +48,6 @@ function ProfessorTrabalho() {
     setModoEdicao(false);
   };
 
-  // ==========================
-  // CARREGAR PROFESSORES
-  // ==========================
-
   useEffect(() => {
     async function carregarProfessores() {
       try {
@@ -68,10 +65,6 @@ function ProfessorTrabalho() {
 
     carregarProfessores();
   }, []);
-
-  // ==========================
-  // CARREGAR ATRIBUIÇÕES
-  // ==========================
 
   const carregarAtribuicoes = async (id) => {
     if (!id) {
@@ -104,45 +97,6 @@ function ProfessorTrabalho() {
     }
   };
 
-  // ==========================
-  // BUSCAR PARA EDIÇÃO
-  // ==========================
-
-  useEffect(() => {
-    if (!atribuicaoSelecionada) return;
-
-    async function buscarTrabalho() {
-      try {
-        const response = await api.get("/trabalhos", {
-          params: { atribuicao_id: atribuicaoSelecionada }
-        });
-
-        const salvo = response.data;
-
-        setDataEntrega(salvo.data_entrega?.split("T")[0]);
-        setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
-        setInstrucoes(salvo.instrucoes || "");
-
-        setModoEdicao(true);
-        setMensagem("Você está editando um trabalho existente.");
-        setTipoMensagem("warning");
-
-      } catch {
-        setModoEdicao(false);
-        setTopicos([""]);
-        setInstrucoes("");
-        setMensagem("");
-      }
-    }
-
-    buscarTrabalho();
-
-  }, [atribuicaoSelecionada]);
-
-  // ==========================
-  // TÓPICOS
-  // ==========================
-
   const adicionarTopico = () => setTopicos([...topicos, ""]);
 
   const atualizarTopico = (index, valor) => {
@@ -156,10 +110,6 @@ function ProfessorTrabalho() {
     setTopicos(novos.length ? novos : [""]);
   };
 
-  // ==========================
-  // SALVAR
-  // ==========================
-
   const salvarTrabalho = async () => {
 
     if (!atribuicaoSelecionada) {
@@ -169,20 +119,17 @@ function ProfessorTrabalho() {
     }
 
     try {
+
       await api.post("/trabalhos", {
         atribuicao_id: atribuicaoSelecionada,
+        bimestre, // 🔥 OBRIGATÓRIO
         conteudo: JSON.stringify(topicos),
         instrucoes,
         data_entrega: dataEntrega
       });
-await api.post("/trabalhos", {
-  atribuicao_id: atribuicaoSelecionada,
-  conteudo: JSON.stringify(topicos),
-  instrucoes,
-  data_entrega: dataEntrega
-});
 
-await logAction("Criou ou atualizou trabalho mensal");
+      await logAction("Criou ou atualizou trabalho mensal");
+
       setMensagem(
         modoEdicao
           ? "Trabalho atualizado com sucesso!"
@@ -237,6 +184,18 @@ await logAction("Criou ou atualizou trabalho mensal");
         ))}
       </select>
 
+      {/* 🔥 SELECT DE BIMESTRE */}
+      <select
+        style={inputStyle}
+        value={bimestre}
+        onChange={(e) => setBimestre(Number(e.target.value))}
+      >
+        <option value={1}>1º Bimestre</option>
+        <option value={2}>2º Bimestre</option>
+        <option value={3}>3º Bimestre</option>
+        <option value={4}>4º Bimestre</option>
+      </select>
+
       <input
         type="date"
         style={inputStyle}
@@ -281,5 +240,3 @@ await logAction("Criou ou atualizou trabalho mensal");
 }
 
 export default ProfessorTrabalho;
-
-/*teste */
