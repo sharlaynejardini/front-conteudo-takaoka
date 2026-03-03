@@ -19,6 +19,7 @@ function ProfessorConteudo() {
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
+
   const [topicos, setTopicos] = useState([""]);
   const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
 
@@ -52,12 +53,11 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // LIMPAR FORMULÁRIO (SEM mexer na seleção)
+  // LIMPAR FORMULÁRIO
   // ==========================
 
   const limparFormulario = () => {
     setTopicos([""]);
-    setDataAvaliacao(semanasProva[bimestre].inicio);
     setModoEdicao(false);
   };
 
@@ -108,17 +108,19 @@ function ProfessorConteudo() {
 
     setAtribuicoes(ordenadas);
 
-    // limpa apenas a turma e formulário quando troca professor
+    // limpa turma e formulário ao trocar professor
     setAtribuicaoSelecionada("");
     limparFormulario();
   };
 
   // ==========================
-  // ATUALIZA DATA AO MUDAR BIMESTRE
+  // ATUALIZA DATA SOMENTE SE NÃO ESTIVER EDITANDO
   // ==========================
 
   useEffect(() => {
-    setDataAvaliacao(semanasProva[bimestre].inicio);
+    if (!modoEdicao) {
+      setDataAvaliacao(semanasProva[bimestre].inicio);
+    }
   }, [bimestre]);
 
   // ==========================
@@ -141,15 +143,16 @@ function ProfessorConteudo() {
 
         const salvo = response.data;
 
-        setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
-        setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
-
         setModoEdicao(true);
+        setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
+        setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
+
         setMensagem("Você está editando uma avaliação existente.");
         setTipoMensagem("warning");
 
       } catch {
-        limparFormulario();
+        setModoEdicao(false);
+        setTopicos([""]);
         setMensagem("");
       }
     }
