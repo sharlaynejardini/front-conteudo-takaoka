@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "./api";
-import { logAction } from "./logAction";
+import { logAction } from "./utils/logAction";
 
 function ProfessorTrabalho() {
 
