@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "./api";
+import { logAction } from "./logAction";
 
 function ProfessorConteudo() {
 
@@ -205,6 +206,8 @@ function ProfessorConteudo() {
         conteudo: JSON.stringify(topicos),
         data_avaliacao: dataAvaliacao
       });
+
+      await logAction("Criou ou atualizou avaliação");
 
       setMensagem(
         modoEdicao

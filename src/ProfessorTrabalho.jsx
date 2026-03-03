@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "./api";
+import { logAction } from "./logAction";
 
 function ProfessorTrabalho() {
 
@@ -174,7 +175,14 @@ function ProfessorTrabalho() {
         instrucoes,
         data_entrega: dataEntrega
       });
+await api.post("/trabalhos", {
+  atribuicao_id: atribuicaoSelecionada,
+  conteudo: JSON.stringify(topicos),
+  instrucoes,
+  data_entrega: dataEntrega
+});
 
+await logAction("Criou ou atualizou trabalho mensal");
       setMensagem(
         modoEdicao
           ? "Trabalho atualizado com sucesso!"
