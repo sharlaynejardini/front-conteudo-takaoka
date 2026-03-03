@@ -1,34 +1,29 @@
 import { supabase } from "../supabaseClient";
 
-export async function logAction(action) {
+export async function logAction({
+  action,
+  entidade,
+  turma,
+  disciplina,
+  bimestre,
+  detalhes
+}) {
 
-  console.log("LOG ACTION CHAMADO:", action);
-
-  const { data, error: sessionError } = await supabase.auth.getSession();
-
-  console.log("SESSION:", data);
-  console.log("SESSION ERROR:", sessionError);
-
-  if (!data.session) {
-    console.log("SEM SESSION");
-    return;
-  }
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) return;
 
   const user = data.session.user;
 
-  const { error } = await supabase
-    .from("action_logs")
-    .insert([
-      {
-        user_id: user.id,
-        email: user.email,
-        action: action
-      }
-    ]);
-
-  if (error) {
-    console.error("ERRO INSERT:", error);
-  } else {
-    console.log("INSERT OK");
-  }
+  await supabase.from("action_logs").insert([
+    {
+      user_id: user.id,
+      email: user.email,
+      action,
+      entidade,
+      turma,
+      disciplina,
+      bimestre,
+      detalhes
+    }
+  ]);
 }

@@ -13,26 +13,22 @@ function ProfessorConteudo() {
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
-  const estadoInicial = {
-    professorSelecionado: "",
-    atribuicaoSelecionada: "",
-    bimestre: 1,
-    topicos: [""],
-    dataAvaliacao: semanasProva[1].inicio
-  };
-
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
 
-  const [professorSelecionado, setProfessorSelecionado] = useState(estadoInicial.professorSelecionado);
-  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState(estadoInicial.atribuicaoSelecionada);
-  const [bimestre, setBimestre] = useState(estadoInicial.bimestre);
-  const [topicos, setTopicos] = useState(estadoInicial.topicos);
-  const [dataAvaliacao, setDataAvaliacao] = useState(estadoInicial.dataAvaliacao);
+  const [professorSelecionado, setProfessorSelecionado] = useState("");
+  const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
+  const [bimestre, setBimestre] = useState(1);
+  const [topicos, setTopicos] = useState([""]);
+  const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
+
+  // ==========================
+  // ESTILOS
+  // ==========================
 
   const inputStyle = {
     width: "100%",
@@ -55,12 +51,14 @@ function ProfessorConteudo() {
         : "#f8d7da"
   };
 
+  // ==========================
+  // LIMPAR
+  // ==========================
+
   const limparTudo = () => {
-    setProfessorSelecionado("");
     setAtribuicaoSelecionada("");
-    setBimestre(1);
     setTopicos([""]);
-    setDataAvaliacao(semanasProva[1].inicio);
+    setDataAvaliacao(semanasProva[bimestre].inicio);
     setModoEdicao(false);
   };
 
@@ -78,8 +76,13 @@ function ProfessorConteudo() {
 
       setProfessores(ordenados);
     }
+
     carregar();
   }, []);
+
+  // ==========================
+  // CARREGAR ATRIBUIÇÕES
+  // ==========================
 
   const carregarAtribuicoes = async (id) => {
     if (!id) {
@@ -105,10 +108,11 @@ function ProfessorConteudo() {
     });
 
     setAtribuicoes(ordenadas);
+    limparTudo();
   };
 
   // ==========================
-  // ATUALIZA DATA QUANDO MUDA BIMESTRE
+  // ATUALIZA DATA AO MUDAR BIMESTRE
   // ==========================
 
   useEffect(() => {
@@ -116,33 +120,16 @@ function ProfessorConteudo() {
   }, [bimestre]);
 
   // ==========================
-  // CONVERTER CONTEÚDO
-  // ==========================
-
-  const converterConteudoParaArray = (conteudo) => {
-    if (!conteudo) return [""];
-
-    if (Array.isArray(conteudo)) return conteudo;
-
-    try {
-      const convertido = JSON.parse(conteudo);
-      return Array.isArray(convertido) ? convertido : [convertido];
-    } catch {
-      return conteudo.includes(",")
-        ? conteudo.split(",").map(t => t.trim())
-        : [conteudo];
-    }
-  };
-
-  // ==========================
   // BUSCAR PARA EDIÇÃO
   // ==========================
 
   useEffect(() => {
+
     if (!atribuicaoSelecionada) return;
 
     async function buscarConteudo() {
       try {
+
         const response = await api.get("/conteudos", {
           params: {
             atribuicao_id: atribuicaoSelecionada,
@@ -153,15 +140,14 @@ function ProfessorConteudo() {
         const salvo = response.data;
 
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
-        setTopicos(converterConteudoParaArray(salvo.conteudo));
+        setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
 
         setModoEdicao(true);
-        setMensagem("Você está editando um conteúdo existente.");
+        setMensagem("Você está editando uma avaliação existente.");
         setTipoMensagem("warning");
 
       } catch {
-        setModoEdicao(false);
-        setTopicos([""]);
+        limparTudo();
         setMensagem("");
       }
     }
@@ -188,7 +174,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================
-  // SALVAR / ATUALIZAR
+  // SALVAR
   // ==========================
 
   const salvarConteudo = async () => {
@@ -200,6 +186,7 @@ function ProfessorConteudo() {
     }
 
     try {
+
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
         bimestre,
@@ -207,7 +194,16 @@ function ProfessorConteudo() {
         data_avaliacao: dataAvaliacao
       });
 
-      await logAction("Criou ou atualizou avaliação");
+      const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
+
+      await logAction({
+        action: modoEdicao ? "Atualizou avaliação" : "Criou avaliação",
+        entidade: "Avaliação",
+        turma: atribuicaoAtual?.turma?.nome,
+        disciplina: atribuicaoAtual?.disciplina?.nome,
+        bimestre,
+        detalhes: `Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
+      });
 
       setMensagem(
         modoEdicao
@@ -262,6 +258,17 @@ function ProfessorConteudo() {
         ))}
       </select>
 
+      <select
+        style={inputStyle}
+        value={bimestre}
+        onChange={(e) => setBimestre(Number(e.target.value))}
+      >
+        <option value={1}>1º Bimestre</option>
+        <option value={2}>2º Bimestre</option>
+        <option value={3}>3º Bimestre</option>
+        <option value={4}>4º Bimestre</option>
+      </select>
+
       <input
         type="date"
         style={inputStyle}
@@ -274,36 +281,14 @@ function ProfessorConteudo() {
       <h4>Conteúdos:</h4>
 
       {topicos.map((topico, index) => (
-        <div
-          key={index}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            marginBottom: "10px"
-          }}
-        >
+        <div key={index} style={{ display: "flex", gap: "10px" }}>
           <input
             type="text"
             value={topico}
             onChange={(e) => atualizarTopico(index, e.target.value)}
             style={{ ...inputStyle, marginBottom: "0" }}
           />
-
-          <button
-            onClick={() => removerTopico(index)}
-            style={{
-              backgroundColor: "#dc3545",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              padding: "8px 10px",
-              cursor: "pointer",
-              height: "38px"
-            }}
-          >
-            ❌
-          </button>
+          <button onClick={() => removerTopico(index)}>❌</button>
         </div>
       ))}
 

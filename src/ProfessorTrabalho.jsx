@@ -10,6 +10,7 @@ function ProfessorTrabalho() {
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
+
   const [topicos, setTopicos] = useState([""]);
   const [instrucoes, setInstrucoes] = useState("");
   const [dataEntrega, setDataEntrega] = useState("");
@@ -17,6 +18,10 @@ function ProfessorTrabalho() {
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
+
+  // ==========================
+  // ESTILOS
+  // ==========================
 
   const inputStyle = {
     width: "100%",
@@ -38,6 +43,10 @@ function ProfessorTrabalho() {
         ? "#fff3cd"
         : "#f8d7da"
   };
+
+  // ==========================
+  // LIMPAR FORMULÁRIO
+  // ==========================
 
   const limparFormulario = () => {
     setTopicos([""]);
@@ -105,7 +114,7 @@ function ProfessorTrabalho() {
   };
 
   // ==========================
-  // BUSCAR TRABALHO PARA EDIÇÃO
+  // BUSCAR PARA EDIÇÃO
   // ==========================
 
   useEffect(() => {
@@ -180,7 +189,17 @@ function ProfessorTrabalho() {
         data_entrega: dataEntrega
       });
 
-      await logAction("Criou ou atualizou trabalho mensal");
+      // 🔥 LOG DETALHADO
+      const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
+
+      await logAction({
+        action: modoEdicao ? "Atualizou trabalho mensal" : "Criou trabalho mensal",
+        entidade: "Trabalho",
+        turma: atribuicaoAtual?.turma?.nome,
+        disciplina: atribuicaoAtual?.disciplina?.nome,
+        bimestre,
+        detalhes: `Conteúdo: ${topicos.join(", ")} | Entrega: ${dataEntrega}`
+      });
 
       setMensagem(
         modoEdicao
