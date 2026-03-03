@@ -9,7 +9,7 @@ function ProfessorTrabalho() {
 
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
-  const [bimestre, setBimestre] = useState(1); // 🔥 ADICIONADO
+  const [bimestre, setBimestre] = useState(1);
   const [topicos, setTopicos] = useState([""]);
   const [instrucoes, setInstrucoes] = useState("");
   const [dataEntrega, setDataEntrega] = useState("");
@@ -39,14 +39,16 @@ function ProfessorTrabalho() {
         : "#f8d7da"
   };
 
-  const limparTudo = () => {
-    setProfessorSelecionado("");
-    setAtribuicaoSelecionada("");
+  const limparFormulario = () => {
     setTopicos([""]);
     setInstrucoes("");
     setDataEntrega("");
     setModoEdicao(false);
   };
+
+  // ==========================
+  // CARREGAR PROFESSORES
+  // ==========================
 
   useEffect(() => {
     async function carregarProfessores() {
@@ -65,6 +67,10 @@ function ProfessorTrabalho() {
 
     carregarProfessores();
   }, []);
+
+  // ==========================
+  // CARREGAR ATRIBUIÇÕES
+  // ==========================
 
   const carregarAtribuicoes = async (id) => {
     if (!id) {
@@ -91,11 +97,53 @@ function ProfessorTrabalho() {
       });
 
       setAtribuicoes(ordenadas);
+      limparFormulario();
 
     } catch (error) {
       console.error(error);
     }
   };
+
+  // ==========================
+  // BUSCAR TRABALHO PARA EDIÇÃO
+  // ==========================
+
+  useEffect(() => {
+
+    if (!atribuicaoSelecionada) return;
+
+    async function buscarTrabalho() {
+      try {
+        const response = await api.get("/trabalhos", {
+          params: {
+            atribuicao_id: atribuicaoSelecionada,
+            bimestre
+          }
+        });
+
+        const salvo = response.data;
+
+        setDataEntrega(salvo.data_entrega?.split("T")[0]);
+        setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
+        setInstrucoes(salvo.instrucoes || "");
+
+        setModoEdicao(true);
+        setMensagem("Você está editando um trabalho existente.");
+        setTipoMensagem("warning");
+
+      } catch {
+        limparFormulario();
+        setMensagem("");
+      }
+    }
+
+    buscarTrabalho();
+
+  }, [atribuicaoSelecionada, bimestre]);
+
+  // ==========================
+  // TÓPICOS
+  // ==========================
 
   const adicionarTopico = () => setTopicos([...topicos, ""]);
 
@@ -110,6 +158,10 @@ function ProfessorTrabalho() {
     setTopicos(novos.length ? novos : [""]);
   };
 
+  // ==========================
+  // SALVAR / ATUALIZAR
+  // ==========================
+
   const salvarTrabalho = async () => {
 
     if (!atribuicaoSelecionada) {
@@ -122,7 +174,7 @@ function ProfessorTrabalho() {
 
       await api.post("/trabalhos", {
         atribuicao_id: atribuicaoSelecionada,
-        bimestre, // 🔥 OBRIGATÓRIO
+        bimestre,
         conteudo: JSON.stringify(topicos),
         instrucoes,
         data_entrega: dataEntrega
@@ -139,7 +191,7 @@ function ProfessorTrabalho() {
       setTipoMensagem("success");
 
       setTimeout(() => {
-        limparTudo();
+        limparFormulario();
         setMensagem("");
       }, 1200);
 
@@ -184,7 +236,6 @@ function ProfessorTrabalho() {
         ))}
       </select>
 
-      {/* 🔥 SELECT DE BIMESTRE */}
       <select
         style={inputStyle}
         value={bimestre}
