@@ -33,10 +33,6 @@ function ProfessorConteudo() {
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
 
-  // ==========================
-  // INPUTS MESMO TAMANHO
-  // ==========================
-
   const inputStyle = {
     width: "100%",
     padding: "10px",
@@ -46,9 +42,17 @@ function ProfessorConteudo() {
     boxSizing: "border-box"
   };
 
-  // ==========================
-  // LIMPAR COMPLETAMENTE
-  // ==========================
+  const mensagemStyle = {
+    padding: "12px",
+    borderRadius: "8px",
+    marginBottom: "20px",
+    backgroundColor:
+      tipoMensagem === "success"
+        ? "#d4edda"
+        : tipoMensagem === "warning"
+        ? "#fff3cd"
+        : "#f8d7da"
+  };
 
   const limparTudo = () => {
     setProfessorSelecionado("");
@@ -221,28 +225,12 @@ function ProfessorConteudo() {
     }
   };
 
-  const mensagemStyle = {
-    padding: "12px",
-    borderRadius: "8px",
-    marginBottom: "20px",
-    backgroundColor:
-      tipoMensagem === "success"
-        ? "#d4edda"
-        : tipoMensagem === "warning"
-        ? "#fff3cd"
-        : "#f8d7da"
-  };
-
   return (
     <div style={{ padding: "40px", maxWidth: "600px", margin: "auto" }}>
 
       <h2>Lançamento de Avaliação</h2>
 
-      {mensagem && (
-        <div style={mensagemStyle}>
-          {mensagem}
-        </div>
-      )}
+      {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
       <select
         style={inputStyle}
@@ -271,7 +259,6 @@ function ProfessorConteudo() {
         ))}
       </select>
 
-      {/* 🔥 DATA LIMITADA À SEMANA DO BIMESTRE */}
       <input
         type="date"
         style={inputStyle}
@@ -284,14 +271,36 @@ function ProfessorConteudo() {
       <h4>Conteúdos:</h4>
 
       {topicos.map((topico, index) => (
-        <div key={index}>
+        <div
+          key={index}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginBottom: "10px"
+          }}
+        >
           <input
             type="text"
             value={topico}
             onChange={(e) => atualizarTopico(index, e.target.value)}
-            style={inputStyle}
+            style={{ ...inputStyle, marginBottom: "0" }}
           />
-          <button onClick={() => removerTopico(index)}>❌</button>
+
+          <button
+            onClick={() => removerTopico(index)}
+            style={{
+              backgroundColor: "#dc3545",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              padding: "8px 10px",
+              cursor: "pointer",
+              height: "38px"
+            }}
+          >
+            ❌
+          </button>
         </div>
       ))}
 
