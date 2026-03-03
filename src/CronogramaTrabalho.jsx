@@ -7,6 +7,7 @@ function CronogramaTrabalho() {
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
+  const [bimestre, setBimestre] = useState(1);
   const [cronograma, setCronograma] = useState([]);
 
   const printRef = useRef();
@@ -43,7 +44,10 @@ function CronogramaTrabalho() {
 
     try {
       const response = await api.get("/cronograma-trabalhos", {
-        params: { turma_id: turmaSelecionada }
+        params: {
+          turma_id: turmaSelecionada,
+          bimestre
+        }
       });
 
       const ordenado = [...response.data].sort(
@@ -70,7 +74,7 @@ function CronogramaTrabalho() {
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
-    link.download = `${turmaNome}_Trabalhos.png`;
+    link.download = `${turmaNome}_${bimestre}Bimestre_Trabalhos.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -136,7 +140,7 @@ function CronogramaTrabalho() {
     borderRadius: "8px",
     border: "1px solid #d0d7e2",
     marginRight: "10px",
-    minWidth: "200px"
+    minWidth: "180px"
   };
 
   const buttonStyle = {
@@ -176,6 +180,7 @@ function CronogramaTrabalho() {
         </h2>
 
         <div style={{ marginBottom: "30px", textAlign: "center" }}>
+
           <select
             style={selectStyle}
             value={turmaSelecionada}
@@ -187,6 +192,17 @@ function CronogramaTrabalho() {
                 {turma.nome}
               </option>
             ))}
+          </select>
+
+          <select
+            style={selectStyle}
+            value={bimestre}
+            onChange={(e) => setBimestre(Number(e.target.value))}
+          >
+            <option value={1}>1º Bimestre</option>
+            <option value={2}>2º Bimestre</option>
+            <option value={3}>3º Bimestre</option>
+            <option value={4}>4º Bimestre</option>
           </select>
 
           <button style={buttonStyle} onClick={buscarCronograma}>
@@ -209,7 +225,7 @@ function CronogramaTrabalho() {
             />
           </div>
 
-          {/* TÍTULO */}
+          {/* TÍTULO DA IMAGEM */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -220,6 +236,7 @@ function CronogramaTrabalho() {
               Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
             </div>
             <div>TRABALHO MENSAL</div>
+            <div>{bimestre}º Bimestre</div>
           </div>
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
