@@ -22,13 +22,20 @@ function AdminRoute({ children }) {
         return;
       }
 
-      const { data } = await supabase
+      const userId = sessionData.session.user.id;
+
+      console.log("User ID:", userId);
+
+      const { data, error } = await supabase
         .from("profiles")
-        .select("role")
-        .eq("id", sessionData.session.user.id)
+        .select("*")
+        .eq("id", userId)
         .single();
 
-      if (data?.role === "admin") {
+      console.log("Profile data:", data);
+      console.log("Profile error:", error);
+
+      if (data && data.role === "admin") {
         setIsAdmin(true);
       }
 
