@@ -2,11 +2,17 @@ import { supabase } from "../supabaseClient";
 
 export async function logAction(action) {
 
-  console.log("LOG ACTION CHAMADO:", action); // 👈 ADICIONE ESTA LINHA
+  console.log("LOG ACTION CHAMADO:", action);
 
-  const { data } = await supabase.auth.getSession();
+  const { data, error: sessionError } = await supabase.auth.getSession();
 
-  if (!data.session) return;
+  console.log("SESSION:", data);
+  console.log("SESSION ERROR:", sessionError);
+
+  if (!data.session) {
+    console.log("SEM SESSION");
+    return;
+  }
 
   const user = data.session.user;
 
@@ -21,6 +27,8 @@ export async function logAction(action) {
     ]);
 
   if (error) {
-    console.error("Erro ao registrar ação:", error);
+    console.error("ERRO INSERT:", error);
+  } else {
+    console.log("INSERT OK");
   }
 }
