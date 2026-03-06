@@ -42,19 +42,14 @@ function Admin() {
     if (!dataISO) return "-";
     
     try {
-      let date;
-      if (dataISO.includes('Z') || dataISO.includes('+')) {
-        date = new Date(dataISO);
-      } else {
-        date = new Date(dataISO + 'Z');
-      }
+      const date = new Date(dataISO);
       
-      const dia = String(date.getUTCDate()).padStart(2, "0");
-      const mes = String(date.getUTCMonth() + 1).padStart(2, "0");
-      const ano = date.getUTCFullYear();
-      const hora = String(date.getUTCHours()).padStart(2, "0");
-      const min = String(date.getUTCMinutes()).padStart(2, "0");
-      const seg = String(date.getUTCSeconds()).padStart(2, "0");
+      const dia = String(date.getDate()).padStart(2, "0");
+      const mes = String(date.getMonth() + 1).padStart(2, "0");
+      const ano = date.getFullYear();
+      const hora = String(date.getHours()).padStart(2, "0");
+      const min = String(date.getMinutes()).padStart(2, "0");
+      const seg = String(date.getSeconds()).padStart(2, "0");
       
       return `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
     } catch (error) {
