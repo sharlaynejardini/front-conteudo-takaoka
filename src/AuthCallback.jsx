@@ -51,6 +51,15 @@ function AuthCallback() {
           
           if (dominioPermitido) {
             console.log("\n✅ ACESSO PERMITIDO! Redirecionando para home...");
+            
+            // Registrar login
+            try {
+              await supabase.from("login_logs").insert({ email });
+              console.log("   - Login registrado no histórico");
+            } catch (logError) {
+              console.error("   - Erro ao registrar login:", logError);
+            }
+            
             navigate("/");
           } else {
             console.log("\n❌ DOMÍNIO NÃO AUTORIZADO!");
