@@ -40,16 +40,14 @@ function Admin() {
 
   const formatarDataHora = (dataISO) => {
     if (!dataISO) return "-";
-    const partes = dataISO.split("T");
-    const data = partes[0];
-    const [ano, mes, dia] = data.split("-");
-    
-    if (partes[1]) {
-      const horaFormatada = partes[1].split(".")[0];
-      return `${dia}/${mes}/${ano} ${horaFormatada}`;
-    }
-    
-    return `${dia}/${mes}/${ano}`;
+    const date = new Date(dataISO + "Z");
+    const dia = String(date.getUTCDate()).padStart(2, "0");
+    const mes = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const ano = date.getUTCFullYear();
+    const hora = String(date.getUTCHours()).padStart(2, "0");
+    const min = String(date.getUTCMinutes()).padStart(2, "0");
+    const seg = String(date.getUTCSeconds()).padStart(2, "0");
+    return `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
   };
 
   const filtrarLogs = (logs, campoData) => {
