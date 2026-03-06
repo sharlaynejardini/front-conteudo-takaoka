@@ -40,10 +40,16 @@ function Admin() {
 
   const formatarDataHora = (dataISO) => {
     if (!dataISO) return "-";
-    const [data, hora] = dataISO.split("T");
+    const partes = dataISO.split("T");
+    const data = partes[0];
     const [ano, mes, dia] = data.split("-");
-    const horaFormatada = hora.split(".")[0];
-    return `${dia}/${mes}/${ano} ${horaFormatada}`;
+    
+    if (partes[1]) {
+      const horaFormatada = partes[1].split(".")[0];
+      return `${dia}/${mes}/${ano} ${horaFormatada}`;
+    }
+    
+    return `${dia}/${mes}/${ano}`;
   };
 
   const filtrarLogs = (logs, campoData) => {
