@@ -7,17 +7,21 @@ function Login() {
 
     const redirectUrl = `${window.location.origin}/auth/callback`;
 
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: redirectUrl,
         queryParams: {
-          hd: domain,
-          access_type: "offline",
-          prompt: "consent"
-        }
+          hd: domain
+        },
+        skipBrowserRedirect: false
       }
     });
+
+    if (error) {
+      console.error("Erro no login:", error);
+      alert("Erro ao fazer login. Verifique se os popups estão habilitados.");
+    }
   };
 
   const pageStyle = {
