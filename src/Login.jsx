@@ -5,9 +5,13 @@ function Login() {
 
   const loginGoogle = async (domain) => {
 
-    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log("=== LOGIN INICIADO ===");
+    console.log("Domínio selecionado:", domain);
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    console.log("Redirect URL:", redirectUrl);
+
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: redirectUrl,
@@ -17,6 +21,9 @@ function Login() {
         skipBrowserRedirect: false
       }
     });
+
+    console.log("OAuth Response Data:", data);
+    console.log("OAuth Response Error:", error);
 
     if (error) {
       console.error("Erro no login:", error);
