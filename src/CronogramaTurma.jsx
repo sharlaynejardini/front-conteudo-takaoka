@@ -52,18 +52,26 @@ function CronogramaTurma() {
     const canvas = await html2canvas(printRef.current, { 
       scale: 2,
       backgroundColor: "#ffffff",
-      windowWidth: printRef.current.scrollWidth + 100,
-      windowHeight: printRef.current.scrollHeight + 100,
-      x: -50,
-      y: -50
+      useCORS: true,
+      logging: false
     });
+
+    const padding = 50;
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width = canvas.width + (padding * 2);
+    newCanvas.height = canvas.height + (padding * 2);
+    
+    const ctx = newCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+    ctx.drawImage(canvas, padding, padding);
 
     const link = document.createElement("a");
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
     link.download = `${turmaNome}_${bimestre}Bimestre.png`;
-    link.href = canvas.toDataURL("image/png");
+    link.href = newCanvas.toDataURL("image/png");
     link.click();
   };
 
@@ -201,7 +209,7 @@ function CronogramaTurma() {
           </button>
         </div>
 
-        <div ref={printRef}>
+        <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
 
           {/* IMAGEM DO CABEÇALHO */}
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
