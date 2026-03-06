@@ -38,44 +38,45 @@ function Layout() {
 
       <div
         style={{
-          backgroundColor: "#1e3a8a",
-          padding: "15px 30px",
+          background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
+          padding: "18px 40px",
           color: "white",
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center"
+          alignItems: "center",
+          boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
         }}
       >
-        <div style={{ display: "flex", gap: "25px" }}>
+        <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
 
           {/* PROVAS */}
           <Link to="/" style={linkStyle}>
-            Provas
+            📝 Provas
           </Link>
 
           <Link to="/cronograma" style={linkStyle}>
-            Cronograma Provas
+            📅 Cronograma Provas
           </Link>
 
           {/* TRABALHOS */}
           <Link to="/trabalho" style={linkStyle}>
-            Trabalhos
+            📚 Trabalhos
           </Link>
 
           <Link to="/cronograma-trabalho" style={linkStyle}>
-            Cronograma Trabalhos
+            📋 Cronograma Trabalhos
           </Link>
 
           {isAdmin && (
             <Link to="/admin" style={linkStyle}>
-              Admin
+              ⚙️ Admin
             </Link>
           )}
 
         </div>
 
         <button onClick={logout} style={buttonStyle}>
-          Sair
+          🚪 Sair
         </button>
       </div>
 
@@ -90,16 +91,25 @@ function Layout() {
 const linkStyle = {
   color: "white",
   textDecoration: "none",
-  fontWeight: "500",
-  fontSize: "15px"
+  fontWeight: "600",
+  fontSize: "15px",
+  padding: "8px 16px",
+  borderRadius: "6px",
+  transition: "all 0.3s ease",
+  display: "inline-block"
 };
 
 const buttonStyle = {
   backgroundColor: "white",
+  color: "#1e3a8a",
   border: "none",
-  padding: "6px 12px",
-  borderRadius: "6px",
-  cursor: "pointer"
+  padding: "10px 20px",
+  borderRadius: "8px",
+  cursor: "pointer",
+  fontWeight: "600",
+  fontSize: "14px",
+  transition: "all 0.3s ease",
+  boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
 };
 
 export default Layout;
