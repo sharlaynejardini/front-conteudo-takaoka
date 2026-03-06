@@ -44,6 +44,21 @@ function ProfessorTrabalho() {
         : "#f8d7da"
   };
 
+  const buttonStyle = {
+    padding: "12px 24px",
+    backgroundColor: "#1e3a8a",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "600",
+    marginTop: "10px",
+    marginRight: "10px",
+    transition: "all 0.3s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+  };
+
   // ==========================
   // LIMPAR FORMULÁRIO
   // ==========================
@@ -222,7 +237,7 @@ function ProfessorTrabalho() {
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "700px", margin: "0 auto" }}>
+    <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
       <h2>Lançamento de Trabalho Mensal</h2>
 
@@ -287,7 +302,7 @@ function ProfessorTrabalho() {
         </div>
       ))}
 
-      <button onClick={adicionarTopico}>
+      <button onClick={adicionarTopico} style={buttonStyle}>
         + Adicionar Tópico
       </button>
 
@@ -299,9 +314,7 @@ function ProfessorTrabalho() {
         onChange={(e) => setInstrucoes(e.target.value)}
       />
 
-      <br />
-
-      <button onClick={salvarTrabalho}>
+      <button onClick={salvarTrabalho} style={buttonStyle}>
         {modoEdicao ? "Atualizar Trabalho" : "Salvar Trabalho"}
       </button>
 
