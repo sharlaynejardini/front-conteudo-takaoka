@@ -16,6 +16,8 @@ function Admin() {
 
   useEffect(() => {
     carregarDados();
+    const interval = setInterval(carregarDados, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   async function carregarDados() {
@@ -35,6 +37,14 @@ function Admin() {
     setActions(actionData || []);
     setLoading(false);
   }
+
+  const formatarDataHora = (dataISO) => {
+    if (!dataISO) return "-";
+    const [data, hora] = dataISO.split("T");
+    const [ano, mes, dia] = data.split("-");
+    const horaFormatada = hora.split(".")[0];
+    return `${dia}/${mes}/${ano} ${horaFormatada}`;
+  };
 
   const filtrarLogs = (logs, campoData) => {
     return logs.filter(log => {
@@ -62,7 +72,7 @@ function Admin() {
         a.disciplina || "",
         a.bimestre ? `${a.bimestre}º` : "",
         a.detalhes || "",
-        new Date(a.created_at).toLocaleString()
+        formatarDataHora(a.created_at)
       ]);
     });
 
@@ -75,7 +85,7 @@ function Admin() {
         "",
         "",
         "",
-        new Date(l.login_at).toLocaleString()
+        formatarDataHora(l.login_at)
       ]);
     });
 
@@ -116,6 +126,10 @@ function Admin() {
           style={inputStyle}
         />
 
+        <button onClick={carregarDados} style={buttonStyle}>
+          🔄 Atualizar
+        </button>
+
         <button onClick={exportarCSV} style={buttonStyle}>
           Exportar CSV
         </button>
@@ -136,7 +150,7 @@ function Admin() {
             <tr key={log.id}>
               <td style={tdStyle}>{log.email}</td>
               <td style={tdStyle}>
-                {new Date(log.login_at).toLocaleString()}
+                {formatarDataHora(log.login_at)}
               </td>
             </tr>
           ))}
@@ -172,7 +186,7 @@ function Admin() {
               </td>
               <td style={tdStyle}>{log.detalhes || "-"}</td>
               <td style={tdStyle}>
-                {new Date(log.created_at).toLocaleString()}
+                {formatarDataHora(log.created_at)}
               </td>
             </tr>
           ))}
