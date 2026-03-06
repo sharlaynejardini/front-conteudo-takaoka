@@ -262,7 +262,7 @@ function ProfessorConteudo() {
   };
 
   return (
-    <div style={{ padding: "40px", maxWidth: "600px", margin: "auto" }}>
+    <div style={{ padding: "20px", maxWidth: "700px", margin: "0 auto" }}>
 
       <h2>Lançamento de Avaliação</h2>
 

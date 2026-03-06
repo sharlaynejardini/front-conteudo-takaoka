@@ -34,7 +34,7 @@ function Layout() {
   };
 
   return (
-    <div>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
 
       <div
         style={{
@@ -79,7 +79,7 @@ function Layout() {
         </button>
       </div>
 
-      <div style={{ padding: "30px" }}>
+      <div style={{ padding: "20px" }}>
         <Outlet />
       </div>
 
