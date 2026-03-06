@@ -64,7 +64,8 @@ function CronogramaTrabalho() {
 
   const formatarData = (dataISO) => {
     if (!dataISO) return "";
-    return new Date(dataISO).toLocaleDateString("pt-BR");
+    const [ano, mes, dia] = dataISO.split("T")[0].split("-");
+    return `${dia}/${mes}/${ano}`;
   };
 
   const gerarImagem = async () => {
@@ -144,13 +145,16 @@ function CronogramaTrabalho() {
   };
 
   const buttonStyle = {
-    padding: "10px 16px",
+    padding: "12px 20px",
     backgroundColor: "#1e3a8a",
     color: "white",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
-    marginRight: "10px"
+    marginRight: "10px",
+    fontSize: "14px",
+    fontWeight: "500",
+    transition: "background-color 0.2s"
   };
 
   const thStyle = {
