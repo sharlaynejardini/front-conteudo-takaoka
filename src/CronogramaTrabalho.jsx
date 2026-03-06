@@ -69,7 +69,14 @@ function CronogramaTrabalho() {
   };
 
   const gerarImagem = async () => {
-    const canvas = await html2canvas(printRef.current, { scale: 2 });
+    const canvas = await html2canvas(printRef.current, { 
+      scale: 2,
+      backgroundColor: "#ffffff",
+      windowWidth: printRef.current.scrollWidth + 100,
+      windowHeight: printRef.current.scrollHeight + 100,
+      x: -50,
+      y: -50
+    });
 
     const link = document.createElement("a");
     const turmaNome =
