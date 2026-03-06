@@ -40,14 +40,27 @@ function Admin() {
 
   const formatarDataHora = (dataISO) => {
     if (!dataISO) return "-";
-    const date = new Date(dataISO + "Z");
-    const dia = String(date.getUTCDate()).padStart(2, "0");
-    const mes = String(date.getUTCMonth() + 1).padStart(2, "0");
-    const ano = date.getUTCFullYear();
-    const hora = String(date.getUTCHours()).padStart(2, "0");
-    const min = String(date.getUTCMinutes()).padStart(2, "0");
-    const seg = String(date.getUTCSeconds()).padStart(2, "0");
-    return `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
+    
+    try {
+      let date;
+      if (dataISO.includes('Z') || dataISO.includes('+')) {
+        date = new Date(dataISO);
+      } else {
+        date = new Date(dataISO + 'Z');
+      }
+      
+      const dia = String(date.getUTCDate()).padStart(2, "0");
+      const mes = String(date.getUTCMonth() + 1).padStart(2, "0");
+      const ano = date.getUTCFullYear();
+      const hora = String(date.getUTCHours()).padStart(2, "0");
+      const min = String(date.getUTCMinutes()).padStart(2, "0");
+      const seg = String(date.getUTCSeconds()).padStart(2, "0");
+      
+      return `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
+    } catch (error) {
+      console.error('Erro ao formatar data:', dataISO, error);
+      return dataISO;
+    }
   };
 
   const filtrarLogs = (logs, campoData) => {
