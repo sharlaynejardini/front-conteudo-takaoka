@@ -44,7 +44,8 @@ function CronogramaTurma() {
 
   const formatarData = (dataISO) => {
     if (!dataISO) return "";
-    return new Date(dataISO).toLocaleDateString("pt-BR");
+    const [ano, mes, dia] = dataISO.split("T")[0].split("-");
+    return `${dia}/${mes}/${ano}`;
   };
 
   const gerarImagem = async () => {
