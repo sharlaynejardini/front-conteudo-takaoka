@@ -34,7 +34,7 @@ function Layout() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5", margin: 0, padding: 0 }}>
 
       <div
         style={{
