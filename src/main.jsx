@@ -12,6 +12,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import AuthCallback from "./AuthCallback";
 import Admin from "./Admin";
 import AdminRoute from "./AdminRoute";
+import TestAPI from "./TestAPI";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -23,6 +24,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
         {/* CALLBACK */}
         <Route path="/auth/callback" element={<AuthCallback />} />
+
+        {/* TESTE API */}
+        <Route path="/test-api" element={<TestAPI />} />
 
         {/* ROTAS PROTEGIDAS */}
         <Route
