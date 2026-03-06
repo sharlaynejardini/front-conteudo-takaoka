@@ -67,13 +67,20 @@ function ProfessorConteudo() {
 
   useEffect(() => {
     async function carregar() {
-      const response = await api.get("/professores");
+      try {
+        console.log("Carregando professores...");
+        const response = await api.get("/professores");
+        console.log("Professores carregados:", response.data);
 
-      const ordenados = [...response.data].sort((a, b) =>
-        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
-      );
+        const ordenados = [...response.data].sort((a, b) =>
+          a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+        );
 
-      setProfessores(ordenados);
+        setProfessores(ordenados);
+      } catch (error) {
+        console.error("ERRO ao carregar professores:", error);
+        console.error("Stack trace:", error.stack);
+      }
     }
 
     carregar();
@@ -84,33 +91,42 @@ function ProfessorConteudo() {
   // ==========================
 
   const carregarAtribuicoes = async (id) => {
-    if (!id) {
+    try {
+      console.log("Carregando atribuições para professor ID:", id);
+      
+      if (!id) {
+        setAtribuicoes([]);
+        return;
+      }
+
+      const response = await api.get(`/atribuicoes/${id}`);
+      console.log("Atribuições carregadas:", response.data);
+
+      const ordenadas = [...response.data].sort((a, b) => {
+        const turmaCompare = a.turma.nome.localeCompare(
+          b.turma.nome,
+          "pt-BR",
+          { sensitivity: "base" }
+        );
+        if (turmaCompare !== 0) return turmaCompare;
+
+        return a.disciplina.nome.localeCompare(
+          b.disciplina.nome,
+          "pt-BR",
+          { sensitivity: "base" }
+        );
+      });
+
+      setAtribuicoes(ordenadas);
+
+      // limpa turma e formulário ao trocar professor
+      setAtribuicaoSelecionada("");
+      limparFormulario();
+    } catch (error) {
+      console.error("ERRO ao carregar atribuições:", error);
+      console.error("Stack trace:", error.stack);
       setAtribuicoes([]);
-      return;
     }
-
-    const response = await api.get(`/atribuicoes/${id}`);
-
-    const ordenadas = [...response.data].sort((a, b) => {
-      const turmaCompare = a.turma.nome.localeCompare(
-        b.turma.nome,
-        "pt-BR",
-        { sensitivity: "base" }
-      );
-      if (turmaCompare !== 0) return turmaCompare;
-
-      return a.disciplina.nome.localeCompare(
-        b.disciplina.nome,
-        "pt-BR",
-        { sensitivity: "base" }
-      );
-    });
-
-    setAtribuicoes(ordenadas);
-
-    // limpa turma e formulário ao trocar professor
-    setAtribuicaoSelecionada("");
-    limparFormulario();
   };
 
   // ==========================
@@ -133,6 +149,7 @@ function ProfessorConteudo() {
 
     async function buscarConteudo() {
       try {
+        console.log("Buscando conteúdo para edição:", { atribuicao_id: atribuicaoSelecionada, bimestre });
 
         const response = await api.get("/conteudos", {
           params: {
@@ -142,6 +159,7 @@ function ProfessorConteudo() {
         });
 
         const salvo = response.data;
+        console.log("Conteúdo encontrado:", salvo);
 
         setModoEdicao(true);
         setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
@@ -150,7 +168,8 @@ function ProfessorConteudo() {
         setMensagem("Você está editando uma avaliação existente.");
         setTipoMensagem("warning");
 
-      } catch {
+      } catch (error) {
+        console.log("Nenhum conteúdo encontrado (normal para novo):", error.message);
         setModoEdicao(false);
         setTopicos([""]);
         setMensagem("");
@@ -191,6 +210,12 @@ function ProfessorConteudo() {
     }
 
     try {
+      console.log("Salvando conteúdo:", {
+        atribuicao_id: atribuicaoSelecionada,
+        bimestre,
+        conteudo: JSON.stringify(topicos),
+        data_avaliacao: dataAvaliacao
+      });
 
       await api.post("/conteudos", {
         atribuicao_id: atribuicaoSelecionada,
@@ -210,6 +235,8 @@ function ProfessorConteudo() {
         detalhes: `Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
       });
 
+      console.log("Conteúdo salvo com sucesso!");
+
       setMensagem(
         modoEdicao
           ? "Conteúdo atualizado com sucesso!"
@@ -223,7 +250,12 @@ function ProfessorConteudo() {
         setMensagem("");
       }, 1200);
 
-    } catch {
+    } catch (error) {
+      console.error("ERRO ao salvar conteúdo:", error);
+      console.error("Response data:", error.response?.data);
+      console.error("Status:", error.response?.status);
+      console.error("Stack trace:", error.stack);
+      
       setMensagem("Já existem 2 provas para essa turma nesse dia.");
       setTipoMensagem("error");
     }
