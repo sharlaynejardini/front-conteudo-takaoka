@@ -3,7 +3,7 @@ import logoTakaoka from "./assets/logo_takaoka.png";
 
 function Login() {
 
-  const loginGoogle = async () => {
+  const loginGoogle = async (domain) => {
 
     const redirectUrl = `${window.location.origin}/auth/callback`;
 
@@ -12,7 +12,7 @@ function Login() {
       options: {
         redirectTo: redirectUrl,
         queryParams: {
-          hd: "professor.barueri.br"
+          hd: domain
         }
       }
     });
@@ -75,12 +75,17 @@ function Login() {
         </h2>
 
         <p style={subtitleStyle}>
-          Utilize sua conta institucional para acessar o sistema.
+          Escolha seu domínio de acesso:
         </p>
 
-        <button onClick={loginGoogle} style={buttonStyle}>
-          <span style={{ fontSize: "18px" }}>🔵</span>
-          Entrar com Google
+        <button onClick={() => loginGoogle("professor.barueri.br")} style={buttonStyle}>
+          <span style={{ fontSize: "18px" }}>👨‍🏫</span>
+          Professor (@professor.barueri.br)
+        </button>
+
+        <button onClick={() => loginGoogle("educbarueri.sp.gov.br")} style={{...buttonStyle, backgroundColor: "#34A853", marginTop: "10px"}}>
+          <span style={{ fontSize: "18px" }}>🏫</span>
+          Educação (@educbarueri.sp.gov.br)
         </button>
 
       </div>
