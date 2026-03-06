@@ -18,7 +18,8 @@ function Login() {
         queryParams: {
           hd: domain
         },
-        skipBrowserRedirect: false
+        skipBrowserRedirect: false,
+        scopes: 'email profile'
       }
     });
 
@@ -27,7 +28,7 @@ function Login() {
 
     if (error) {
       console.error("Erro no login:", error);
-      alert("Erro ao fazer login. Verifique se os popups estão habilitados.");
+      alert(`Erro ao fazer login: ${error.message}`);
     }
   };
 
