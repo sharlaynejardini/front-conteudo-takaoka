@@ -16,13 +16,30 @@ function AuthCallback() {
 
         const user = data.session.user;
 
-        // 🔥 REGISTRA LOGIN
+        // Registra login
         await supabase.from("login_logs").insert([
           {
             user_id: user.id,
             email: user.email
           }
         ]);
+
+        // Registra usuário na tabela users se não existir
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("id")
+          .eq("email", user.email)
+          .single();
+
+        if (!existingUser) {
+          await supabase.from("users").insert([
+            {
+              id: user.id,
+              email: user.email,
+              nome: user.user_metadata?.full_name || user.email.split("@")[0]
+            }
+          ]);
+        }
 
         navigate("/");
 

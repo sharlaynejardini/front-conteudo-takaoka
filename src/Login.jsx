@@ -12,7 +12,9 @@ function Login() {
       options: {
         redirectTo: redirectUrl,
         queryParams: {
-          hd: domain
+          hd: domain,
+          access_type: "offline",
+          prompt: "consent"
         }
       }
     });
