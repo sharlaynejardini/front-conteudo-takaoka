@@ -13,6 +13,7 @@ import AuthCallback from "./AuthCallback";
 import Admin from "./Admin";
 import AdminRoute from "./AdminRoute";
 import TestAPI from "./TestAPI";
+import HorarioEscolar from "./HorarioEscolar";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -44,6 +45,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           {/* TRABALHOS MENSAIS */}
           <Route path="trabalho" element={<ProfessorTrabalho />} />
           <Route path="cronograma-trabalho" element={<CronogramaTrabalho />} />
+
+          {/* HORÁRIO ESCOLAR */}
+          <Route path="horario" element={<HorarioEscolar />} />
 
           {/* ADMIN */}
           <Route

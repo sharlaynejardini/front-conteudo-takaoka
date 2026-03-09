@@ -67,6 +67,11 @@ function Layout() {
             📋 Cronograma Trabalhos
           </Link>
 
+          {/* HORÁRIO */}
+          <Link to="/horario" style={linkStyle}>
+            🕒 Horário Escolar
+          </Link>
+
           {isAdmin && (
             <Link to="/admin" style={linkStyle}>
               ⚙️ Admin
