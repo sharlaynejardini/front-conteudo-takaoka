@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
+import { supabase } from "./supabaseClient";
 
 function ProfessorTrabalho() {
 
@@ -78,13 +79,31 @@ function ProfessorTrabalho() {
   useEffect(() => {
     async function carregarProfessores() {
       try {
+        // Pega o email do usuário logado
+        const { data: sessionData } = await supabase.auth.getSession();
+        const emailLogado = sessionData.session?.user?.email;
+        console.log("Email logado:", emailLogado);
+
         const response = await api.get("/professores");
 
-        const ordenados = [...response.data].sort((a, b) =>
-          a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+        // Filtra apenas o professor com email correspondente
+        const professorLogado = response.data.find(p => 
+          p.email?.toLowerCase() === emailLogado?.toLowerCase()
         );
 
-        setProfessores(ordenados);
+        if (professorLogado) {
+          console.log("Professor encontrado:", professorLogado);
+          setProfessores([professorLogado]);
+          setProfessorSelecionado(professorLogado.id);
+          carregarAtribuicoes(professorLogado.id);
+        } else {
+          console.log("Professor não encontrado para o email:", emailLogado);
+          // Fallback: mostra todos se não encontrar
+          const ordenados = [...response.data].sort((a, b) =>
+            a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+          );
+          setProfessores(ordenados);
+        }
       } catch (error) {
         console.error(error);
       }
