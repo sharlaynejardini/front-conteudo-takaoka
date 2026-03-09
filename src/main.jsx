@@ -14,6 +14,7 @@ import Admin from "./Admin";
 import AdminRoute from "./AdminRoute";
 import TestAPI from "./TestAPI";
 import HorarioEscolar from "./HorarioEscolar";
+import DebugProfessor from "./DebugProfessor";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -28,6 +29,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
         {/* TESTE API */}
         <Route path="/test-api" element={<TestAPI />} />
+
+        {/* DEBUG PROFESSOR */}
+        <Route path="/debug-professor" element={<DebugProfessor />} />
 
         {/* ROTAS PROTEGIDAS */}
         <Route
