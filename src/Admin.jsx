@@ -8,7 +8,6 @@ import { supabase } from "./supabaseClient";
 
 function Admin() {
 
-  const [logins, setLogins] = useState([]);
   const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroEmail, setFiltroEmail] = useState("");
@@ -23,17 +22,11 @@ function Admin() {
   async function carregarDados() {
     setLoading(true);
 
-    const { data: loginData } = await supabase
-      .from("login_logs")
-      .select("*")
-      .order("login_at", { ascending: false });
-
     const { data: actionData } = await supabase
       .from("action_logs")
       .select("*")
       .order("created_at", { ascending: false });
 
-    setLogins(loginData || []);
     setActions(actionData || []);
     setLoading(false);
   }
@@ -72,12 +65,11 @@ function Admin() {
 
   const exportarCSV = () => {
     const linhas = [
-      ["Tipo", "Email", "Ação", "Turma", "Disciplina", "Bimestre", "Detalhes", "Data"]
+      ["Email", "Ação", "Turma", "Disciplina", "Bimestre", "Detalhes", "Data"]
     ];
 
     actions.forEach(a => {
       linhas.push([
-        "AÇÃO",
         a.email,
         a.action,
         a.turma || "",
@@ -88,19 +80,6 @@ function Admin() {
       ]);
     });
 
-    logins.forEach(l => {
-      linhas.push([
-        "LOGIN",
-        l.email,
-        "Login no sistema",
-        "",
-        "",
-        "",
-        "",
-        formatarDataHora(l.login_at)
-      ]);
-    });
-
     const csv = linhas.map(l => l.join(";")).join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -108,7 +87,7 @@ function Admin() {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "relatorio_logs.csv";
+    a.download = "relatorio_acoes.csv";
     a.click();
   };
 
@@ -146,30 +125,6 @@ function Admin() {
           Exportar CSV
         </button>
       </div>
-
-      {/* LOGINS */}
-      <h3>Histórico de Logins</h3>
-
-      <table style={tableStyle}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Email</th>
-            <th style={thStyle}>Data</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtrarLogs(logins, "login_at").map(log => (
-            <tr key={log.id}>
-              <td style={tdStyle}>{log.email}</td>
-              <td style={tdStyle}>
-                {formatarDataHora(log.login_at)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <br /><br />
 
       {/* AÇÕES */}
       <h3>Histórico de Ações</h3>
