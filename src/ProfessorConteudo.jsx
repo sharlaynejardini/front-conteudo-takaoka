@@ -212,8 +212,8 @@ function ProfessorConteudo() {
       const conteudoOrigem = response.data;
       setTopicos(Array.isArray(conteudoOrigem.conteudo) ? conteudoOrigem.conteudo : [conteudoOrigem.conteudo]);
       setMostrarCopiar(false);
-      setMensagem("Conteúdo copiado! Ajuste a data e salve.");
-      setTipoMensagem("success");
+      setMensagem("⚠️ Conteúdo copiado! NÃO ESQUEÇA de ajustar a data e CLICAR EM SALVAR!");
+      setTipoMensagem("warning");
     } catch (error) {
       setMensagem("Nenhum conteúdo encontrado para copiar.");
       setTipoMensagem("error");
@@ -366,8 +366,11 @@ function ProfessorConteudo() {
       )}
 
       {mostrarCopiar && (
-        <div style={{padding: "15px", backgroundColor: "#f0f9ff", borderRadius: "8px", marginBottom: "15px"}}>
-          <h4 style={{marginTop: 0}}>Selecione a turma para copiar:</h4>
+        <div style={{padding: "15px", backgroundColor: "#fff3cd", borderRadius: "8px", marginBottom: "15px", border: "2px solid #ffc107"}}>
+          <h4 style={{marginTop: 0, color: "#856404"}}>⚠️ Selecione a turma para copiar:</h4>
+          <p style={{fontSize: "13px", color: "#856404", marginBottom: "10px"}}>
+            <strong>ATENÇÃO:</strong> Após copiar, ajuste a data e clique em SALVAR!
+          </p>
           {atribuicoes
             .filter(a => a.id !== atribuicaoSelecionada)
             .map(a => (

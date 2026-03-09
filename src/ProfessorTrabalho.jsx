@@ -10,6 +10,7 @@ function ProfessorTrabalho() {
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
+  const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
   const [topicos, setTopicos] = useState([""]);
   const [instrucoes, setInstrucoes] = useState("");
@@ -166,6 +167,31 @@ function ProfessorTrabalho() {
   }, [atribuicaoSelecionada, bimestre]);
 
   // ==========================
+  // COPIAR CONTEÚDO
+  // ==========================
+
+  const copiarTrabalho = async (atribuicaoOrigemId) => {
+    try {
+      const response = await api.get("/trabalhos", {
+        params: {
+          atribuicao_id: atribuicaoOrigemId,
+          bimestre
+        }
+      });
+
+      const trabalhoOrigem = response.data;
+      setTopicos(Array.isArray(trabalhoOrigem.conteudo) ? trabalhoOrigem.conteudo : [trabalhoOrigem.conteudo]);
+      setInstrucoes(trabalhoOrigem.instrucoes || "");
+      setMostrarCopiar(false);
+      setMensagem("⚠️ Conteúdo copiado! NÃO ESQUEÇA de ajustar a data e CLICAR EM SALVAR!");
+      setTipoMensagem("warning");
+    } catch (error) {
+      setMensagem("Nenhum trabalho encontrado para copiar.");
+      setTipoMensagem("error");
+    }
+  };
+
+  // ==========================
   // TÓPICOS
   // ==========================
 
@@ -287,6 +313,42 @@ function ProfessorTrabalho() {
         value={dataEntrega}
         onChange={(e) => setDataEntrega(e.target.value)}
       />
+
+      {!modoEdicao && atribuicaoSelecionada && (
+        <button 
+          onClick={() => setMostrarCopiar(!mostrarCopiar)} 
+          style={{...buttonStyle, backgroundColor: "#059669", marginBottom: "10px"}}
+        >
+          {mostrarCopiar ? "Cancelar Cópia" : "📋 Copiar de Outra Turma"}
+        </button>
+      )}
+
+      {mostrarCopiar && (
+        <div style={{padding: "15px", backgroundColor: "#fff3cd", borderRadius: "8px", marginBottom: "15px", border: "2px solid #ffc107"}}>
+          <h4 style={{marginTop: 0, color: "#856404"}}>⚠️ Selecione a turma para copiar:</h4>
+          <p style={{fontSize: "13px", color: "#856404", marginBottom: "10px"}}>
+            <strong>ATENÇÃO:</strong> Após copiar, ajuste a data e clique em SALVAR!
+          </p>
+          {atribuicoes
+            .filter(a => a.id !== atribuicaoSelecionada)
+            .map(a => (
+              <button
+                key={a.id}
+                onClick={() => copiarTrabalho(a.id)}
+                style={{
+                  ...buttonStyle,
+                  backgroundColor: "#3b82f6",
+                  width: "100%",
+                  marginBottom: "5px",
+                  textAlign: "left"
+                }}
+              >
+                {a.turma.nome} - {a.disciplina.nome}
+              </button>
+            ))
+          }
+        </div>
+      )}
 
       <h4>Conteúdo:</h4>
 
