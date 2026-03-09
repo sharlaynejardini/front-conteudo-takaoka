@@ -3,7 +3,7 @@ import fund2PDF from "./assets/Fund2.pdf";
 import v8PDF from "./assets/v8.pdf";
 
 function HorarioEscolar() {
-  const [horarioSelecionado, setHorarioSelecionado] = useState("fund2");
+  const [horarioSelecionado, setHorarioSelecionado] = useState("v8");
 
   const buttonStyle = {
     padding: "12px 24px",
@@ -29,16 +29,16 @@ function HorarioEscolar() {
 
       <div style={{ marginBottom: "20px" }}>
         <button
+          onClick={() => setHorarioSelecionado("v8")}
+          style={horarioSelecionado === "v8" ? activeButtonStyle : buttonStyle}
+        >
+          Fundamental 1
+        </button>
+        <button
           onClick={() => setHorarioSelecionado("fund2")}
           style={horarioSelecionado === "fund2" ? activeButtonStyle : buttonStyle}
         >
           Fundamental 2
-        </button>
-        <button
-          onClick={() => setHorarioSelecionado("v8")}
-          style={horarioSelecionado === "v8" ? activeButtonStyle : buttonStyle}
-        >
-          V8
         </button>
       </div>
 
@@ -49,7 +49,7 @@ function HorarioEscolar() {
         backgroundColor: "#f5f5f5"
       }}>
         <iframe
-          src={horarioSelecionado === "fund2" ? fund2PDF : v8PDF}
+          src={horarioSelecionado === "v8" ? v8PDF : fund2PDF}
           style={{
             width: "100%",
             height: "80vh",
