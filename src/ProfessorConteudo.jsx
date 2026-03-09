@@ -19,6 +19,7 @@ function ProfessorConteudo() {
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
+  const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
   const [topicos, setTopicos] = useState([""]);
   const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
@@ -196,6 +197,30 @@ function ProfessorConteudo() {
   }, [atribuicaoSelecionada, bimestre]);
 
   // ==========================
+  // COPIAR CONTEÚDO
+  // ==========================
+
+  const copiarConteudo = async (atribuicaoOrigemId) => {
+    try {
+      const response = await api.get("/conteudos", {
+        params: {
+          atribuicao_id: atribuicaoOrigemId,
+          bimestre
+        }
+      });
+
+      const conteudoOrigem = response.data;
+      setTopicos(Array.isArray(conteudoOrigem.conteudo) ? conteudoOrigem.conteudo : [conteudoOrigem.conteudo]);
+      setMostrarCopiar(false);
+      setMensagem("Conteúdo copiado! Ajuste a data e salve.");
+      setTipoMensagem("success");
+    } catch (error) {
+      setMensagem("Nenhum conteúdo encontrado para copiar.");
+      setTipoMensagem("error");
+    }
+  };
+
+  // ==========================
   // TÓPICOS
   // ==========================
 
@@ -330,6 +355,39 @@ function ProfessorConteudo() {
         max={semanasProva[bimestre].fim}
         onChange={(e) => setDataAvaliacao(e.target.value)}
       />
+
+      {!modoEdicao && atribuicaoSelecionada && (
+        <button 
+          onClick={() => setMostrarCopiar(!mostrarCopiar)} 
+          style={{...buttonStyle, backgroundColor: "#059669", marginBottom: "10px"}}
+        >
+          {mostrarCopiar ? "Cancelar Cópia" : "📋 Copiar de Outra Turma"}
+        </button>
+      )}
+
+      {mostrarCopiar && (
+        <div style={{padding: "15px", backgroundColor: "#f0f9ff", borderRadius: "8px", marginBottom: "15px"}}>
+          <h4 style={{marginTop: 0}}>Selecione a turma para copiar:</h4>
+          {atribuicoes
+            .filter(a => a.id !== atribuicaoSelecionada)
+            .map(a => (
+              <button
+                key={a.id}
+                onClick={() => copiarConteudo(a.id)}
+                style={{
+                  ...buttonStyle,
+                  backgroundColor: "#3b82f6",
+                  width: "100%",
+                  marginBottom: "5px",
+                  textAlign: "left"
+                }}
+              >
+                {a.turma.nome} - {a.disciplina.nome}
+              </button>
+            ))
+          }
+        </div>
+      )}
 
       <h4>Conteúdos:</h4>
 
