@@ -64,7 +64,7 @@ function Layout() {
           </Link>
 
           <Link to="/cronograma-trabalho" style={linkStyle}>
-            📋 Cronograma Trabalhos
+             📅 Cronograma Trabalhos
           </Link>
 
           {/* HORÁRIO */}
