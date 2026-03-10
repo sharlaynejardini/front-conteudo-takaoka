@@ -266,21 +266,48 @@ function ProfessorTrabalho() {
     <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
       <h2>Lançamento de Trabalho Mensal</h2>
-      <div style={{
-        backgroundColor: "#eef2ff",
-        border: "1px solid #c7d2fe",
-        borderRadius: "10px",
-        padding: "12px",
-        marginBottom: "20px",
-        fontSize: "14px"
-      }}>
-        <strong>📅 Cronograma de Avaliações Mensais</strong>
-        <ul style={{ marginTop: "8px", paddingLeft: "18px" }}>
-          <li><strong>1º Bimestre:</strong> 16 a 20 de Março</li>
-          <li><strong>2º Bimestre:</strong> 11 a 15 de Maio</li>
-          <li><strong>3º Bimestre:</strong> 10 a 14 de Agosto</li>
-          <li><strong>4º Bimestre:</strong> 19 a 23 de Outubro</li>
-        </ul>
+      <div
+        style={{
+          background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
+          color: "white",
+          borderRadius: "12px",
+          padding: "16px",
+          marginBottom: "20px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.15)"
+        }}
+      >
+        <div style={{ fontSize: "16px", fontWeight: "700", marginBottom: "10px" }}>
+          📅 Cronograma de Avaliações Mensais
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "8px",
+            fontSize: "14px"
+          }}
+        >
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>1º Bimestre</strong><br />
+            16 a 20 de Março
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>2º Bimestre</strong><br />
+            11 a 15 de Maio
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>3º Bimestre</strong><br />
+            10 a 14 de Agosto
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>4º Bimestre</strong><br />
+            19 a 23 de Outubro
+          </div>
+        </div>
       </div>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
