@@ -305,6 +305,49 @@ function ProfessorConteudo() {
     <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
       <h2>Lançamento de Avaliação</h2>
+      <div
+        style={{
+          background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
+          color: "white",
+          borderRadius: "12px",
+          padding: "16px",
+          marginBottom: "20px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.15)"
+        }}
+      >
+        <div style={{ fontSize: "16px", fontWeight: "700", marginBottom: "10px" }}>
+          📅 Cronograma de Avaliações Bimestrais
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "8px",
+            fontSize: "14px"
+          }}
+        >
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>1º Bimestre</strong><br />
+            13 a 17 de Abril 
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>2º Bimestre</strong><br />
+            08 a 12 de Junho
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>3º Bimestre</strong><br />
+            14 a 18 de Setembro
+          </div>
+
+          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
+            <strong>4º Bimestre</strong><br />
+            13 a 19 de Novembro
+          </div>
+        </div>
+      </div>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
