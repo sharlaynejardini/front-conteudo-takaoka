@@ -265,7 +265,7 @@ function ProfessorTrabalho() {
   return (
     <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
-      <h2>Lançamento de Trabalho Mensal</h2>
+      <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "20px" }}>Lançamento de Trabalho Mensal</h2>
       <div
         style={{
           background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
