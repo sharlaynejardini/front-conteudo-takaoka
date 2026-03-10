@@ -41,8 +41,8 @@ function ProfessorTrabalho() {
       tipoMensagem === "success"
         ? "#d4edda"
         : tipoMensagem === "warning"
-        ? "#fff3cd"
-        : "#f8d7da"
+          ? "#fff3cd"
+          : "#f8d7da"
   };
 
   const buttonStyle = {
@@ -266,6 +266,22 @@ function ProfessorTrabalho() {
     <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
       <h2>Lançamento de Trabalho Mensal</h2>
+      <div style={{
+        backgroundColor: "#eef2ff",
+        border: "1px solid #c7d2fe",
+        borderRadius: "10px",
+        padding: "12px",
+        marginBottom: "20px",
+        fontSize: "14px"
+      }}>
+        <strong>📅 Cronograma de Avaliações Mensais</strong>
+        <ul style={{ marginTop: "8px", paddingLeft: "18px" }}>
+          <li><strong>1º Bimestre:</strong> 16 a 20 de Março</li>
+          <li><strong>2º Bimestre:</strong> 11 a 15 de Maio</li>
+          <li><strong>3º Bimestre:</strong> 10 a 14 de Agosto</li>
+          <li><strong>4º Bimestre:</strong> 19 a 23 de Outubro</li>
+        </ul>
+      </div>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
@@ -315,18 +331,18 @@ function ProfessorTrabalho() {
       />
 
       {!modoEdicao && atribuicaoSelecionada && (
-        <button 
-          onClick={() => setMostrarCopiar(!mostrarCopiar)} 
-          style={{...buttonStyle, backgroundColor: "#059669", marginBottom: "10px"}}
+        <button
+          onClick={() => setMostrarCopiar(!mostrarCopiar)}
+          style={{ ...buttonStyle, backgroundColor: "#059669", marginBottom: "10px" }}
         >
           {mostrarCopiar ? "Cancelar Cópia" : "📋 Copiar de Outra Turma"}
         </button>
       )}
 
       {mostrarCopiar && (
-        <div style={{padding: "15px", backgroundColor: "#fff3cd", borderRadius: "8px", marginBottom: "15px", border: "2px solid #ffc107"}}>
-          <h4 style={{marginTop: 0, color: "#856404"}}>⚠️ Selecione a turma para copiar:</h4>
-          <p style={{fontSize: "13px", color: "#856404", marginBottom: "10px"}}>
+        <div style={{ padding: "15px", backgroundColor: "#fff3cd", borderRadius: "8px", marginBottom: "15px", border: "2px solid #ffc107" }}>
+          <h4 style={{ marginTop: 0, color: "#856404" }}>⚠️ Selecione a turma para copiar:</h4>
+          <p style={{ fontSize: "13px", color: "#856404", marginBottom: "10px" }}>
             <strong>ATENÇÃO:</strong> Após copiar, ajuste a data e clique em SALVAR!
           </p>
           {atribuicoes
