@@ -51,7 +51,7 @@ function Layout() {
 
           {/* PROVAS */}
           <Link to="/" style={linkStyle}>
-            📝 Provas
+            📝 Provas Bimestrais
           </Link>
 
           <Link to="/cronograma" style={linkStyle}>
@@ -60,7 +60,7 @@ function Layout() {
 
           {/* TRABALHOS */}
           <Link to="/trabalho" style={linkStyle}>
-            📚 Trabalhos
+            📚 Trabalhos Mensais
           </Link>
 
           <Link to="/cronograma-trabalho" style={linkStyle}>
