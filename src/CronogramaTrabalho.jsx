@@ -198,12 +198,13 @@ function CronogramaTrabalho() {
     color: "white"
   };
 
-  const tdStyle = {
-    padding: "12px",
-    border: "1px solid #ddd",
-    verticalAlign: "top",
-    pageBreakInside: "avoid"
-  };
+ const tdStyle = {
+  padding: "12px",
+  border: "1px solid #ddd",
+  verticalAlign: "top",
+  pageBreakInside: "avoid",
+  wordBreak: "break-word"
+};
 
   // ==========================
   // RENDER
@@ -262,7 +263,7 @@ function CronogramaTrabalho() {
             padding: "20px",
             paddingBottom: "120px",
             backgroundColor: "white",
-            width: "1000px",
+            width: "760px",
             margin: "auto",
             position: "relative"
           }}
@@ -289,9 +290,15 @@ function CronogramaTrabalho() {
             </div>
             <div>TRABALHO MENSAL</div>
             <div>{bimestre}º Bimestre</div>
-          </div>
+               </div>
 
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              tableLayout: "fixed"
+            }}
+          >
             <thead>
               <tr>
                 <th style={thStyle}>Data Entrega</th>
