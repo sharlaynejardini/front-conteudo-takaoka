@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import api from "./api";
 import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import logoTakaoka from "./assets/logo_takaoka.png";
 
 function CronogramaTrabalho() {
@@ -94,6 +95,32 @@ function CronogramaTrabalho() {
     link.href = newCanvas.toDataURL("image/png");
     link.click();
   };
+
+  const gerarPDF = async () => {
+  const canvas = await html2canvas(printRef.current, {
+    scale: 2,
+    backgroundColor: "#ffffff",
+    useCORS: true
+  });
+
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4"
+  });
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = (canvas.height * pageWidth) / canvas.width;
+
+  pdf.addImage(imgData, "PNG", 0, 10, pageWidth, pageHeight);
+
+  const turmaNome =
+    turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+  pdf.save(`${turmaNome}_${bimestre}Bimestre_Trabalhos.pdf`);
+};
 
   const transformarConteudoEmLista = (conteudo) => {
     if (!conteudo) return [];
@@ -231,6 +258,10 @@ function CronogramaTrabalho() {
           <button style={buttonStyle} onClick={gerarImagem}>
             Baixar Imagem
           </button>
+
+          <button style={buttonStyle} onClick={gerarPDF}>
+  Baixar PDF
+</button>
         </div>
 
         <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
