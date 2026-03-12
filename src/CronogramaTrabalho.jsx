@@ -121,8 +121,6 @@ function CronogramaTrabalho() {
     indiceCor++;
   });
 
-  // GERAR PDF COM CORES
-
   const gerarPDF = () => {
 
     const doc = new jsPDF({
@@ -173,7 +171,8 @@ function CronogramaTrabalho() {
       styles: {
         fontSize: 9,
         cellPadding: 3,
-        valign: "top"
+        valign: "top",
+        overflow: "linebreak"
       },
 
       headStyles: {
@@ -186,7 +185,7 @@ function CronogramaTrabalho() {
         1: { cellWidth: 60 },
         2: { cellWidth: 40 },
         3: { cellWidth: 90 },
-        4: { cellWidth: "auto" }
+        4: { cellWidth: 110 }
       },
 
       didParseCell: function (data) {
