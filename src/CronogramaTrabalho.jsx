@@ -69,22 +69,12 @@ function CronogramaTrabalho() {
       useCORS: true
     });
 
-    const padding = 50;
-    const newCanvas = document.createElement('canvas');
-    newCanvas.width = canvas.width + (padding * 2);
-    newCanvas.height = canvas.height + (padding * 2);
-
-    const ctx = newCanvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
-    ctx.drawImage(canvas, padding, padding);
-
     const link = document.createElement("a");
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
     link.download = `${turmaNome}_${bimestre}Bimestre_Trabalhos.png`;
-    link.href = newCanvas.toDataURL("image/png");
+    link.href = canvas.toDataURL("image/png");
     link.click();
   };
 
@@ -132,10 +122,10 @@ function CronogramaTrabalho() {
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.text(`Turma: ${turmaNome}`, 14, 15);
-    doc.text(`TRABALHO MENSAL`, 140, 15);
-    doc.text(`${bimestre}º Bimestre`, 260, 15);
+    doc.text("TRABALHO MENSAL", 140, 15, { align: "center" });
+    doc.text(`${bimestre}º Bimestre`, 280, 15, { align: "right" });
 
     const rows = cronograma.map((item) => {
 
@@ -159,7 +149,7 @@ function CronogramaTrabalho() {
       startY: 25,
 
       head: [[
-        "Data Entrega",
+        "Data",
         "Professor",
         "Disciplina",
         "Conteúdo",
@@ -169,23 +159,24 @@ function CronogramaTrabalho() {
       body: rows.map(r => r.data),
 
       styles: {
-        fontSize: 9,
-        cellPadding: 3,
+        fontSize: 10,
+        cellPadding: 4,
         valign: "top",
         overflow: "linebreak"
       },
 
       headStyles: {
         fillColor: [30, 58, 138],
-        textColor: 255
+        textColor: 255,
+        halign: "center"
       },
 
       columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 60 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 90 },
-        4: { cellWidth: 110 }
+        0: { cellWidth: 30 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 110 },
+        4: { cellWidth: 160 }
       },
 
       didParseCell: function (data) {
@@ -242,9 +233,7 @@ function CronogramaTrabalho() {
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
-    marginRight: "10px",
-    fontSize: "14px",
-    fontWeight: "500"
+    marginRight: "10px"
   };
 
   const thStyle = {
@@ -353,27 +342,11 @@ function CronogramaTrabalho() {
 
                 return (
                   <tr key={item.id} style={{ backgroundColor: corLinha }}>
-                    <td style={tdStyle}>
-                      {formatarData(item.data_entrega)}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {item.atribuicao?.professor?.nome}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {item.atribuicao?.disciplina?.nome}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {listaTopicos.map((topico, i) => (
-                        <div key={i}>• {topico}</div>
-                      ))}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {item.instrucoes}
-                    </td>
+                    <td style={tdStyle}>{formatarData(item.data_entrega)}</td>
+                    <td style={tdStyle}>{item.atribuicao?.professor?.nome}</td>
+                    <td style={tdStyle}>{item.atribuicao?.disciplina?.nome}</td>
+                    <td style={tdStyle}>{listaTopicos.join(", ")}</td>
+                    <td style={tdStyle}>{item.instrucoes}</td>
                   </tr>
                 );
               })}
