@@ -100,7 +100,28 @@ function CronogramaTrabalho() {
     }
   };
 
-  // PDF PROFISSIONAL
+  const coresAlternadas = [
+    "#e3f2fd",
+    "#fce4ec",
+    "#e8f5e9",
+    "#fff3e0",
+    "#ede7f6"
+  ];
+
+  const mapaCores = {};
+  let indiceCor = 0;
+
+  const datasOrdenadas = [
+    ...new Set(cronograma.map(item => item.data_entrega))
+  ].sort((a, b) => new Date(a) - new Date(b));
+
+  datasOrdenadas.forEach(data => {
+    mapaCores[data] =
+      coresAlternadas[indiceCor % coresAlternadas.length];
+    indiceCor++;
+  });
+
+  // GERAR PDF COM CORES
 
   const gerarPDF = () => {
 
@@ -123,13 +144,16 @@ function CronogramaTrabalho() {
       const listaTopicos =
         transformarConteudoEmLista(item.conteudo);
 
-      return [
-        formatarData(item.data_entrega),
-        item.atribuicao?.professor?.nome || "",
-        item.atribuicao?.disciplina?.nome || "",
-        listaTopicos.join("\n"),
-        item.instrucoes || ""
-      ];
+      return {
+        data: [
+          formatarData(item.data_entrega),
+          item.atribuicao?.professor?.nome || "",
+          item.atribuicao?.disciplina?.nome || "",
+          listaTopicos.join("\n"),
+          item.instrucoes || ""
+        ],
+        cor: mapaCores[item.data_entrega]
+      };
     });
 
     autoTable(doc, {
@@ -144,7 +168,7 @@ function CronogramaTrabalho() {
         "Instruções"
       ]],
 
-      body: rows,
+      body: rows.map(r => r.data),
 
       styles: {
         fontSize: 9,
@@ -153,7 +177,8 @@ function CronogramaTrabalho() {
       },
 
       headStyles: {
-        fillColor: [30, 58, 138]
+        fillColor: [30, 58, 138],
+        textColor: 255
       },
 
       columnStyles: {
@@ -164,42 +189,29 @@ function CronogramaTrabalho() {
         4: { cellWidth: "auto" }
       },
 
-      theme: "grid",
+      didParseCell: function (data) {
 
-      didDrawPage: function (data) {
-        doc.setFontSize(10);
-        doc.text(
-          `Página ${doc.internal.getNumberOfPages()}`,
-          data.settings.margin.left,
-          doc.internal.pageSize.height - 5
-        );
+        if (data.section === "body") {
+
+          const corHex = rows[data.row.index].cor;
+
+          if (corHex) {
+
+            const r = parseInt(corHex.substr(1,2),16);
+            const g = parseInt(corHex.substr(3,2),16);
+            const b = parseInt(corHex.substr(5,2),16);
+
+            data.cell.styles.fillColor = [r,g,b];
+          }
+
+        }
+
       }
 
     });
 
     doc.save(`cronograma_${turmaNome}_${bimestre}bimestre.pdf`);
   };
-
-  const coresAlternadas = [
-    "#e3f2fd",
-    "#fce4ec",
-    "#e8f5e9",
-    "#fff3e0",
-    "#ede7f6"
-  ];
-
-  const mapaCores = {};
-  let indiceCor = 0;
-
-  const datasOrdenadas = [
-    ...new Set(cronograma.map(item => item.data_entrega))
-  ].sort((a, b) => new Date(a) - new Date(b));
-
-  datasOrdenadas.forEach(data => {
-    mapaCores[data] =
-      coresAlternadas[indiceCor % coresAlternadas.length];
-    indiceCor++;
-  });
 
   const pageStyle = {
     backgroundColor: "#f2f5fa",
