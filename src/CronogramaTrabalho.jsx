@@ -3,6 +3,7 @@ import api from "./api";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import logoTakaoka from "./assets/logo_takaoka.png";
+import html2pdf from "html2pdf.js";
 
 function CronogramaTrabalho() {
 
@@ -96,42 +97,20 @@ function CronogramaTrabalho() {
     link.click();
   };
 
-  const gerarPDF = async () => {
-    const elemento = printRef.current;
+  const gerarPDF = () => {
 
-    const canvas = await html2canvas(elemento, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff"
-    });
+    const element = printRef.current;
 
-    const imgData = canvas.toDataURL("image/png");
+    const opt = {
+      margin: 10,
+      filename: `cronograma_${bimestre}bimestre.pdf`,
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+    };
 
-    const pdf = new jsPDF("p", "mm", "a4");
-
-    const pageWidth = 210;
-    const pageHeight = 297;
-
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 0;
-
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-    }
-
-    const turmaNome =
-      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
-
-    pdf.save(`${turmaNome}_${bimestre}Bimestre_Trabalhos.pdf`);
+    html2pdf().set(opt).from(element).save();
   };
 
   const transformarConteudoEmLista = (conteudo) => {
@@ -222,7 +201,8 @@ function CronogramaTrabalho() {
   const tdStyle = {
     padding: "12px",
     border: "1px solid #ddd",
-    verticalAlign: "top"
+    verticalAlign: "top",
+    pageBreakInside: "avoid"
   };
 
   // ==========================
@@ -334,7 +314,10 @@ function CronogramaTrabalho() {
                 return (
                   <tr
                     key={item.id}
-                    style={{ backgroundColor: corLinha }}
+                    style={{
+                      backgroundColor: corLinha,
+                      pageBreakInside: "avoid"
+                    }}
                   >
                     <td style={tdStyle}>
                       {formatarData(item.data_entrega)}
