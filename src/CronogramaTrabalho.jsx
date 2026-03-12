@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import api from "./api";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import logoTakaoka from "./assets/logo_takaoka.png";
-import html2pdf from "html2pdf.js";
 
 function CronogramaTrabalho() {
 
@@ -88,22 +88,6 @@ function CronogramaTrabalho() {
     link.click();
   };
 
-  const gerarPDF = () => {
-
-    const element = printRef.current;
-
-    const opt = {
-      margin: 10,
-      filename: `cronograma_${bimestre}bimestre.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 1.5, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-      pagebreak: { mode: ["css", "legacy"] }
-    };
-
-    html2pdf().set(opt).from(element).save();
-  };
-
   const transformarConteudoEmLista = (conteudo) => {
     if (!conteudo) return [];
     if (Array.isArray(conteudo)) return conteudo;
@@ -114,6 +98,86 @@ function CronogramaTrabalho() {
     } catch {
       return [conteudo];
     }
+  };
+
+  // PDF PROFISSIONAL
+
+  const gerarPDF = () => {
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const turmaNome =
+      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+    doc.setFontSize(14);
+    doc.text(`Turma: ${turmaNome}`, 14, 15);
+    doc.text(`TRABALHO MENSAL`, 140, 15);
+    doc.text(`${bimestre}º Bimestre`, 260, 15);
+
+    const rows = cronograma.map((item) => {
+
+      const listaTopicos =
+        transformarConteudoEmLista(item.conteudo);
+
+      return [
+        formatarData(item.data_entrega),
+        item.atribuicao?.professor?.nome || "",
+        item.atribuicao?.disciplina?.nome || "",
+        listaTopicos.join("\n"),
+        item.instrucoes || ""
+      ];
+    });
+
+    autoTable(doc, {
+
+      startY: 25,
+
+      head: [[
+        "Data Entrega",
+        "Professor",
+        "Disciplina",
+        "Conteúdo",
+        "Instruções"
+      ]],
+
+      body: rows,
+
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        valign: "top"
+      },
+
+      headStyles: {
+        fillColor: [30, 58, 138]
+      },
+
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 90 },
+        4: { cellWidth: "auto" }
+      },
+
+      theme: "grid",
+
+      didDrawPage: function (data) {
+        doc.setFontSize(10);
+        doc.text(
+          `Página ${doc.internal.getNumberOfPages()}`,
+          data.settings.margin.left,
+          doc.internal.pageSize.height - 5
+        );
+      }
+
+    });
+
+    doc.save(`cronograma_${turmaNome}_${bimestre}bimestre.pdf`);
   };
 
   const coresAlternadas = [
@@ -183,15 +247,7 @@ function CronogramaTrabalho() {
   const tdStyle = {
     padding: "12px",
     border: "1px solid #ddd",
-    verticalAlign: "top",
-    wordBreak: "break-word",
-    whiteSpace: "normal"
-  };
-
-  const tableStyle = {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: "13px"
+    verticalAlign: "top"
   };
 
   return (
@@ -241,16 +297,7 @@ function CronogramaTrabalho() {
           </button>
         </div>
 
-        <div
-          ref={printRef}
-          style={{
-            padding: "20px",
-            backgroundColor: "white",
-            width: "100%",
-            maxWidth: "1200px",
-            margin: "auto"
-          }}
-        >
+        <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
 
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
             <img
@@ -273,14 +320,14 @@ function CronogramaTrabalho() {
             <div>{bimestre}º Bimestre</div>
           </div>
 
-          <table style={tableStyle}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
-                <th style={{...thStyle, width:"10%"}}>Data Entrega</th>
-                <th style={{...thStyle, width:"18%"}}>Professor</th>
-                <th style={{...thStyle, width:"15%"}}>Disciplina</th>
-                <th style={{...thStyle, width:"25%"}}>Conteúdo</th>
-                <th style={{...thStyle, width:"32%"}}>Instruções</th>
+                <th style={thStyle}>Data Entrega</th>
+                <th style={thStyle}>Professor</th>
+                <th style={thStyle}>Disciplina</th>
+                <th style={thStyle}>Conteúdo</th>
+                <th style={thStyle}>Instruções</th>
               </tr>
             </thead>
 
@@ -294,10 +341,7 @@ function CronogramaTrabalho() {
                   mapaCores[item.data_entrega] || "white";
 
                 return (
-                  <tr
-                    key={item.id}
-                    style={{ backgroundColor: corLinha }}
-                  >
+                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
                     <td style={tdStyle}>
                       {formatarData(item.data_entrega)}
                     </td>
