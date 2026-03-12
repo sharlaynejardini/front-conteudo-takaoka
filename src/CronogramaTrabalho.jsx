@@ -13,10 +13,6 @@ function CronogramaTrabalho() {
 
   const printRef = useRef();
 
-  // ==========================
-  // CARREGAR TURMAS ORDENADAS
-  // ==========================
-
   useEffect(() => {
     async function carregarTurmas() {
       try {
@@ -35,10 +31,6 @@ function CronogramaTrabalho() {
 
     carregarTurmas();
   }, []);
-
-  // ==========================
-  // BUSCAR TRABALHOS
-  // ==========================
 
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
@@ -69,40 +61,22 @@ function CronogramaTrabalho() {
     return `${dia}/${mes}/${ano}`;
   };
 
-  // ==========================
-  // GERAR IMAGEM
-  // ==========================
-
   const gerarImagem = async () => {
     const canvas = await html2canvas(printRef.current, {
       scale: 2,
       backgroundColor: "#ffffff",
-      useCORS: true,
-      logging: false
+      useCORS: true
     });
 
-    const padding = 50;
-    const newCanvas = document.createElement('canvas');
-    newCanvas.width = canvas.width + (padding * 2);
-    newCanvas.height = canvas.height + (padding * 2);
-
-    const ctx = newCanvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
-    ctx.drawImage(canvas, padding, padding);
-
     const link = document.createElement("a");
+
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
     link.download = `${turmaNome}_${bimestre}Bimestre_Trabalhos.png`;
-    link.href = newCanvas.toDataURL("image/png");
+    link.href = canvas.toDataURL("image/png");
     link.click();
   };
-
-  // ==========================
-  // GERAR PDF
-  // ==========================
 
   const gerarPDF = () => {
 
@@ -125,7 +99,7 @@ function CronogramaTrabalho() {
         orientation: "landscape"
       },
       pagebreak: {
-        mode: ["css", "legacy"]
+        mode: ["avoid-all", "css"]
       }
     };
 
@@ -143,10 +117,6 @@ function CronogramaTrabalho() {
       return [conteudo];
     }
   };
-
-  // ==========================
-  // CORES POR DATA
-  // ==========================
 
   const coresAlternadas = [
     "#e3f2fd",
@@ -168,10 +138,6 @@ function CronogramaTrabalho() {
       coresAlternadas[indiceCor % coresAlternadas.length];
     indiceCor++;
   });
-
-  // ==========================
-  // ESTILOS
-  // ==========================
 
   const pageStyle = {
     backgroundColor: "#f2f5fa",
@@ -203,10 +169,7 @@ function CronogramaTrabalho() {
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
-    marginRight: "10px",
-    fontSize: "14px",
-    fontWeight: "500",
-    transition: "background-color 0.2s"
+    marginRight: "10px"
   };
 
   const thStyle = {
@@ -222,10 +185,6 @@ function CronogramaTrabalho() {
     border: "1px solid #ddd",
     verticalAlign: "top"
   };
-
-  // ==========================
-  // RENDER
-  // ==========================
 
   return (
     <div style={pageStyle}>
@@ -276,7 +235,6 @@ function CronogramaTrabalho() {
 
         <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
 
-          {/* LOGO GRANDE */}
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
             <img
               src={logoTakaoka}
@@ -285,7 +243,6 @@ function CronogramaTrabalho() {
             />
           </div>
 
-          {/* TÍTULO DA IMAGEM */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -320,7 +277,13 @@ function CronogramaTrabalho() {
                   mapaCores[item.data_entrega] || "white";
 
                 return (
-                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
+                  <tr
+                    key={item.id}
+                    style={{
+                      backgroundColor: corLinha,
+                      pageBreakInside: "avoid"
+                    }}
+                  >
                     <td style={tdStyle}>
                       {formatarData(item.data_entrega)}
                     </td>
