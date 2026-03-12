@@ -93,19 +93,12 @@ function CronogramaTrabalho() {
     const element = printRef.current;
 
     const opt = {
-      margin: [10,10,10,10],
+      margin: 10,
       filename: `cronograma_${bimestre}bimestre.pdf`,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 1.5,
-        useCORS: true
-      },
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "landscape"
-      },
-      pagebreak: { mode: ["avoid-all", "css"] }
+      html2canvas: { scale: 1.5, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
+      pagebreak: { mode: ["css", "legacy"] }
     };
 
     html2pdf().set(opt).from(element).save();
@@ -151,7 +144,7 @@ function CronogramaTrabalho() {
   };
 
   const cardStyle = {
-    maxWidth: "1000px",
+    maxWidth: "1200px",
     margin: "auto",
     backgroundColor: "white",
     padding: "40px",
@@ -191,7 +184,6 @@ function CronogramaTrabalho() {
     padding: "12px",
     border: "1px solid #ddd",
     verticalAlign: "top",
-    pageBreakInside: "avoid",
     wordBreak: "break-word",
     whiteSpace: "normal"
   };
@@ -253,10 +245,9 @@ function CronogramaTrabalho() {
           ref={printRef}
           style={{
             padding: "20px",
-            paddingBottom: "120px",
             backgroundColor: "white",
             width: "100%",
-            maxWidth: "1000px",
+            maxWidth: "1200px",
             margin: "auto"
           }}
         >
@@ -285,11 +276,11 @@ function CronogramaTrabalho() {
           <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={{...thStyle, width:"12%"}}>Data Entrega</th>
+                <th style={{...thStyle, width:"10%"}}>Data Entrega</th>
                 <th style={{...thStyle, width:"18%"}}>Professor</th>
                 <th style={{...thStyle, width:"15%"}}>Disciplina</th>
                 <th style={{...thStyle, width:"25%"}}>Conteúdo</th>
-                <th style={{...thStyle, width:"30%"}}>Instruções</th>
+                <th style={{...thStyle, width:"32%"}}>Instruções</th>
               </tr>
             </thead>
 
@@ -305,10 +296,7 @@ function CronogramaTrabalho() {
                 return (
                   <tr
                     key={item.id}
-                    style={{
-                      backgroundColor: corLinha,
-                      pageBreakInside: "avoid"
-                    }}
+                    style={{ backgroundColor: corLinha }}
                   >
                     <td style={tdStyle}>
                       {formatarData(item.data_entrega)}
