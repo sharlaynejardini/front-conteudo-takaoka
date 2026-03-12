@@ -62,22 +62,6 @@ function CronogramaTrabalho() {
     return `${dia}/${mes}/${ano}`;
   };
 
-  const gerarImagem = async () => {
-    const canvas = await html2canvas(printRef.current, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true
-    });
-
-    const link = document.createElement("a");
-    const turmaNome =
-      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
-
-    link.download = `${turmaNome}_${bimestre}Bimestre_Trabalhos.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  };
-
   const transformarConteudoEmLista = (conteudo) => {
     if (!conteudo) return [];
     if (Array.isArray(conteudo)) return conteudo;
@@ -90,27 +74,6 @@ function CronogramaTrabalho() {
     }
   };
 
-  const coresAlternadas = [
-    "#e3f2fd",
-    "#fce4ec",
-    "#e8f5e9",
-    "#fff3e0",
-    "#ede7f6"
-  ];
-
-  const mapaCores = {};
-  let indiceCor = 0;
-
-  const datasOrdenadas = [
-    ...new Set(cronograma.map(item => item.data_entrega))
-  ].sort((a, b) => new Date(a) - new Date(b));
-
-  datasOrdenadas.forEach(data => {
-    mapaCores[data] =
-      coresAlternadas[indiceCor % coresAlternadas.length];
-    indiceCor++;
-  });
-
   const gerarPDF = () => {
 
     const doc = new jsPDF({
@@ -122,31 +85,36 @@ function CronogramaTrabalho() {
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
+    // LOGO DA ESCOLA
+    const img = new Image();
+    img.src = logoTakaoka;
+
+    doc.addImage(img, "PNG", 10, 8, 40, 15);
+
     doc.setFontSize(16);
-    doc.text(`Turma: ${turmaNome}`, 14, 15);
-    doc.text("TRABALHO MENSAL", 140, 15, { align: "center" });
-    doc.text(`${bimestre}º Bimestre`, 280, 15, { align: "right" });
+    doc.text("TRABALHO MENSAL", 148, 15, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.text(`Turma: ${turmaNome}`, 14, 25);
+    doc.text(`${bimestre}º Bimestre`, 280, 25, { align: "right" });
 
     const rows = cronograma.map((item) => {
 
       const listaTopicos =
         transformarConteudoEmLista(item.conteudo);
 
-      return {
-        data: [
-          formatarData(item.data_entrega),
-          item.atribuicao?.professor?.nome || "",
-          item.atribuicao?.disciplina?.nome || "",
-          listaTopicos.join("\n"),
-          item.instrucoes || ""
-        ],
-        cor: mapaCores[item.data_entrega]
-      };
+      return [
+        formatarData(item.data_entrega),
+        item.atribuicao?.professor?.nome || "",
+        item.atribuicao?.disciplina?.nome || "",
+        listaTopicos.join("\n"),
+        item.instrucoes || ""
+      ];
     });
 
     autoTable(doc, {
 
-      startY: 25,
+      startY: 30,
 
       head: [[
         "Data",
@@ -156,7 +124,7 @@ function CronogramaTrabalho() {
         "Instruções"
       ]],
 
-      body: rows.map(r => r.data),
+      body: rows,
 
       styles: {
         fontSize: 10,
@@ -171,36 +139,22 @@ function CronogramaTrabalho() {
         halign: "center"
       },
 
+      theme: "grid",
+
+      tableWidth: "auto",
+      margin: { left: 14, right: 14 },
+
       columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 70 },
-        2: { cellWidth: 50 },
-        3: { cellWidth: 110 },
-        4: { cellWidth: 160 }
-      },
-
-      didParseCell: function (data) {
-
-        if (data.section === "body") {
-
-          const corHex = rows[data.row.index].cor;
-
-          if (corHex) {
-
-            const r = parseInt(corHex.substr(1,2),16);
-            const g = parseInt(corHex.substr(3,2),16);
-            const b = parseInt(corHex.substr(5,2),16);
-
-            data.cell.styles.fillColor = [r,g,b];
-          }
-
-        }
-
+        0: { halign: "center" },
+        1: { halign: "left" },
+        2: { halign: "center" },
+        3: { halign: "left" },
+        4: { halign: "left" }
       }
 
     });
 
-    doc.save(`cronograma_${turmaNome}_${bimestre}bimestre.pdf`);
+    doc.save(`cronograma_${turmaNome}_${bimestre}.pdf`);
   };
 
   const pageStyle = {
@@ -234,20 +188,6 @@ function CronogramaTrabalho() {
     borderRadius: "8px",
     cursor: "pointer",
     marginRight: "10px"
-  };
-
-  const thStyle = {
-    padding: "12px",
-    border: "1px solid #ddd",
-    textAlign: "left",
-    backgroundColor: "#1e3a8a",
-    color: "white"
-  };
-
-  const tdStyle = {
-    padding: "12px",
-    border: "1px solid #ddd",
-    verticalAlign: "top"
   };
 
   return (
@@ -288,71 +228,9 @@ function CronogramaTrabalho() {
             Buscar
           </button>
 
-          <button style={buttonStyle} onClick={gerarImagem}>
-            Baixar Imagem
-          </button>
-
           <button style={buttonStyle} onClick={gerarPDF}>
             Baixar PDF
           </button>
-        </div>
-
-        <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
-
-          <div style={{ textAlign: "center", marginBottom: "20px" }}>
-            <img
-              src={logoTakaoka}
-              alt="Logo"
-              style={{ width: "100%", maxWidth: "900px" }}
-            />
-          </div>
-
-          <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "20px",
-            fontWeight: "bold"
-          }}>
-            <div>
-              Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
-            </div>
-            <div>TRABALHO MENSAL</div>
-            <div>{bimestre}º Bimestre</div>
-          </div>
-
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Data Entrega</th>
-                <th style={thStyle}>Professor</th>
-                <th style={thStyle}>Disciplina</th>
-                <th style={thStyle}>Conteúdo</th>
-                <th style={thStyle}>Instruções</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {cronograma.map((item) => {
-
-                const listaTopicos =
-                  transformarConteudoEmLista(item.conteudo);
-
-                const corLinha =
-                  mapaCores[item.data_entrega] || "white";
-
-                return (
-                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
-                    <td style={tdStyle}>{formatarData(item.data_entrega)}</td>
-                    <td style={tdStyle}>{item.atribuicao?.professor?.nome}</td>
-                    <td style={tdStyle}>{item.atribuicao?.disciplina?.nome}</td>
-                    <td style={tdStyle}>{listaTopicos.join(", ")}</td>
-                    <td style={tdStyle}>{item.instrucoes}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
         </div>
 
       </div>
