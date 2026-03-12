@@ -70,7 +70,7 @@ function CronogramaTrabalho() {
   };
 
   const gerarImagem = async () => {
-    const canvas = await html2canvas(printRef.current, { 
+    const canvas = await html2canvas(printRef.current, {
       scale: 2,
       backgroundColor: "#ffffff",
       useCORS: true,
@@ -81,7 +81,7 @@ function CronogramaTrabalho() {
     const newCanvas = document.createElement('canvas');
     newCanvas.width = canvas.width + (padding * 2);
     newCanvas.height = canvas.height + (padding * 2);
-    
+
     const ctx = newCanvas.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
@@ -97,30 +97,42 @@ function CronogramaTrabalho() {
   };
 
   const gerarPDF = async () => {
-  const canvas = await html2canvas(printRef.current, {
-    scale: 2,
-    backgroundColor: "#ffffff",
-    useCORS: true
-  });
+    const elemento = printRef.current;
 
-  const imgData = canvas.toDataURL("image/png");
+    const canvas = await html2canvas(elemento, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff"
+    });
 
-  const pdf = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4"
-  });
+    const imgData = canvas.toDataURL("image/png");
 
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = (canvas.height * pageWidth) / canvas.width;
+    const pdf = new jsPDF("p", "mm", "a4");
 
-  pdf.addImage(imgData, "PNG", 0, 10, pageWidth, pageHeight);
+    const pageWidth = 210;
+    const pageHeight = 297;
 
-  const turmaNome =
-    turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  pdf.save(`${turmaNome}_${bimestre}Bimestre_Trabalhos.pdf`);
-};
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    const turmaNome =
+      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+    pdf.save(`${turmaNome}_${bimestre}Bimestre_Trabalhos.pdf`);
+  };
 
   const transformarConteudoEmLista = (conteudo) => {
     if (!conteudo) return [];
@@ -260,11 +272,19 @@ function CronogramaTrabalho() {
           </button>
 
           <button style={buttonStyle} onClick={gerarPDF}>
-  Baixar PDF
-</button>
+            Baixar PDF
+          </button>
         </div>
 
-        <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
+        <div
+          ref={printRef}
+          style={{
+            padding: "20px",
+            backgroundColor: "white",
+            width: "1000px",
+            margin: "auto"
+          }}
+        >
 
           {/* LOGO GRANDE */}
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
