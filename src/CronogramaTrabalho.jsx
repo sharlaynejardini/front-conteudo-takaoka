@@ -14,10 +14,6 @@ function CronogramaTrabalho() {
 
   const printRef = useRef();
 
-  // ==========================
-  // CARREGAR TURMAS ORDENADAS
-  // ==========================
-
   useEffect(() => {
     async function carregarTurmas() {
       try {
@@ -36,10 +32,6 @@ function CronogramaTrabalho() {
 
     carregarTurmas();
   }, []);
-
-  // ==========================
-  // BUSCAR TRABALHOS
-  // ==========================
 
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
@@ -102,12 +94,19 @@ function CronogramaTrabalho() {
     const element = printRef.current;
 
     const opt = {
-      margin: 10,
+      margin: [10,10,10,10],
       filename: `cronograma_${bimestre}bimestre.pdf`,
-      image: { type: "jpeg", quality: 1 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 1.5,
+        useCORS: true
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait"
+      },
+      pagebreak: { mode: ["avoid-all", "css"] }
     };
 
     html2pdf().set(opt).from(element).save();
@@ -124,10 +123,6 @@ function CronogramaTrabalho() {
       return [conteudo];
     }
   };
-
-  // ==========================
-  // CORES POR DATA
-  // ==========================
 
   const coresAlternadas = [
     "#e3f2fd",
@@ -149,10 +144,6 @@ function CronogramaTrabalho() {
       coresAlternadas[indiceCor % coresAlternadas.length];
     indiceCor++;
   });
-
-  // ==========================
-  // ESTILOS
-  // ==========================
 
   const pageStyle = {
     backgroundColor: "#f2f5fa",
@@ -198,17 +189,13 @@ function CronogramaTrabalho() {
     color: "white"
   };
 
- const tdStyle = {
-  padding: "12px",
-  border: "1px solid #ddd",
-  verticalAlign: "top",
-  pageBreakInside: "avoid",
-  wordBreak: "break-word"
-};
-
-  // ==========================
-  // RENDER
-  // ==========================
+  const tdStyle = {
+    padding: "12px",
+    border: "1px solid #ddd",
+    verticalAlign: "top",
+    pageBreakInside: "avoid",
+    wordBreak: "break-word"
+  };
 
   return (
     <div style={pageStyle}>
@@ -263,13 +250,13 @@ function CronogramaTrabalho() {
             padding: "20px",
             paddingBottom: "120px",
             backgroundColor: "white",
-            width: "760px",
+            width: "100%",
+            maxWidth: "1000px",
             margin: "auto",
             position: "relative"
           }}
         >
 
-          {/* LOGO GRANDE */}
           <div style={{ textAlign: "center", marginBottom: "20px" }}>
             <img
               src={logoTakaoka}
@@ -278,7 +265,6 @@ function CronogramaTrabalho() {
             />
           </div>
 
-          {/* TÍTULO DA IMAGEM */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -290,13 +276,12 @@ function CronogramaTrabalho() {
             </div>
             <div>TRABALHO MENSAL</div>
             <div>{bimestre}º Bimestre</div>
-               </div>
+          </div>
 
           <table
             style={{
               width: "100%",
-              borderCollapse: "collapse",
-              tableLayout: "fixed"
+              borderCollapse: "collapse"
             }}
           >
             <thead>
