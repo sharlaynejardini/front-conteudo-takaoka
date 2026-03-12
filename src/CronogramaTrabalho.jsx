@@ -280,9 +280,11 @@ function CronogramaTrabalho() {
           ref={printRef}
           style={{
             padding: "20px",
+            paddingBottom: "120px",
             backgroundColor: "white",
             width: "1000px",
-            margin: "auto"
+            margin: "auto",
+            position: "relative"
           }}
         >
 
