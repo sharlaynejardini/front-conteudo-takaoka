@@ -66,8 +66,7 @@ function CronogramaTrabalho() {
     const canvas = await html2canvas(printRef.current, {
       scale: 2,
       backgroundColor: "#ffffff",
-      useCORS: true,
-      logging: false
+      useCORS: true
     });
 
     const padding = 50;
@@ -177,8 +176,7 @@ function CronogramaTrabalho() {
     cursor: "pointer",
     marginRight: "10px",
     fontSize: "14px",
-    fontWeight: "500",
-    transition: "background-color 0.2s"
+    fontWeight: "500"
   };
 
   const thStyle = {
@@ -194,7 +192,14 @@ function CronogramaTrabalho() {
     border: "1px solid #ddd",
     verticalAlign: "top",
     pageBreakInside: "avoid",
-    wordBreak: "break-word"
+    wordBreak: "break-word",
+    whiteSpace: "normal"
+  };
+
+  const tableStyle = {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: "13px"
   };
 
   return (
@@ -252,8 +257,7 @@ function CronogramaTrabalho() {
             backgroundColor: "white",
             width: "100%",
             maxWidth: "1000px",
-            margin: "auto",
-            position: "relative"
+            margin: "auto"
           }}
         >
 
@@ -278,19 +282,14 @@ function CronogramaTrabalho() {
             <div>{bimestre}º Bimestre</div>
           </div>
 
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse"
-            }}
-          >
+          <table style={tableStyle}>
             <thead>
               <tr>
-                <th style={thStyle}>Data Entrega</th>
-                <th style={thStyle}>Professor</th>
-                <th style={thStyle}>Disciplina</th>
-                <th style={thStyle}>Conteúdo</th>
-                <th style={thStyle}>Instruções</th>
+                <th style={{...thStyle, width:"12%"}}>Data Entrega</th>
+                <th style={{...thStyle, width:"18%"}}>Professor</th>
+                <th style={{...thStyle, width:"15%"}}>Disciplina</th>
+                <th style={{...thStyle, width:"25%"}}>Conteúdo</th>
+                <th style={{...thStyle, width:"30%"}}>Instruções</th>
               </tr>
             </thead>
 
