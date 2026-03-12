@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import api from "./api";
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import html2pdf from "html2pdf.js";
 import logoTakaoka from "./assets/logo_takaoka.png";
 
 function CronogramaTrabalho() {
@@ -13,6 +12,10 @@ function CronogramaTrabalho() {
   const [cronograma, setCronograma] = useState([]);
 
   const printRef = useRef();
+
+  // ==========================
+  // CARREGAR TURMAS ORDENADAS
+  // ==========================
 
   useEffect(() => {
     async function carregarTurmas() {
@@ -32,6 +35,10 @@ function CronogramaTrabalho() {
 
     carregarTurmas();
   }, []);
+
+  // ==========================
+  // BUSCAR TRABALHOS
+  // ==========================
 
   const buscarCronograma = async () => {
     if (!turmaSelecionada) return;
@@ -62,6 +69,69 @@ function CronogramaTrabalho() {
     return `${dia}/${mes}/${ano}`;
   };
 
+  // ==========================
+  // GERAR IMAGEM
+  // ==========================
+
+  const gerarImagem = async () => {
+    const canvas = await html2canvas(printRef.current, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      logging: false
+    });
+
+    const padding = 50;
+    const newCanvas = document.createElement('canvas');
+    newCanvas.width = canvas.width + (padding * 2);
+    newCanvas.height = canvas.height + (padding * 2);
+
+    const ctx = newCanvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+    ctx.drawImage(canvas, padding, padding);
+
+    const link = document.createElement("a");
+    const turmaNome =
+      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+    link.download = `${turmaNome}_${bimestre}Bimestre_Trabalhos.png`;
+    link.href = newCanvas.toDataURL("image/png");
+    link.click();
+  };
+
+  // ==========================
+  // GERAR PDF
+  // ==========================
+
+  const gerarPDF = () => {
+
+    const element = printRef.current;
+
+    const turmaNome =
+      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+    const opt = {
+      margin: 10,
+      filename: `${turmaNome}_${bimestre}Bimestre_Trabalhos.pdf`,
+      image: { type: "jpeg", quality: 1 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "landscape"
+      },
+      pagebreak: {
+        mode: ["css", "legacy"]
+      }
+    };
+
+    html2pdf().set(opt).from(element).save();
+  };
+
   const transformarConteudoEmLista = (conteudo) => {
     if (!conteudo) return [];
     if (Array.isArray(conteudo)) return conteudo;
@@ -74,88 +144,34 @@ function CronogramaTrabalho() {
     }
   };
 
-  const gerarPDF = () => {
+  // ==========================
+  // CORES POR DATA
+  // ==========================
 
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "mm",
-      format: "a4"
-    });
+  const coresAlternadas = [
+    "#e3f2fd",
+    "#fce4ec",
+    "#e8f5e9",
+    "#fff3e0",
+    "#ede7f6"
+  ];
 
-    const turmaNome =
-      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+  const mapaCores = {};
+  let indiceCor = 0;
 
-    // LOGO DA ESCOLA
-    const img = new Image();
-    img.src = logoTakaoka;
+  const datasOrdenadas = [
+    ...new Set(cronograma.map(item => item.data_entrega))
+  ].sort((a, b) => new Date(a) - new Date(b));
 
-    doc.addImage(img, "PNG", 10, 8, 40, 15);
+  datasOrdenadas.forEach(data => {
+    mapaCores[data] =
+      coresAlternadas[indiceCor % coresAlternadas.length];
+    indiceCor++;
+  });
 
-    doc.setFontSize(16);
-    doc.text("TRABALHO MENSAL", 148, 15, { align: "center" });
-
-    doc.setFontSize(12);
-    doc.text(`Turma: ${turmaNome}`, 14, 25);
-    doc.text(`${bimestre}º Bimestre`, 280, 25, { align: "right" });
-
-    const rows = cronograma.map((item) => {
-
-      const listaTopicos =
-        transformarConteudoEmLista(item.conteudo);
-
-      return [
-        formatarData(item.data_entrega),
-        item.atribuicao?.professor?.nome || "",
-        item.atribuicao?.disciplina?.nome || "",
-        listaTopicos.join("\n"),
-        item.instrucoes || ""
-      ];
-    });
-
-    autoTable(doc, {
-
-      startY: 30,
-
-      head: [[
-        "Data",
-        "Professor",
-        "Disciplina",
-        "Conteúdo",
-        "Instruções"
-      ]],
-
-      body: rows,
-
-      styles: {
-        fontSize: 10,
-        cellPadding: 4,
-        valign: "top",
-        overflow: "linebreak"
-      },
-
-      headStyles: {
-        fillColor: [30, 58, 138],
-        textColor: 255,
-        halign: "center"
-      },
-
-      theme: "grid",
-
-      tableWidth: "auto",
-      margin: { left: 14, right: 14 },
-
-      columnStyles: {
-        0: { halign: "center" },
-        1: { halign: "left" },
-        2: { halign: "center" },
-        3: { halign: "left" },
-        4: { halign: "left" }
-      }
-
-    });
-
-    doc.save(`cronograma_${turmaNome}_${bimestre}.pdf`);
-  };
+  // ==========================
+  // ESTILOS
+  // ==========================
 
   const pageStyle = {
     backgroundColor: "#f2f5fa",
@@ -164,7 +180,7 @@ function CronogramaTrabalho() {
   };
 
   const cardStyle = {
-    maxWidth: "1200px",
+    maxWidth: "1000px",
     margin: "auto",
     backgroundColor: "white",
     padding: "40px",
@@ -187,8 +203,29 @@ function CronogramaTrabalho() {
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
-    marginRight: "10px"
+    marginRight: "10px",
+    fontSize: "14px",
+    fontWeight: "500",
+    transition: "background-color 0.2s"
   };
+
+  const thStyle = {
+    padding: "12px",
+    border: "1px solid #ddd",
+    textAlign: "left",
+    backgroundColor: "#1e3a8a",
+    color: "white"
+  };
+
+  const tdStyle = {
+    padding: "12px",
+    border: "1px solid #ddd",
+    verticalAlign: "top"
+  };
+
+  // ==========================
+  // RENDER
+  // ==========================
 
   return (
     <div style={pageStyle}>
@@ -228,9 +265,89 @@ function CronogramaTrabalho() {
             Buscar
           </button>
 
+          <button style={buttonStyle} onClick={gerarImagem}>
+            Baixar Imagem
+          </button>
+
           <button style={buttonStyle} onClick={gerarPDF}>
             Baixar PDF
           </button>
+        </div>
+
+        <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
+
+          {/* LOGO GRANDE */}
+          <div style={{ textAlign: "center", marginBottom: "20px" }}>
+            <img
+              src={logoTakaoka}
+              alt="Logo"
+              style={{ width: "100%", maxWidth: "900px" }}
+            />
+          </div>
+
+          {/* TÍTULO DA IMAGEM */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: "20px",
+            fontWeight: "bold"
+          }}>
+            <div>
+              Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
+            </div>
+            <div>TRABALHO MENSAL</div>
+            <div>{bimestre}º Bimestre</div>
+          </div>
+
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Data Entrega</th>
+                <th style={thStyle}>Professor</th>
+                <th style={thStyle}>Disciplina</th>
+                <th style={thStyle}>Conteúdo</th>
+                <th style={thStyle}>Instruções</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {cronograma.map((item) => {
+
+                const listaTopicos =
+                  transformarConteudoEmLista(item.conteudo);
+
+                const corLinha =
+                  mapaCores[item.data_entrega] || "white";
+
+                return (
+                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
+                    <td style={tdStyle}>
+                      {formatarData(item.data_entrega)}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao?.professor?.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao?.disciplina?.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {listaTopicos.map((topico, i) => (
+                        <div key={i}>• {topico}</div>
+                      ))}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.instrucoes}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
         </div>
 
       </div>
