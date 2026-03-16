@@ -59,10 +59,17 @@ function CronogramaTurma() {
 
   };
 
+  // ======================================
+  // GERAR IMAGEM (ESCONDE AÇÕES)
+  // ======================================
+
   const gerarImagem = async () => {
 
-    const botoes = document.querySelectorAll(".no-print");
-    botoes.forEach(btn => btn.style.display = "none");
+    const elementosOcultar = document.querySelectorAll(".no-print");
+
+    elementosOcultar.forEach(el => {
+      el.style.display = "none";
+    });
 
     const canvas = await html2canvas(printRef.current, {
       scale: 2,
@@ -71,7 +78,9 @@ function CronogramaTurma() {
       logging: false
     });
 
-    botoes.forEach(btn => btn.style.display = "inline-block");
+    elementosOcultar.forEach(el => {
+      el.style.display = "";
+    });
 
     const padding = 50;
 
@@ -97,9 +106,9 @@ function CronogramaTurma() {
 
   };
 
-  // ==========================
+  // ======================================
   // EXCLUIR AVALIAÇÃO
-  // ==========================
+  // ======================================
 
   const excluirAvaliacao = async (id) => {
 
@@ -109,11 +118,7 @@ function CronogramaTurma() {
 
     try {
 
-      console.log("Excluindo avaliação ID:", id);
-
       await api.delete(`/conteudos/${id}`);
-
-      console.log("Avaliação excluída com sucesso");
 
       setCronograma(prev =>
         prev.filter(item => item.id !== id)
@@ -122,9 +127,8 @@ function CronogramaTurma() {
     } catch (error) {
 
       console.error("Erro ao excluir:", error);
-      console.error("Resposta API:", error.response?.data);
 
-      alert("Erro ao excluir avaliação. Verifique o console.");
+      alert("Erro ao excluir avaliação.");
 
     }
 
@@ -292,30 +296,6 @@ function CronogramaTurma() {
             />
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: "20px",
-              fontWeight: "bold",
-              fontSize: "18px"
-            }}
-          >
-
-            <div>
-              Turma: {turmas.find(t => t.id === turmaSelecionada)?.nome}
-            </div>
-
-            <div>
-              AVALIAÇÃO BIMESTRAL
-            </div>
-
-            <div>
-              {bimestre}º Bimestre
-            </div>
-
-          </div>
-
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
 
             <thead>
@@ -324,7 +304,7 @@ function CronogramaTurma() {
                 <th style={thStyle}>Professor</th>
                 <th style={thStyle}>Disciplina</th>
                 <th style={thStyle}>Conteúdo</th>
-                <th style={thStyle}>Ações</th>
+                <th style={thStyle} className="no-print">Ações</th>
               </tr>
             </thead>
 
