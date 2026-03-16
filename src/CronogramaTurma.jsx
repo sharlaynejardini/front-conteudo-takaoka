@@ -59,28 +59,23 @@ function CronogramaTurma() {
 
   };
 
-  // ======================================
+  // ===============================
   // GERAR IMAGEM (ESCONDE AÇÕES)
-  // ======================================
+  // ===============================
 
   const gerarImagem = async () => {
 
-    const elementosOcultar = document.querySelectorAll(".no-print");
+    const ocultar = document.querySelectorAll(".no-print");
 
-    elementosOcultar.forEach(el => {
-      el.style.display = "none";
-    });
+    ocultar.forEach(el => el.style.display = "none");
 
     const canvas = await html2canvas(printRef.current, {
       scale: 2,
       backgroundColor: "#ffffff",
-      useCORS: true,
-      logging: false
+      useCORS: true
     });
 
-    elementosOcultar.forEach(el => {
-      el.style.display = "";
-    });
+    ocultar.forEach(el => el.style.display = "");
 
     const padding = 50;
 
@@ -93,6 +88,7 @@ function CronogramaTurma() {
 
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
     ctx.drawImage(canvas, padding, padding);
 
     const link = document.createElement("a");
@@ -101,14 +97,16 @@ function CronogramaTurma() {
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
     link.download = `${turmaNome}_${bimestre}Bimestre.png`;
+
     link.href = newCanvas.toDataURL("image/png");
+
     link.click();
 
   };
 
-  // ======================================
-  // EXCLUIR AVALIAÇÃO
-  // ======================================
+  // ===============================
+  // EXCLUIR
+  // ===============================
 
   const excluirAvaliacao = async (id) => {
 
@@ -126,7 +124,7 @@ function CronogramaTurma() {
 
     } catch (error) {
 
-      console.error("Erro ao excluir:", error);
+      console.error(error);
 
       alert("Erro ao excluir avaliação.");
 
@@ -134,16 +132,18 @@ function CronogramaTurma() {
 
   };
 
-  // ======================================
-  // EDITAR AVALIAÇÃO
-  // ======================================
+  // ===============================
+  // EDITAR
+  // ===============================
 
   const editarAvaliacao = (item) => {
 
-    const url =
-      `/professor-conteudo?atribuicao=${item.atribuicao.id}&bimestre=${item.bimestre}`;
+    const params = new URLSearchParams({
+      atribuicao: item.atribuicao.id,
+      bimestre: item.bimestre
+    });
 
-    window.location.href = url;
+    window.location.href = `/?${params.toString()}`;
 
   };
 
@@ -158,6 +158,7 @@ function CronogramaTurma() {
       try {
 
         const convertido = JSON.parse(conteudo);
+
         return Array.isArray(convertido) ? convertido : [convertido];
 
       } catch {
@@ -230,22 +231,19 @@ function CronogramaTurma() {
     borderRadius: "8px",
     cursor: "pointer",
     marginRight: "10px",
-    fontSize: "14px",
-    fontWeight: "500"
+    fontSize: "14px"
   };
 
   const thStyle = {
     padding: "12px",
     border: "1px solid #ddd",
-    textAlign: "left",
     backgroundColor: "#2c4a8a",
     color: "white"
   };
 
   const tdStyle = {
     padding: "12px",
-    border: "1px solid #ddd",
-    verticalAlign: "top"
+    border: "1px solid #ddd"
   };
 
   return (
@@ -254,7 +252,7 @@ function CronogramaTurma() {
 
       <div style={cardStyle}>
 
-        <h2 style={{ textAlign: "center", color: "#2c4a8a", marginBottom: "30px" }}>
+        <h2 style={{ textAlign: "center", color: "#2c4a8a" }}>
           Cronograma de Avaliações
         </h2>
 
@@ -299,26 +297,28 @@ function CronogramaTurma() {
 
         </div>
 
-        <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
+        <div ref={printRef}>
 
-          <div style={{ textAlign: "center", marginBottom: "20px" }}>
-            <img
-              src={logoTakaoka}
-              alt="Cabeçalho"
-              style={{ width: "100%", height: "auto" }}
-            />
-          </div>
+          <img
+            src={logoTakaoka}
+            alt="Cabeçalho"
+            style={{ width: "100%", marginBottom: "20px" }}
+          />
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
 
             <thead>
+
               <tr>
+
                 <th style={thStyle}>Data</th>
                 <th style={thStyle}>Professor</th>
                 <th style={thStyle}>Disciplina</th>
                 <th style={thStyle}>Conteúdo</th>
                 <th style={thStyle} className="no-print">Ações</th>
+
               </tr>
+
             </thead>
 
             <tbody>
@@ -340,11 +340,11 @@ function CronogramaTurma() {
                     </td>
 
                     <td style={tdStyle}>
-                      {item.atribuicao?.professor?.nome}
+                      {item.atribuicao.professor.nome}
                     </td>
 
                     <td style={tdStyle}>
-                      {item.atribuicao?.disciplina?.nome}
+                      {item.atribuicao.disciplina.nome}
                     </td>
 
                     <td style={tdStyle}>
@@ -363,8 +363,8 @@ function CronogramaTurma() {
                           border: "none",
                           borderRadius: "6px",
                           padding: "6px 10px",
-                          cursor: "pointer",
-                          marginRight: "5px"
+                          marginRight: "5px",
+                          cursor: "pointer"
                         }}
                       >
                         ✏️ Editar

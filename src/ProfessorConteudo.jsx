@@ -19,7 +19,6 @@ function ProfessorConteudo() {
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
 
-  // NOVO - múltiplas turmas
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
   const [bimestre, setBimestre] = useState(1);
@@ -75,19 +74,14 @@ function ProfessorConteudo() {
 
   useEffect(() => {
     async function carregar() {
-      try {
 
-        const response = await api.get("/professores");
+      const response = await api.get("/professores");
 
-        const ordenados = [...response.data].sort((a, b) =>
-          a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
-        );
+      const ordenados = [...response.data].sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+      );
 
-        setProfessores(ordenados);
-
-      } catch (error) {
-        console.error(error);
-      }
+      setProfessores(ordenados);
     }
 
     carregar();
@@ -129,9 +123,8 @@ function ProfessorConteudo() {
 
       limparFormulario();
 
-    } catch (error) {
+    } catch {
 
-      console.error(error);
       setAtribuicoes([]);
 
     }
@@ -182,38 +175,26 @@ function ProfessorConteudo() {
 
   }, [atribuicaoSelecionada, bimestre]);
 
-  const copiarConteudo = async (atribuicaoOrigemId) => {
+  // ==========================================
+  // NOVO - PARAMETROS DA URL (EDIÇÃO)
+  // ==========================================
 
-    try {
+  useEffect(() => {
 
-      const response = await api.get("/conteudos", {
-        params: {
-          atribuicao_id: atribuicaoOrigemId,
-          bimestre
-        }
-      });
+    const params = new URLSearchParams(window.location.search);
 
-      const conteudoOrigem = response.data;
+    const atribuicao = params.get("atribuicao");
+    const bimestreParam = params.get("bimestre");
 
-      setTopicos(
-        Array.isArray(conteudoOrigem.conteudo)
-          ? conteudoOrigem.conteudo
-          : [conteudoOrigem.conteudo]
-      );
-
-      setMostrarCopiar(false);
-
-      setMensagem("⚠️ Conteúdo copiado! NÃO ESQUEÇA de ajustar a data e CLICAR EM SALVAR!");
-      setTipoMensagem("warning");
-
-    } catch {
-
-      setMensagem("Nenhum conteúdo encontrado para copiar.");
-      setTipoMensagem("error");
-
+    if (atribuicao) {
+      setAtribuicaoSelecionada(atribuicao);
     }
 
-  };
+    if (bimestreParam) {
+      setBimestre(Number(bimestreParam));
+    }
+
+  }, []);
 
   const adicionarTopico = () => setTopicos([...topicos, ""]);
 
@@ -240,7 +221,6 @@ function ProfessorConteudo() {
 
     setAtribuicoesSelecionadas(novas);
 
-    // mantém compatibilidade com código antigo
     setAtribuicaoSelecionada(novas[0] || "");
 
   };
@@ -329,8 +309,6 @@ function ProfessorConteudo() {
         ))}
 
       </select>
-
-      {/* NOVA ÁREA - MULTIPLAS TURMAS */}
 
       {atribuicoes.length > 0 && (
 
