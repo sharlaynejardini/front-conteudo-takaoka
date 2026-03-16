@@ -97,6 +97,10 @@ function CronogramaTurma() {
 
   };
 
+  // ==========================
+  // EXCLUIR AVALIAÇÃO
+  // ==========================
+
   const excluirAvaliacao = async (id) => {
 
     const confirmar = window.confirm("Deseja realmente excluir esta avaliação?");
@@ -105,13 +109,22 @@ function CronogramaTurma() {
 
     try {
 
+      console.log("Excluindo avaliação ID:", id);
+
       await api.delete(`/conteudos/${id}`);
 
-      setCronograma(cronograma.filter(item => item.id !== id));
+      console.log("Avaliação excluída com sucesso");
 
-    } catch {
+      setCronograma(prev =>
+        prev.filter(item => item.id !== id)
+      );
 
-      alert("Erro ao excluir avaliação.");
+    } catch (error) {
+
+      console.error("Erro ao excluir:", error);
+      console.error("Resposta API:", error.response?.data);
+
+      alert("Erro ao excluir avaliação. Verifique o console.");
 
     }
 
@@ -327,10 +340,7 @@ function CronogramaTurma() {
 
                 return (
 
-                  <tr
-                    key={item.id}
-                    style={{ backgroundColor: corLinha }}
-                  >
+                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
 
                     <td style={tdStyle}>
                       {formatarData(item.data_avaliacao)}
