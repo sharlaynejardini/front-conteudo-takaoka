@@ -9,6 +9,10 @@ function ProfessorTrabalho() {
 
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
+
+  // NOVO
+  const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
+
   const [bimestre, setBimestre] = useState(1);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
@@ -37,8 +41,8 @@ function ProfessorTrabalho() {
       tipoMensagem === "success"
         ? "#d4edda"
         : tipoMensagem === "warning"
-          ? "#fff3cd"
-          : "#f8d7da"
+        ? "#fff3cd"
+        : "#f8d7da"
   };
 
   const buttonStyle = {
@@ -51,9 +55,7 @@ function ProfessorTrabalho() {
     fontSize: "14px",
     fontWeight: "600",
     marginTop: "10px",
-    marginRight: "10px",
-    transition: "all 0.3s ease",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+    marginRight: "10px"
   };
 
   const limparFormulario = () => {
@@ -62,6 +64,10 @@ function ProfessorTrabalho() {
     setDataEntrega("");
     setModoEdicao(false);
   };
+
+  // =========================
+  // CARREGAR PROFESSORES
+  // =========================
 
   useEffect(() => {
 
@@ -81,6 +87,10 @@ function ProfessorTrabalho() {
 
   }, []);
 
+  // =========================
+  // CARREGAR ATRIBUIÇÕES
+  // =========================
+
   const carregarAtribuicoes = async (id) => {
 
     if (!id) {
@@ -88,42 +98,38 @@ function ProfessorTrabalho() {
       return;
     }
 
-    try {
+    const response = await api.get(`/atribuicoes/${id}`);
 
-      const response = await api.get(`/atribuicoes/${id}`);
+    const ordenadas = [...response.data].sort((a, b) => {
 
-      const ordenadas = [...response.data].sort((a, b) => {
+      const turmaCompare = a.turma.nome.localeCompare(
+        b.turma.nome,
+        "pt-BR",
+        { sensitivity: "base" }
+      );
 
-        const turmaCompare = a.turma.nome.localeCompare(
-          b.turma.nome,
-          "pt-BR",
-          { sensitivity: "base" }
-        );
+      if (turmaCompare !== 0) return turmaCompare;
 
-        if (turmaCompare !== 0) return turmaCompare;
+      return a.disciplina.nome.localeCompare(
+        b.disciplina.nome,
+        "pt-BR",
+        { sensitivity: "base" }
+      );
 
-        return a.disciplina.nome.localeCompare(
-          b.disciplina.nome,
-          "pt-BR",
-          { sensitivity: "base" }
-        );
+    });
 
-      });
+    setAtribuicoes(ordenadas);
 
-      setAtribuicoes(ordenadas);
-      limparFormulario();
+    setAtribuicaoSelecionada("");
+    setAtribuicoesSelecionadas([]);
 
-    } catch (error) {
-
-      console.error(error);
-
-    }
+    limparFormulario();
 
   };
 
-  // ==========================================
-  // NOVO - PARAMETROS DA URL (EDITAR TRABALHO)
-  // ==========================================
+  // =========================
+  // URL PARAMETROS (EDIÇÃO)
+  // =========================
 
   useEffect(() => {
 
@@ -132,19 +138,14 @@ function ProfessorTrabalho() {
     const atribuicao = params.get("atribuicao");
     const bimestreParam = params.get("bimestre");
 
-    if (atribuicao) {
-      setAtribuicaoSelecionada(atribuicao);
-    }
-
-    if (bimestreParam) {
-      setBimestre(Number(bimestreParam));
-    }
+    if (atribuicao) setAtribuicaoSelecionada(atribuicao);
+    if (bimestreParam) setBimestre(Number(bimestreParam));
 
   }, []);
 
-  // ==========================================
-  // BUSCAR PARA EDIÇÃO
-  // ==========================================
+  // =========================
+  // BUSCAR TRABALHO
+  // =========================
 
   useEffect(() => {
 
@@ -185,35 +186,29 @@ function ProfessorTrabalho() {
 
   }, [atribuicaoSelecionada, bimestre]);
 
-  const copiarTrabalho = async (atribuicaoOrigemId) => {
+  // =========================
+  // MULTI TURMAS
+  // =========================
 
-    try {
+  const toggleTurma = (id) => {
 
-      const response = await api.get("/trabalhos", {
-        params: {
-          atribuicao_id: atribuicaoOrigemId,
-          bimestre
-        }
-      });
+    let novas;
 
-      const trabalhoOrigem = response.data;
-
-      setTopicos(Array.isArray(trabalhoOrigem.conteudo) ? trabalhoOrigem.conteudo : [trabalhoOrigem.conteudo]);
-      setInstrucoes(trabalhoOrigem.instrucoes || "");
-
-      setMostrarCopiar(false);
-
-      setMensagem("⚠️ Conteúdo copiado! NÃO ESQUEÇA de ajustar a data e CLICAR EM SALVAR!");
-      setTipoMensagem("warning");
-
-    } catch {
-
-      setMensagem("Nenhum trabalho encontrado para copiar.");
-      setTipoMensagem("error");
-
+    if (atribuicoesSelecionadas.includes(id)) {
+      novas = atribuicoesSelecionadas.filter(a => a !== id);
+    } else {
+      novas = [...atribuicoesSelecionadas, id];
     }
 
+    setAtribuicoesSelecionadas(novas);
+
+    setAtribuicaoSelecionada(novas[0] || "");
+
   };
+
+  // =========================
+  // TÓPICOS
+  // =========================
 
   const adicionarTopico = () => setTopicos([...topicos, ""]);
 
@@ -234,9 +229,13 @@ function ProfessorTrabalho() {
 
   };
 
+  // =========================
+  // SALVAR TRABALHO
+  // =========================
+
   const salvarTrabalho = async () => {
 
-    if (!atribuicaoSelecionada) {
+    if (!atribuicaoSelecionada && atribuicoesSelecionadas.length === 0) {
 
       setMensagem("Selecione uma turma/disciplina.");
       setTipoMensagem("error");
@@ -245,15 +244,24 @@ function ProfessorTrabalho() {
 
     }
 
+    const atribuicoesParaSalvar =
+      atribuicoesSelecionadas.length > 0
+        ? atribuicoesSelecionadas
+        : [atribuicaoSelecionada];
+
     try {
 
-      await api.post("/trabalhos", {
-        atribuicao_id: atribuicaoSelecionada,
-        bimestre,
-        conteudo: JSON.stringify(topicos),
-        instrucoes,
-        data_entrega: dataEntrega
-      });
+      for (const atribuicaoId of atribuicoesParaSalvar) {
+
+        await api.post("/trabalhos", {
+          atribuicao_id: atribuicaoId,
+          bimestre,
+          conteudo: JSON.stringify(topicos),
+          instrucoes,
+          data_entrega: dataEntrega
+        });
+
+      }
 
       const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
 
@@ -281,9 +289,7 @@ function ProfessorTrabalho() {
 
       }, 1200);
 
-    } catch (error) {
-
-      console.error(error);
+    } catch {
 
       setMensagem("Erro ao salvar trabalho.");
       setTipoMensagem("error");
@@ -309,42 +315,61 @@ function ProfessorTrabalho() {
           carregarAtribuicoes(e.target.value);
         }}
       >
-
         <option value="">Selecione Professor</option>
-
         {professores.map(p => (
           <option key={p.id} value={p.id}>{p.nome}</option>
         ))}
-
       </select>
 
-      <select
-        style={inputStyle}
-        value={atribuicaoSelecionada}
-        onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
-      >
+      {atribuicoes.length > 0 && (
 
-        <option value="">Selecione Turma / Disciplina</option>
+        <div
+          style={{
+            border: "1px solid #ddd",
+            borderRadius: "10px",
+            padding: "10px",
+            marginBottom: "15px",
+            maxHeight: "200px",
+            overflowY: "auto"
+          }}
+        >
 
-        {atribuicoes.map(a => (
-          <option key={a.id} value={a.id}>
-            {a.turma.nome} - {a.disciplina.nome}
-          </option>
-        ))}
+          <strong>Selecione as Turmas</strong>
 
-      </select>
+          {atribuicoes.map(a => (
+
+            <div key={a.id}>
+
+              <label>
+
+                <input
+                  type="checkbox"
+                  checked={atribuicoesSelecionadas.includes(a.id)}
+                  onChange={() => toggleTurma(a.id)}
+                />
+
+                {" "}
+                {a.turma.nome} - {a.disciplina.nome}
+
+              </label>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      )}
 
       <select
         style={inputStyle}
         value={bimestre}
         onChange={(e) => setBimestre(Number(e.target.value))}
       >
-
         <option value={1}>1º Bimestre</option>
         <option value={2}>2º Bimestre</option>
         <option value={3}>3º Bimestre</option>
         <option value={4}>4º Bimestre</option>
-
       </select>
 
       <input
