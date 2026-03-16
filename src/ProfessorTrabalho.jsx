@@ -20,10 +20,6 @@ function ProfessorTrabalho() {
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
 
-  // ==========================
-  // ESTILOS
-  // ==========================
-
   const inputStyle = {
     width: "100%",
     padding: "10px",
@@ -60,10 +56,6 @@ function ProfessorTrabalho() {
     boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
   };
 
-  // ==========================
-  // LIMPAR FORMULÁRIO
-  // ==========================
-
   const limparFormulario = () => {
     setTopicos([""]);
     setInstrucoes("");
@@ -71,47 +63,43 @@ function ProfessorTrabalho() {
     setModoEdicao(false);
   };
 
-  // ==========================
-  // CARREGAR PROFESSORES
-  // ==========================
-
   useEffect(() => {
+
     async function carregarProfessores() {
-      try {
-        const response = await api.get("/professores");
 
-        const ordenados = [...response.data].sort((a, b) =>
-          a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
-        );
+      const response = await api.get("/professores");
 
-        setProfessores(ordenados);
-      } catch (error) {
-        console.error(error);
-      }
+      const ordenados = [...response.data].sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+      );
+
+      setProfessores(ordenados);
+
     }
 
     carregarProfessores();
+
   }, []);
 
-  // ==========================
-  // CARREGAR ATRIBUIÇÕES
-  // ==========================
-
   const carregarAtribuicoes = async (id) => {
+
     if (!id) {
       setAtribuicoes([]);
       return;
     }
 
     try {
+
       const response = await api.get(`/atribuicoes/${id}`);
 
       const ordenadas = [...response.data].sort((a, b) => {
+
         const turmaCompare = a.turma.nome.localeCompare(
           b.turma.nome,
           "pt-BR",
           { sensitivity: "base" }
         );
+
         if (turmaCompare !== 0) return turmaCompare;
 
         return a.disciplina.nome.localeCompare(
@@ -119,26 +107,53 @@ function ProfessorTrabalho() {
           "pt-BR",
           { sensitivity: "base" }
         );
+
       });
 
       setAtribuicoes(ordenadas);
       limparFormulario();
 
     } catch (error) {
+
       console.error(error);
+
     }
+
   };
 
-  // ==========================
+  // ==========================================
+  // NOVO - PARAMETROS DA URL (EDITAR TRABALHO)
+  // ==========================================
+
+  useEffect(() => {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const atribuicao = params.get("atribuicao");
+    const bimestreParam = params.get("bimestre");
+
+    if (atribuicao) {
+      setAtribuicaoSelecionada(atribuicao);
+    }
+
+    if (bimestreParam) {
+      setBimestre(Number(bimestreParam));
+    }
+
+  }, []);
+
+  // ==========================================
   // BUSCAR PARA EDIÇÃO
-  // ==========================
+  // ==========================================
 
   useEffect(() => {
 
     if (!atribuicaoSelecionada) return;
 
     async function buscarTrabalho() {
+
       try {
+
         const response = await api.get("/trabalhos", {
           params: {
             atribuicao_id: atribuicaoSelecionada,
@@ -153,25 +168,27 @@ function ProfessorTrabalho() {
         setInstrucoes(salvo.instrucoes || "");
 
         setModoEdicao(true);
+
         setMensagem("Você está editando um trabalho existente.");
         setTipoMensagem("warning");
 
       } catch {
+
         limparFormulario();
         setMensagem("");
+
       }
+
     }
 
     buscarTrabalho();
 
   }, [atribuicaoSelecionada, bimestre]);
 
-  // ==========================
-  // COPIAR CONTEÚDO
-  // ==========================
-
   const copiarTrabalho = async (atribuicaoOrigemId) => {
+
     try {
+
       const response = await api.get("/trabalhos", {
         params: {
           atribuicao_id: atribuicaoOrigemId,
@@ -180,44 +197,52 @@ function ProfessorTrabalho() {
       });
 
       const trabalhoOrigem = response.data;
+
       setTopicos(Array.isArray(trabalhoOrigem.conteudo) ? trabalhoOrigem.conteudo : [trabalhoOrigem.conteudo]);
       setInstrucoes(trabalhoOrigem.instrucoes || "");
+
       setMostrarCopiar(false);
+
       setMensagem("⚠️ Conteúdo copiado! NÃO ESQUEÇA de ajustar a data e CLICAR EM SALVAR!");
       setTipoMensagem("warning");
-    } catch (error) {
+
+    } catch {
+
       setMensagem("Nenhum trabalho encontrado para copiar.");
       setTipoMensagem("error");
-    }
-  };
 
-  // ==========================
-  // TÓPICOS
-  // ==========================
+    }
+
+  };
 
   const adicionarTopico = () => setTopicos([...topicos, ""]);
 
   const atualizarTopico = (index, valor) => {
+
     const novos = [...topicos];
     novos[index] = valor;
+
     setTopicos(novos);
+
   };
 
   const removerTopico = (index) => {
-    const novos = topicos.filter((_, i) => i !== index);
-    setTopicos(novos.length ? novos : [""]);
-  };
 
-  // ==========================
-  // SALVAR / ATUALIZAR
-  // ==========================
+    const novos = topicos.filter((_, i) => i !== index);
+
+    setTopicos(novos.length ? novos : [""]);
+
+  };
 
   const salvarTrabalho = async () => {
 
     if (!atribuicaoSelecionada) {
+
       setMensagem("Selecione uma turma/disciplina.");
       setTipoMensagem("error");
+
       return;
+
     }
 
     try {
@@ -230,7 +255,6 @@ function ProfessorTrabalho() {
         data_entrega: dataEntrega
       });
 
-      // 🔥 LOG DETALHADO
       const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
 
       await logAction({
@@ -251,64 +275,29 @@ function ProfessorTrabalho() {
       setTipoMensagem("success");
 
       setTimeout(() => {
+
         limparFormulario();
         setMensagem("");
+
       }, 1200);
 
     } catch (error) {
+
       console.error(error);
+
       setMensagem("Erro ao salvar trabalho.");
       setTipoMensagem("error");
+
     }
+
   };
 
   return (
     <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
-      <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "20px" }}>Lançamento de Trabalho Mensal</h2>
-      <div
-        style={{
-          background: "linear-gradient(135deg, #1e3a8a, #3b82f6)",
-          color: "white",
-          borderRadius: "12px",
-          padding: "16px",
-          marginBottom: "20px",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.15)"
-        }}
-      >
-        <div style={{ fontSize: "16px", fontWeight: "700", marginBottom: "10px" }}>
-          📅 Cronograma de Avaliações Mensais
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "8px",
-            fontSize: "14px"
-          }}
-        >
-          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
-            <strong>1º Bimestre</strong><br />
-            16 a 20 de Março
-          </div>
-
-          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
-            <strong>2º Bimestre</strong><br />
-            11 a 15 de Maio
-          </div>
-
-          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
-            <strong>3º Bimestre</strong><br />
-            10 a 14 de Agosto
-          </div>
-
-          <div style={{ background: "rgba(255,255,255,0.15)", padding: "8px", borderRadius: "8px" }}>
-            <strong>4º Bimestre</strong><br />
-            19 a 23 de Outubro
-          </div>
-        </div>
-      </div>
+      <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "20px" }}>
+        Lançamento de Trabalho Mensal
+      </h2>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
@@ -320,10 +309,13 @@ function ProfessorTrabalho() {
           carregarAtribuicoes(e.target.value);
         }}
       >
+
         <option value="">Selecione Professor</option>
+
         {professores.map(p => (
           <option key={p.id} value={p.id}>{p.nome}</option>
         ))}
+
       </select>
 
       <select
@@ -331,12 +323,15 @@ function ProfessorTrabalho() {
         value={atribuicaoSelecionada}
         onChange={(e) => setAtribuicaoSelecionada(e.target.value)}
       >
+
         <option value="">Selecione Turma / Disciplina</option>
+
         {atribuicoes.map(a => (
           <option key={a.id} value={a.id}>
             {a.turma.nome} - {a.disciplina.nome}
           </option>
         ))}
+
       </select>
 
       <select
@@ -344,10 +339,12 @@ function ProfessorTrabalho() {
         value={bimestre}
         onChange={(e) => setBimestre(Number(e.target.value))}
       >
+
         <option value={1}>1º Bimestre</option>
         <option value={2}>2º Bimestre</option>
         <option value={3}>3º Bimestre</option>
         <option value={4}>4º Bimestre</option>
+
       </select>
 
       <input
@@ -357,54 +354,23 @@ function ProfessorTrabalho() {
         onChange={(e) => setDataEntrega(e.target.value)}
       />
 
-      {!modoEdicao && atribuicaoSelecionada && (
-        <button
-          onClick={() => setMostrarCopiar(!mostrarCopiar)}
-          style={{ ...buttonStyle, backgroundColor: "#059669", marginBottom: "10px" }}
-        >
-          {mostrarCopiar ? "Cancelar Cópia" : "📋 Copiar de Outra Turma"}
-        </button>
-      )}
-
-      {mostrarCopiar && (
-        <div style={{ padding: "15px", backgroundColor: "#fff3cd", borderRadius: "8px", marginBottom: "15px", border: "2px solid #ffc107" }}>
-          <h4 style={{ marginTop: 0, color: "#856404" }}>⚠️ Selecione a turma para copiar:</h4>
-          <p style={{ fontSize: "13px", color: "#856404", marginBottom: "10px" }}>
-            <strong>ATENÇÃO:</strong> Após copiar, ajuste a data e clique em SALVAR!
-          </p>
-          {atribuicoes
-            .filter(a => a.id !== atribuicaoSelecionada)
-            .map(a => (
-              <button
-                key={a.id}
-                onClick={() => copiarTrabalho(a.id)}
-                style={{
-                  ...buttonStyle,
-                  backgroundColor: "#3b82f6",
-                  width: "100%",
-                  marginBottom: "5px",
-                  textAlign: "left"
-                }}
-              >
-                {a.turma.nome} - {a.disciplina.nome}
-              </button>
-            ))
-          }
-        </div>
-      )}
-
       <h4>Conteúdo:</h4>
 
       {topicos.map((topico, index) => (
+
         <div key={index} style={{ display: "flex", gap: "10px" }}>
+
           <input
             type="text"
             value={topico}
             onChange={(e) => atualizarTopico(index, e.target.value)}
             style={{ ...inputStyle, marginBottom: "5px" }}
           />
+
           <button onClick={() => removerTopico(index)}>❌</button>
+
         </div>
+
       ))}
 
       <button onClick={adicionarTopico} style={buttonStyle}>

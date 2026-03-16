@@ -15,44 +15,37 @@ function CronogramaTrabalho() {
 
   useEffect(() => {
     async function carregarTurmas() {
-      try {
-        const response = await api.get("/turmas");
 
-        const ordenadas = [...response.data].sort((a, b) =>
-          a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
-        );
+      const response = await api.get("/turmas");
 
-        setTurmas(ordenadas);
+      const ordenadas = [...response.data].sort((a, b) =>
+        a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" })
+      );
 
-      } catch (error) {
-        console.error("Erro ao carregar turmas:", error);
-      }
+      setTurmas(ordenadas);
+
     }
 
     carregarTurmas();
   }, []);
 
   const buscarCronograma = async () => {
+
     if (!turmaSelecionada) return;
 
-    try {
-      const response = await api.get("/cronograma-trabalhos", {
-        params: {
-          turma_id: turmaSelecionada,
-          bimestre
-        }
-      });
+    const response = await api.get("/cronograma-trabalhos", {
+      params: {
+        turma_id: turmaSelecionada,
+        bimestre
+      }
+    });
 
-      const ordenado = [...response.data].sort(
-        (a, b) => new Date(a.data_entrega) - new Date(b.data_entrega)
-      );
+    const ordenado = [...response.data].sort(
+      (a, b) => new Date(a.data_entrega) - new Date(b.data_entrega)
+    );
 
-      setCronograma(ordenado);
+    setCronograma(ordenado);
 
-    } catch (error) {
-      console.error("Erro ao buscar trabalhos:", error);
-      setCronograma([]);
-    }
   };
 
   const formatarData = (dataISO) => {
@@ -61,12 +54,33 @@ function CronogramaTrabalho() {
     return `${dia}/${mes}/${ano}`;
   };
 
+  // =============================
+  // ESCONDER AÇÕES PARA EXPORTAR
+  // =============================
+
+  const esconderAcoes = () => {
+    document.querySelectorAll(".no-print").forEach(el => {
+      el.style.display = "none";
+    });
+  };
+
+  const mostrarAcoes = () => {
+    document.querySelectorAll(".no-print").forEach(el => {
+      el.style.display = "";
+    });
+  };
+
   const gerarImagem = async () => {
+
+    esconderAcoes();
+
     const canvas = await html2canvas(printRef.current, {
       scale: 2,
       backgroundColor: "#ffffff",
       useCORS: true
     });
+
+    mostrarAcoes();
 
     const link = document.createElement("a");
 
@@ -79,6 +93,8 @@ function CronogramaTrabalho() {
   };
 
   const gerarPDF = () => {
+
+    esconderAcoes();
 
     const element = printRef.current;
 
@@ -97,17 +113,62 @@ function CronogramaTrabalho() {
         unit: "mm",
         format: "a4",
         orientation: "landscape"
-      },
-      pagebreak: {
-        mode: ["avoid-all", "css"]
       }
     };
 
-    html2pdf().set(opt).from(element).save();
+    html2pdf().set(opt).from(element).save().then(() => {
+      mostrarAcoes();
+    });
+
+  };
+
+  // =============================
+  // EDITAR TRABALHO
+  // =============================
+
+  const editarTrabalho = (item) => {
+
+    const params = new URLSearchParams({
+      atribuicao: item.atribuicao.id,
+      bimestre: item.bimestre
+    });
+
+    window.location.href = `/?${params.toString()}`;
+
+  };
+
+  // =============================
+  // EXCLUIR TRABALHO
+  // =============================
+
+  const excluirTrabalho = async (id) => {
+
+    const confirmar = window.confirm("Deseja realmente excluir este trabalho?");
+
+    if (!confirmar) return;
+
+    try {
+
+      await api.delete(`/trabalhos/${id}`);
+
+      setCronograma(prev =>
+        prev.filter(item => item.id !== id)
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert("Erro ao excluir trabalho.");
+
+    }
+
   };
 
   const transformarConteudoEmLista = (conteudo) => {
+
     if (!conteudo) return [];
+
     if (Array.isArray(conteudo)) return conteudo;
 
     try {
@@ -116,6 +177,7 @@ function CronogramaTrabalho() {
     } catch {
       return [conteudo];
     }
+
   };
 
   const coresAlternadas = [
@@ -231,6 +293,7 @@ function CronogramaTrabalho() {
           <button style={buttonStyle} onClick={gerarPDF}>
             Baixar PDF
           </button>
+
         </div>
 
         <div ref={printRef} style={{ padding: "20px", backgroundColor: "white" }}>
@@ -264,6 +327,7 @@ function CronogramaTrabalho() {
                 <th style={thStyle}>Disciplina</th>
                 <th style={thStyle}>Conteúdo</th>
                 <th style={thStyle}>Instruções</th>
+                <th style={thStyle} className="no-print">Ações</th>
               </tr>
             </thead>
 
@@ -277,13 +341,7 @@ function CronogramaTrabalho() {
                   mapaCores[item.data_entrega] || "white";
 
                 return (
-                  <tr
-                    key={item.id}
-                    style={{
-                      backgroundColor: corLinha,
-                      pageBreakInside: "avoid"
-                    }}
-                  >
+                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
                     <td style={tdStyle}>
                       {formatarData(item.data_entrega)}
                     </td>
@@ -305,6 +363,40 @@ function CronogramaTrabalho() {
                     <td style={tdStyle}>
                       {item.instrucoes}
                     </td>
+
+                    <td style={tdStyle} className="no-print">
+
+                      <button
+                        onClick={() => editarTrabalho(item)}
+                        style={{
+                          backgroundColor: "#2563eb",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          padding: "6px 10px",
+                          marginRight: "5px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        ✏️
+                      </button>
+
+                      <button
+                        onClick={() => excluirTrabalho(item.id)}
+                        style={{
+                          backgroundColor: "#dc2626",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          padding: "6px 10px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        🗑
+                      </button>
+
+                    </td>
+
                   </tr>
                 );
               })}
