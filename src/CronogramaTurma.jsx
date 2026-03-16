@@ -134,6 +134,19 @@ function CronogramaTurma() {
 
   };
 
+  // ======================================
+  // EDITAR AVALIAÇÃO
+  // ======================================
+
+  const editarAvaliacao = (item) => {
+
+    const url =
+      `/professor-conteudo?atribuicao=${item.atribuicao.id}&bimestre=${item.bimestre}`;
+
+    window.location.href = url;
+
+  };
+
   const transformarConteudoEmLista = (conteudo) => {
 
     if (!conteudo) return [];
@@ -341,6 +354,21 @@ function CronogramaTurma() {
                     </td>
 
                     <td style={tdStyle} className="no-print">
+
+                      <button
+                        onClick={() => editarAvaliacao(item)}
+                        style={{
+                          backgroundColor: "#2563eb",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          padding: "6px 10px",
+                          cursor: "pointer",
+                          marginRight: "5px"
+                        }}
+                      >
+                        ✏️ Editar
+                      </button>
 
                       <button
                         onClick={() => excluirAvaliacao(item.id)}
