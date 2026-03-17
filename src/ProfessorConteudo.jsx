@@ -63,7 +63,9 @@ function ProfessorConteudo() {
     fontSize: "14px",
     fontWeight: "600",
     marginTop: "10px",
-    marginRight: "10px"
+    marginRight: "10px",
+    transition: "all 0.3s ease",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
   };
 
   const limparFormulario = () => {
@@ -72,7 +74,7 @@ function ProfessorConteudo() {
   };
 
   // ==========================================
-  // 🔥 CARREGAR PROFESSORES + AUTO SELEÇÃO
+  // 🔥 CARREGAR PROFESSORES + AUTO LOGIN
   // ==========================================
 
   useEffect(() => {
@@ -86,18 +88,24 @@ function ProfessorConteudo() {
 
       setProfessores(ordenados);
 
-      // 🔥 PEGAR EMAIL LOGADO
+      // 🔥 pega email do usuário logado
       const { data } = await supabase.auth.getSession();
       const email = data.session?.user?.email;
 
-      // 🔥 ENCONTRAR PROFESSOR
+      console.log("EMAIL LOGADO:", email);
+
+      // 🔥 encontra professor correspondente
       const professor = ordenados.find(
         p => p.email?.toLowerCase() === email?.toLowerCase()
       );
 
+      console.log("PROFESSOR ENCONTRADO:", professor);
+
       if (professor) {
         setProfessorSelecionado(professor.id);
         carregarAtribuicoes(professor.id);
+      } else {
+        console.warn("❌ Nenhum professor com esse email");
       }
 
     }
@@ -141,8 +149,9 @@ function ProfessorConteudo() {
 
       limparFormulario();
 
-    } catch {
+    } catch (err) {
 
+      console.error(err);
       setAtribuicoes([]);
 
     }
@@ -193,6 +202,27 @@ function ProfessorConteudo() {
 
   }, [atribuicaoSelecionada, bimestre]);
 
+  // ==========================================
+  // PARAMETROS URL (MANTIDO)
+  // ==========================================
+
+  useEffect(() => {
+
+    const params = new URLSearchParams(window.location.search);
+
+    const atribuicao = params.get("atribuicao");
+    const bimestreParam = params.get("bimestre");
+
+    if (atribuicao) {
+      setAtribuicaoSelecionada(atribuicao);
+    }
+
+    if (bimestreParam) {
+      setBimestre(Number(bimestreParam));
+    }
+
+  }, []);
+
   const adicionarTopico = () => setTopicos([...topicos, ""]);
 
   const atualizarTopico = (index, valor) => {
@@ -217,7 +247,6 @@ function ProfessorConteudo() {
     }
 
     setAtribuicoesSelecionadas(novas);
-
     setAtribuicaoSelecionada(novas[0] || "");
 
   };
@@ -248,13 +277,24 @@ function ProfessorConteudo() {
 
       }
 
+      const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
+
+      await logAction({
+        action: modoEdicao ? "Atualizou avaliação" : "Criou avaliação",
+        entidade: "Avaliação",
+        turma: atribuicaoAtual?.turma?.nome,
+        disciplina: atribuicaoAtual?.disciplina?.nome,
+        bimestre,
+        detalhes: `Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
+      });
+
       setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
 
     } catch (err) {
 
       console.error(err);
-      setMensagem("Erro ou falta de permissão.");
+      setMensagem("Erro ou sem permissão.");
       setTipoMensagem("error");
 
     }
@@ -262,23 +302,35 @@ function ProfessorConteudo() {
   };
 
   return (
-    <div style={{ maxWidth: "700px", margin: "0 auto" }}>
+    <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
-      <h2 style={{ textAlign: "center", color: "#1e3a8a" }}>
+      <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "20px" }}>
         Lançamento de Avaliação
       </h2>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
-      {/* 🔒 agora só exibe, não depende mais */}
+      {/* 🔒 PROFESSOR BLOQUEADO AUTOMATICAMENTE */}
       <select style={inputStyle} value={professorSelecionado} disabled>
+        <option value="">Carregando professor...</option>
         {professores.map(p => (
           <option key={p.id} value={p.id}>{p.nome}</option>
         ))}
       </select>
 
       {atribuicoes.length > 0 && (
-        <div>
+
+        <div style={{
+          border: "1px solid #ddd",
+          borderRadius: "10px",
+          padding: "10px",
+          marginBottom: "15px",
+          maxHeight: "200px",
+          overflowY: "auto"
+        }}>
+
+          <strong>Selecione as Turmas</strong>
+
           {atribuicoes.map(a => (
             <div key={a.id}>
               <label>
@@ -287,15 +339,56 @@ function ProfessorConteudo() {
                   checked={atribuicoesSelecionadas.includes(a.id)}
                   onChange={() => toggleTurma(a.id)}
                 />
+                {" "}
                 {a.turma.nome} - {a.disciplina.nome}
               </label>
             </div>
           ))}
+
         </div>
+
       )}
 
+      <select
+        style={inputStyle}
+        value={bimestre}
+        onChange={(e) => setBimestre(Number(e.target.value))}
+      >
+        <option value={1}>1º Bimestre</option>
+        <option value={2}>2º Bimestre</option>
+        <option value={3}>3º Bimestre</option>
+        <option value={4}>4º Bimestre</option>
+      </select>
+
+      <input
+        type="date"
+        style={inputStyle}
+        value={dataAvaliacao}
+        min={semanasProva[bimestre].inicio}
+        max={semanasProva[bimestre].fim}
+        onChange={(e) => setDataAvaliacao(e.target.value)}
+      />
+
+      <h4>Conteúdos:</h4>
+
+      {topicos.map((topico, index) => (
+        <div key={index} style={{ display: "flex", gap: "10px" }}>
+          <input
+            type="text"
+            value={topico}
+            onChange={(e) => atualizarTopico(index, e.target.value)}
+            style={{ ...inputStyle, marginBottom: "0" }}
+          />
+          <button onClick={() => removerTopico(index)}>❌</button>
+        </div>
+      ))}
+
+      <button onClick={adicionarTopico} style={buttonStyle}>
+        + Adicionar Tópico
+      </button>
+
       <button onClick={salvarConteudo} style={buttonStyle}>
-        Salvar Conteúdo
+        {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
       </button>
 
     </div>
