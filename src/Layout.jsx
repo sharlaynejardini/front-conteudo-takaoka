@@ -6,12 +6,13 @@ function Layout() {
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
   const location = useLocation();
 
   useEffect(() => {
 
     const checkAdmin = async () => {
-
       const { data: sessionData } = await supabase.auth.getSession();
 
       if (!sessionData.session) return;
@@ -28,6 +29,15 @@ function Layout() {
     };
 
     checkAdmin();
+
+    // 🔥 DETECTAR RESPONSIVO
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
 
   }, []);
 
@@ -51,12 +61,23 @@ function Layout() {
   return (
     <div style={styles.container}>
 
-      {/* SIDEBAR */}
-      <div style={{
-        ...styles.sidebar,
-        ...(menuOpen ? styles.sidebarMobileOpen : {})
-      }}>
+      {/* OVERLAY (MOBILE) */}
+      {menuOpen && isMobile && (
+        <div
+          style={styles.overlay}
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
+      {/* SIDEBAR */}
+      <div
+        style={{
+          ...styles.sidebar,
+          ...(isMobile
+            ? (menuOpen ? styles.sidebarOpen : styles.sidebarClosed)
+            : {})
+        }}
+      >
         <h2 style={styles.logo}>Sistema</h2>
 
         {menu.map((item) => (
@@ -72,7 +93,6 @@ function Layout() {
             <span>{item.icon}</span> {item.label}
           </Link>
         ))}
-
       </div>
 
       {/* MAIN */}
@@ -110,7 +130,19 @@ const styles = {
   container: {
     display: "flex",
     height: "100vh",
-    width: "100%"
+    width: "100%",
+    position: "relative"
+  },
+
+  /* OVERLAY */
+  overlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    background: "rgba(0,0,0,0.4)",
+    zIndex: 999
   },
 
   /* SIDEBAR */
@@ -122,12 +154,21 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "10px",
-    transition: "0.3s"
+    transition: "all 0.3s ease",
+    zIndex: 1000
   },
 
-  sidebarMobileOpen: {
-    position: "absolute",
-    zIndex: 1000,
+  sidebarOpen: {
+    position: "fixed",
+    left: 0,
+    top: 0,
+    height: "100%"
+  },
+
+  sidebarClosed: {
+    position: "fixed",
+    left: "-240px",
+    top: 0,
     height: "100%"
   },
 
