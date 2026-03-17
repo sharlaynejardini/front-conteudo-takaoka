@@ -8,26 +8,17 @@ function Admin() {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
 
-  const [actions, setActions] = useState([]);
   const [professores, setProfessores] = useState([]);
   const [turmas, setTurmas] = useState([]);
   const [disciplinas, setDisciplinas] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
-
-  const [novoProfessor, setNovoProfessor] = useState("");
-  const [novoEmail, setNovoEmail] = useState("");
-  const [novaTurma, setNovaTurma] = useState("");
-  const [novaDisciplina, setNovaDisciplina] = useState("");
-
-  const [professorAtrib, setProfessorAtrib] = useState("");
-  const [turmaAtrib, setTurmaAtrib] = useState("");
-  const [disciplinaAtrib, setDisciplinaAtrib] = useState("");
+  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    carregarDados();
+    carregar();
   }, []);
 
-  async function carregarDados() {
+  async function carregar() {
     try {
       setLoading(true);
 
@@ -36,7 +27,7 @@ function Admin() {
         .select("*")
         .order("created_at", { ascending: false });
 
-      setActions(data || []);
+      setLogs(data || []);
 
       const prof = await api.get("/professores");
       const tur = await api.get("/turmas");
@@ -48,126 +39,41 @@ function Admin() {
       setDisciplinas(disc.data || []);
       setAtribuicoes(atrib.data || []);
 
-    } catch (err) {
-      console.error("Erro ao carregar dados:", err);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   }
 
-  const filtrar = (lista) => {
+  // 🔥 SAFE GET (NUNCA QUEBRA)
+  const get = (obj, path) => {
     try {
-      return (lista || []).filter(item =>
-        JSON.stringify(item || {})
-          .toLowerCase()
-          .includes(busca.toLowerCase())
-      );
+      return path.split(".").reduce((o, k) => o?.[k], obj) ?? "-";
     } catch {
-      return lista || [];
+      return "-";
     }
   };
 
-  const formatarData = (d) => {
-    if (!d) return "-";
-    return new Date(d).toLocaleString("pt-BR");
-  };
+  // 🔥 FILTRO SEGURO (SEM JSON.stringify)
+  const filtrar = (lista) => {
+    if (!busca) return lista;
 
-  const exportarCSV = () => {
-    const linhas = [["Email","Ação","Data"]];
-    actions.forEach(a => {
-      linhas.push([
-        a.email || "-",
-        a.action || "-",
-        formatarData(a.created_at)
-      ]);
+    return lista.filter(item => {
+      return Object.values(item || {}).some(v =>
+        String(v).toLowerCase().includes(busca.toLowerCase())
+      );
     });
-
-    const csv = linhas.map(l => l.join(";")).join("\n");
-    const blob = new Blob([csv]);
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "logs.csv";
-    a.click();
   };
 
-  // ================= CRUD =================
-
-  const adicionarProfessor = async () => {
-    if (!novoProfessor || !novoEmail) return;
-
-    await api.post("/professores", {
-      nome: novoProfessor,
-      email: novoEmail
-    });
-
-    setNovoProfessor("");
-    setNovoEmail("");
-    carregarDados();
-  };
-
-  const deletarProfessor = async (id) => {
-    if (!window.confirm("Excluir professor?")) return;
-    await api.delete(`/professores/${id}`);
-    carregarDados();
-  };
-
-  const adicionarTurma = async () => {
-    if (!novaTurma) return;
-    await api.post("/turmas", { nome: novaTurma });
-    setNovaTurma("");
-    carregarDados();
-  };
-
-  const deletarTurma = async (id) => {
-    if (!window.confirm("Excluir turma?")) return;
-    await api.delete(`/turmas/${id}`);
-    carregarDados();
-  };
-
-  const adicionarDisciplina = async () => {
-    if (!novaDisciplina) return;
-    await api.post("/disciplinas", { nome: novaDisciplina });
-    setNovaDisciplina("");
-    carregarDados();
-  };
-
-  const deletarDisciplina = async (id) => {
-    if (!window.confirm("Excluir disciplina?")) return;
-    await api.delete(`/disciplinas/${id}`);
-    carregarDados();
-  };
-
-  const criarAtribuicao = async () => {
-    if (!professorAtrib || !turmaAtrib || !disciplinaAtrib) {
-      alert("Preencha tudo");
-      return;
-    }
-
-    await api.post("/atribuicoes", {
-      professor_id: professorAtrib,
-      turma_id: turmaAtrib,
-      disciplina_id: disciplinaAtrib
-    });
-
-    carregarDados();
-  };
-
-  const deletarAtribuicao = async (id) => {
-    if (!window.confirm("Excluir atribuição?")) return;
-    await api.delete(`/atribuicoes/${id}`);
-    carregarDados();
-  };
-
-  if (loading) return <div style={styles.loading}>Carregando...</div>;
+  if (loading) return <div style={{ padding: 40 }}>Carregando...</div>;
 
   return (
     <div style={styles.page}>
 
-      {/* SIDEBAR */}
+      {/* MENU */}
       <div style={styles.sidebar}>
-        <h2 style={{ marginBottom: 20 }}>⚙️ Admin</h2>
+        <h2>⚙️ Admin</h2>
 
         {["dashboard","professores","turmas","disciplinas","atribuicoes","logs"].map(a => (
           <button
@@ -191,7 +97,7 @@ function Admin() {
             placeholder="🔍 Buscar..."
             value={busca}
             onChange={e => setBusca(e.target.value)}
-            style={styles.search}
+            style={styles.input}
           />
         )}
 
@@ -207,76 +113,62 @@ function Admin() {
 
         {/* PROFESSORES */}
         {aba === "professores" && (
-          <>
-            <Form>
-              <input placeholder="Nome" value={novoProfessor} onChange={e => setNovoProfessor(e.target.value)} style={styles.input}/>
-              <input placeholder="Email" value={novoEmail} onChange={e => setNovoEmail(e.target.value)} style={styles.input}/>
-              <button onClick={adicionarProfessor} style={styles.primary}>Adicionar</button>
-            </Form>
+          <Table headers={["Nome","Email"]}>
+            {filtrar(professores).map(p => (
+              <tr key={p.id}>
+                <td>{String(p.nome || "-")}</td>
+                <td>{String(p.email || "-")}</td>
+              </tr>
+            ))}
+          </Table>
+        )}
 
-            <Table headers={["Nome","Email",""]}>
-              {filtrar(professores).map(p => (
-                <tr key={p.id}>
-                  <td>{p.nome || "-"}</td>
-                  <td>{p.email || "-"}</td>
-                  <td>
-                    <button style={styles.danger} onClick={() => deletarProfessor(p.id)}>Excluir</button>
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          </>
+        {/* TURMAS */}
+        {aba === "turmas" && (
+          <Table headers={["Nome"]}>
+            {filtrar(turmas).map(t => (
+              <tr key={t.id}>
+                <td>{String(t.nome || "-")}</td>
+              </tr>
+            ))}
+          </Table>
+        )}
+
+        {/* DISCIPLINAS */}
+        {aba === "disciplinas" && (
+          <Table headers={["Nome"]}>
+            {filtrar(disciplinas).map(d => (
+              <tr key={d.id}>
+                <td>{String(d.nome || "-")}</td>
+              </tr>
+            ))}
+          </Table>
         )}
 
         {/* ATRIBUIÇÕES */}
         {aba === "atribuicoes" && (
-          <>
-            <Form>
-              <select onChange={e => setProfessorAtrib(e.target.value)} style={styles.input}>
-                <option>Professor</option>
-                {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-              </select>
-
-              <select onChange={e => setTurmaAtrib(e.target.value)} style={styles.input}>
-                <option>Turma</option>
-                {turmas.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-              </select>
-
-              <select onChange={e => setDisciplinaAtrib(e.target.value)} style={styles.input}>
-                <option>Disciplina</option>
-                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-              </select>
-
-              <button onClick={criarAtribuicao} style={styles.primary}>Criar</button>
-            </Form>
-
-            <Table headers={["Professor","Turma","Disciplina"]}>
-              {filtrar(atribuicoes).map(a => (
-                <tr key={a.id}>
-                  <td>{a.professor?.nome || "-"}</td>
-                  <td>{a.turma?.nome || "-"}</td>
-                  <td>{a.disciplina?.nome || "-"}</td>
-                </tr>
-              ))}
-            </Table>
-          </>
+          <Table headers={["Professor","Turma","Disciplina"]}>
+            {filtrar(atribuicoes).map(a => (
+              <tr key={a.id}>
+                <td>{String(get(a,"professor.nome"))}</td>
+                <td>{String(get(a,"turma.nome"))}</td>
+                <td>{String(get(a,"disciplina.nome"))}</td>
+              </tr>
+            ))}
+          </Table>
         )}
 
         {/* LOGS */}
         {aba === "logs" && (
-          <>
-            <button onClick={exportarCSV} style={styles.primary}>Exportar CSV</button>
-
-            <Table headers={["Email","Ação","Data"]}>
-              {filtrar(actions).map(l => (
-                <tr key={l.id}>
-                  <td>{l.email || "-"}</td>
-                  <td>{l.action || "-"}</td>
-                  <td>{formatarData(l.created_at)}</td>
-                </tr>
-              ))}
-            </Table>
-          </>
+          <Table headers={["Email","Ação","Data"]}>
+            {filtrar(logs).map(l => (
+              <tr key={l.id}>
+                <td>{String(l.email || "-")}</td>
+                <td>{String(l.action || "-")}</td>
+                <td>{new Date(l.created_at).toLocaleString("pt-BR")}</td>
+              </tr>
+            ))}
+          </Table>
         )}
 
       </div>
@@ -293,15 +185,11 @@ const Card = ({ title, value }) => (
   </div>
 );
 
-const Form = ({ children }) => (
-  <div style={styles.form}>{children}</div>
-);
-
 const Table = ({ headers, children }) => (
   <table style={styles.table}>
     <thead>
       <tr>
-        {headers.map((h,i) => <th key={i}>{h || "-"}</th>)}
+        {headers.map((h,i) => <th key={i}>{String(h)}</th>)}
       </tr>
     </thead>
     <tbody>{children}</tbody>
@@ -317,14 +205,9 @@ const styles = {
   active: { background:"#2563eb", borderRadius:6 },
   content: { flex:1 },
   cards: { display:"flex", gap:20 },
-  search: { marginBottom:20, padding:10, width:"100%", borderRadius:8, border:"1px solid #ddd" },
-  input: { flex:1, padding:10, borderRadius:8, border:"1px solid #ddd" },
-  primary: { background:"#2563eb", color:"white", border:"none", padding:"10px 16px", borderRadius:8, cursor:"pointer" },
-  danger: { background:"#ef4444", color:"white", border:"none", padding:"6px 10px", borderRadius:6 },
+  input: { marginBottom:20, padding:10, width:"100%", borderRadius:8, border:"1px solid #ddd" },
   table: { width:"100%", marginTop:20, borderCollapse:"collapse" },
-  card: { flex:1, padding:20, background:"white", borderRadius:12 },
-  form: { display:"flex", gap:10, marginBottom:20 },
-  loading: { padding:40 }
+  card: { flex:1, padding:20, background:"white", borderRadius:12 }
 };
 
 export default Admin;
