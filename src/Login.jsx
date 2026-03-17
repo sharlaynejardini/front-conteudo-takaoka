@@ -27,7 +27,7 @@ function Login() {
       <div style={styles.left}>
         <h1 style={styles.brandTitle}>Sistema Escolar</h1>
         <p style={styles.brandSubtitle}>
-          Gestão de conteúdos, trabalhos e horários em um só lugar
+          Gestão de conteúdos, trabalhos <br>EMEIEF ENG. YOJIRO TAKAOKA</br>
         </p>
       </div>
 
