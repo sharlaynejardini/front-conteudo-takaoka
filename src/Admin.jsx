@@ -2,6 +2,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import api from "./api";
 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
 function Admin() {
 
   const [aba, setAba] = useState("dashboard");
@@ -12,58 +25,45 @@ function Admin() {
   const [turmas, setTurmas] = useState([]);
   const [disciplinas, setDisciplinas] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
-  const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    carregar();
+    carregarDados();
   }, []);
 
-  async function carregar() {
-    try {
-      setLoading(true);
+  async function carregarDados() {
+    setLoading(true);
 
-      const { data } = await supabase
-        .from("action_logs")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const prof = await api.get("/professores");
+    const tur = await api.get("/turmas");
+    const disc = await api.get("/disciplinas");
+    const atrib = await api.get("/atribuicoes");
 
-      setLogs(data || []);
+    setProfessores(prof.data);
+    setTurmas(tur.data);
+    setDisciplinas(disc.data);
+    setAtribuicoes(atrib.data);
 
-      const prof = await api.get("/professores");
-      const tur = await api.get("/turmas");
-      const disc = await api.get("/disciplinas");
-      const atrib = await api.get("/atribuicoes");
-
-      setProfessores(prof.data || []);
-      setTurmas(tur.data || []);
-      setDisciplinas(disc.data || []);
-      setAtribuicoes(atrib.data || []);
-
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   }
 
-  // 🔥 SAFE GET (NUNCA QUEBRA)
-  const get = (obj, path) => {
-    try {
-      return path.split(".").reduce((o, k) => o?.[k], obj) ?? "-";
-    } catch {
-      return "-";
-    }
-  };
+  const filtrar = (lista) =>
+    lista.filter(item =>
+      JSON.stringify(item).toLowerCase().includes(busca.toLowerCase())
+    );
 
-  // 🔥 FILTRO SEGURO (SEM JSON.stringify)
-  const filtrar = (lista) => {
-    if (!busca) return lista;
-
-    return lista.filter(item => {
-      return Object.values(item || {}).some(v =>
-        String(v).toLowerCase().includes(busca.toLowerCase())
-      );
-    });
+  const chartData = {
+    labels: ["Professores", "Turmas", "Disciplinas", "Atribuições"],
+    datasets: [
+      {
+        label: "Dados do Sistema",
+        data: [
+          professores.length,
+          turmas.length,
+          disciplinas.length,
+          atribuicoes.length,
+        ],
+      },
+    ],
   };
 
   if (loading) return <div style={{ padding: 40 }}>Carregando...</div>;
@@ -71,11 +71,11 @@ function Admin() {
   return (
     <div style={styles.page}>
 
-      {/* MENU */}
+      {/* SIDEBAR */}
       <div style={styles.sidebar}>
         <h2>⚙️ Admin</h2>
 
-        {["dashboard","professores","turmas","disciplinas","atribuicoes","logs"].map(a => (
+        {["dashboard","professores","turmas","disciplinas","atribuicoes"].map(a => (
           <button
             key={a}
             onClick={() => setAba(a)}
@@ -97,78 +97,50 @@ function Admin() {
             placeholder="🔍 Buscar..."
             value={busca}
             onChange={e => setBusca(e.target.value)}
-            style={styles.input}
+            style={styles.search}
           />
         )}
 
         {/* DASHBOARD */}
         {aba === "dashboard" && (
-          <div style={styles.cards}>
-            <Card title="Professores" value={professores.length}/>
-            <Card title="Turmas" value={turmas.length}/>
-            <Card title="Disciplinas" value={disciplinas.length}/>
-            <Card title="Atribuições" value={atribuicoes.length}/>
-          </div>
+          <>
+            <div style={styles.cards}>
+              <Card title="Professores" value={professores.length} color="#3b82f6"/>
+              <Card title="Turmas" value={turmas.length} color="#22c55e"/>
+              <Card title="Disciplinas" value={disciplinas.length} color="#f59e0b"/>
+              <Card title="Atribuições" value={atribuicoes.length} color="#ef4444"/>
+            </div>
+
+            <div style={styles.chart}>
+              <Bar data={chartData} />
+            </div>
+          </>
         )}
 
         {/* PROFESSORES */}
         {aba === "professores" && (
-          <Table headers={["Nome","Email"]}>
-            {filtrar(professores).map(p => (
-              <tr key={p.id}>
-                <td>{String(p.nome || "-")}</td>
-                <td>{String(p.email || "-")}</td>
-              </tr>
-            ))}
-          </Table>
+          <Table
+            data={filtrar(professores)}
+            cols={["nome","email"]}
+          />
         )}
 
         {/* TURMAS */}
         {aba === "turmas" && (
-          <Table headers={["Nome"]}>
-            {filtrar(turmas).map(t => (
-              <tr key={t.id}>
-                <td>{String(t.nome || "-")}</td>
-              </tr>
-            ))}
-          </Table>
+          <Table data={filtrar(turmas)} cols={["nome"]} />
         )}
 
         {/* DISCIPLINAS */}
         {aba === "disciplinas" && (
-          <Table headers={["Nome"]}>
-            {filtrar(disciplinas).map(d => (
-              <tr key={d.id}>
-                <td>{String(d.nome || "-")}</td>
-              </tr>
-            ))}
-          </Table>
+          <Table data={filtrar(disciplinas)} cols={["nome"]} />
         )}
 
         {/* ATRIBUIÇÕES */}
         {aba === "atribuicoes" && (
-          <Table headers={["Professor","Turma","Disciplina"]}>
-            {filtrar(atribuicoes).map(a => (
-              <tr key={a.id}>
-                <td>{String(get(a,"professor.nome"))}</td>
-                <td>{String(get(a,"turma.nome"))}</td>
-                <td>{String(get(a,"disciplina.nome"))}</td>
-              </tr>
-            ))}
-          </Table>
-        )}
-
-        {/* LOGS */}
-        {aba === "logs" && (
-          <Table headers={["Email","Ação","Data"]}>
-            {filtrar(logs).map(l => (
-              <tr key={l.id}>
-                <td>{String(l.email || "-")}</td>
-                <td>{String(l.action || "-")}</td>
-                <td>{new Date(l.created_at).toLocaleString("pt-BR")}</td>
-              </tr>
-            ))}
-          </Table>
+          <Table
+            data={filtrar(atribuicoes)}
+            cols={["professor.nome","turma.nome","disciplina.nome"]}
+          />
         )}
 
       </div>
@@ -178,36 +150,92 @@ function Admin() {
 
 /* COMPONENTES */
 
-const Card = ({ title, value }) => (
-  <div style={styles.card}>
+const Card = ({ title, value, color }) => (
+  <div style={{
+    flex: 1,
+    padding: 20,
+    borderRadius: 12,
+    background: "white",
+    borderLeft: `6px solid ${color}`,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.05)"
+  }}>
     <span>{title}</span>
     <h2>{value}</h2>
   </div>
 );
 
-const Table = ({ headers, children }) => (
-  <table style={styles.table}>
-    <thead>
-      <tr>
-        {headers.map((h,i) => <th key={i}>{String(h)}</th>)}
-      </tr>
-    </thead>
-    <tbody>{children}</tbody>
-  </table>
+const Table = ({ data, cols }) => (
+  <div style={{ background: "white", borderRadius: 12, overflow: "hidden" }}>
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead style={{ background: "#f1f5f9" }}>
+        <tr>
+          {cols.map(c => <th key={c} style={styles.th}>{c}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((item, i) => (
+          <tr key={i} style={{ background: i % 2 ? "#f9fafb" : "white" }}>
+            {cols.map(c => (
+              <td key={c} style={styles.td}>
+                {c.split(".").reduce((o,k)=>o?.[k], item)}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 );
 
 /* ESTILOS */
 
 const styles = {
-  page: { display:"flex", gap:20 },
-  sidebar: { width:220, background:"#0f172a", color:"white", padding:20, borderRadius:12 },
-  menuBtn: { width:"100%", padding:10, marginBottom:10, background:"transparent", color:"white", border:"none", cursor:"pointer" },
-  active: { background:"#2563eb", borderRadius:6 },
-  content: { flex:1 },
-  cards: { display:"flex", gap:20 },
-  input: { marginBottom:20, padding:10, width:"100%", borderRadius:8, border:"1px solid #ddd" },
-  table: { width:"100%", marginTop:20, borderCollapse:"collapse" },
-  card: { flex:1, padding:20, background:"white", borderRadius:12 }
+  page: { display: "flex", gap: 20 },
+
+  sidebar: {
+    width: 220,
+    background: "#0f172a",
+    color: "white",
+    padding: 20,
+    borderRadius: 12
+  },
+
+  menuBtn: {
+    width: "100%",
+    padding: 10,
+    marginBottom: 10,
+    background: "transparent",
+    color: "white",
+    border: "none",
+    cursor: "pointer"
+  },
+
+  active: {
+    background: "#2563eb",
+    borderRadius: 6
+  },
+
+  content: { flex: 1 },
+
+  cards: { display: "flex", gap: 20 },
+
+  chart: {
+    marginTop: 30,
+    background: "white",
+    padding: 20,
+    borderRadius: 12
+  },
+
+  search: {
+    marginBottom: 20,
+    padding: 10,
+    width: "100%",
+    borderRadius: 8,
+    border: "1px solid #ddd"
+  },
+
+  th: { textAlign: "left", padding: 10 },
+  td: { padding: 10 }
 };
 
 export default Admin;
