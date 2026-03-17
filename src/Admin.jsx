@@ -1,5 +1,5 @@
 // ==========================================
-// ADMIN COMPLETO FINAL (TUDO INTEGRADO)
+// ADMIN COMPLETO FINAL (OTIMIZADO)
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -9,11 +9,9 @@ import api from "./api";
 function Admin() {
 
   const [aba, setAba] = useState("dashboard");
-
   const [loading, setLoading] = useState(true);
 
   const [actions, setActions] = useState([]);
-
   const [filtroEmail, setFiltroEmail] = useState("");
   const [filtroData, setFiltroData] = useState("");
 
@@ -34,8 +32,6 @@ function Admin() {
 
   useEffect(() => {
     carregarDados();
-    const interval = setInterval(carregarDados, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   async function carregarDados() {
@@ -54,22 +50,12 @@ function Admin() {
     const prof = await api.get("/professores");
     const tur = await api.get("/turmas");
     const disc = await api.get("/disciplinas");
+    const atrib = await api.get("/atribuicoes"); // 🔥 OTIMIZADO
 
     setProfessores(prof.data);
     setTurmas(tur.data);
     setDisciplinas(disc.data);
-
-    // ATRIBUIÇÕES
-    const todas = [];
-
-    for (const p of prof.data) {
-      try {
-        const res = await api.get(`/atribuicoes/${p.id}`);
-        todas.push(...res.data);
-      } catch {}
-    }
-
-    setAtribuicoes(todas);
+    setAtribuicoes(atrib.data);
 
     setLoading(false);
   }
@@ -151,11 +137,12 @@ function Admin() {
   };
 
   // =========================
-  // TURMA
+  // TURMAS
   // =========================
 
   const adicionarTurma = async () => {
     if (!novaTurma) return;
+
     await api.post("/turmas", { nome: novaTurma });
     setNovaTurma("");
     carregarDados();
@@ -168,11 +155,12 @@ function Admin() {
   };
 
   // =========================
-  // DISCIPLINA
+  // DISCIPLINAS
   // =========================
 
   const adicionarDisciplina = async () => {
     if (!novaDisciplina) return;
+
     await api.post("/disciplinas", { nome: novaDisciplina });
     setNovaDisciplina("");
     carregarDados();
@@ -218,20 +206,21 @@ function Admin() {
       <div style={menuStyle}>
         <h2>Admin</h2>
 
-        <button onClick={() => setAba("dashboard")} style={menuButton}>Dashboard</button>
-        <button onClick={() => setAba("professores")} style={menuButton}>Professores</button>
-        <button onClick={() => setAba("turmas")} style={menuButton}>Turmas</button>
-        <button onClick={() => setAba("disciplinas")} style={menuButton}>Disciplinas</button>
-        <button onClick={() => setAba("atribuicoes")} style={menuButton}>Atribuições</button>
-        <button onClick={() => setAba("logs")} style={menuButton}>Logs</button>
+        <button onClick={() => setAba("dashboard")} style={menuButton}>📊 Dashboard</button>
+        <button onClick={() => setAba("professores")} style={menuButton}>👨‍🏫 Professores</button>
+        <button onClick={() => setAba("turmas")} style={menuButton}>🏫 Turmas</button>
+        <button onClick={() => setAba("disciplinas")} style={menuButton}>📚 Disciplinas</button>
+        <button onClick={() => setAba("atribuicoes")} style={menuButton}>🔗 Atribuições</button>
+        <button onClick={() => setAba("logs")} style={menuButton}>📋 Logs</button>
       </div>
 
       {/* CONTEÚDO */}
       <div style={{ flex: 1, padding: 30 }}>
 
+        {/* DASHBOARD */}
         {aba === "dashboard" && (
           <>
-            <h2>Dashboard</h2>
+            <h2>📊 Dashboard</h2>
             <div style={cards}>
               <div style={card}>👨‍🏫 {professores.length}</div>
               <div style={card}>🏫 {turmas.length}</div>
@@ -241,6 +230,7 @@ function Admin() {
           </>
         )}
 
+        {/* PROFESSORES */}
         {aba === "professores" && (
           <>
             <h2>Professores</h2>
@@ -258,6 +248,7 @@ function Admin() {
           </>
         )}
 
+        {/* TURMAS */}
         {aba === "turmas" && (
           <>
             <h2>Turmas</h2>
@@ -274,6 +265,7 @@ function Admin() {
           </>
         )}
 
+        {/* DISCIPLINAS */}
         {aba === "disciplinas" && (
           <>
             <h2>Disciplinas</h2>
@@ -290,6 +282,7 @@ function Admin() {
           </>
         )}
 
+        {/* ATRIBUIÇÕES */}
         {aba === "atribuicoes" && (
           <>
             <h2>Atribuições</h2>
@@ -320,13 +313,14 @@ function Admin() {
           </>
         )}
 
+        {/* LOGS */}
         {aba === "logs" && (
           <>
             <h2>Logs</h2>
 
             <input placeholder="Email" value={filtroEmail} onChange={(e) => setFiltroEmail(e.target.value)} />
             <input type="date" value={filtroData} onChange={(e) => setFiltroData(e.target.value)} />
-            <button onClick={exportarCSV}>Exportar</button>
+            <button onClick={exportarCSV}>Exportar CSV</button>
 
             {filtrarLogs(actions).map(log => (
               <div key={log.id}>
@@ -346,7 +340,7 @@ function Admin() {
 // =========================
 
 const menuStyle = {
-  width: 200,
+  width: 220,
   background: "#1e3a8a",
   color: "white",
   padding: 20
@@ -355,7 +349,13 @@ const menuStyle = {
 const menuButton = {
   display: "block",
   width: "100%",
-  marginBottom: 10
+  marginBottom: 10,
+  padding: 10,
+  background: "white",
+  color: "#1e3a8a",
+  border: "none",
+  borderRadius: 6,
+  cursor: "pointer"
 };
 
 const cards = {
@@ -366,7 +366,8 @@ const cards = {
 const card = {
   padding: 20,
   background: "#f1f5f9",
-  borderRadius: 10
+  borderRadius: 10,
+  fontSize: 20
 };
 
 export default Admin;
