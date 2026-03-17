@@ -6,7 +6,6 @@ function Admin() {
 
   const [aba, setAba] = useState("dashboard");
   const [loading, setLoading] = useState(true);
-
   const [busca, setBusca] = useState("");
 
   const [actions, setActions] = useState([]);
@@ -17,7 +16,6 @@ function Admin() {
 
   const [novoProfessor, setNovoProfessor] = useState("");
   const [novoEmail, setNovoEmail] = useState("");
-
   const [novaTurma, setNovaTurma] = useState("");
   const [novaDisciplina, setNovaDisciplina] = useState("");
 
@@ -30,41 +28,58 @@ function Admin() {
   }, []);
 
   async function carregarDados() {
+    try {
+      setLoading(true);
 
-    setLoading(true);
+      const { data } = await supabase
+        .from("action_logs")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    const { data } = await supabase
-      .from("action_logs")
-      .select("*")
-      .order("created_at", { ascending: false });
+      setActions(data || []);
 
-    setActions(data || []);
+      const prof = await api.get("/professores");
+      const tur = await api.get("/turmas");
+      const disc = await api.get("/disciplinas");
+      const atrib = await api.get("/atribuicoes");
 
-    const prof = await api.get("/professores");
-    const tur = await api.get("/turmas");
-    const disc = await api.get("/disciplinas");
-    const atrib = await api.get("/atribuicoes");
+      setProfessores(prof.data || []);
+      setTurmas(tur.data || []);
+      setDisciplinas(disc.data || []);
+      setAtribuicoes(atrib.data || []);
 
-    setProfessores(prof.data);
-    setTurmas(tur.data);
-    setDisciplinas(disc.data);
-    setAtribuicoes(atrib.data);
-
-    setLoading(false);
+    } catch (err) {
+      console.error("Erro ao carregar dados:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const filtrar = (lista) =>
-    lista.filter(item =>
-      JSON.stringify(item).toLowerCase().includes(busca.toLowerCase())
-    );
+  const filtrar = (lista) => {
+    try {
+      return (lista || []).filter(item =>
+        JSON.stringify(item || {})
+          .toLowerCase()
+          .includes(busca.toLowerCase())
+      );
+    } catch {
+      return lista || [];
+    }
+  };
 
-  const formatarData = (d) =>
-    new Date(d).toLocaleString("pt-BR");
+  const formatarData = (d) => {
+    if (!d) return "-";
+    return new Date(d).toLocaleString("pt-BR");
+  };
 
   const exportarCSV = () => {
     const linhas = [["Email","Ação","Data"]];
     actions.forEach(a => {
-      linhas.push([a.email, a.action, formatarData(a.created_at)]);
+      linhas.push([
+        a.email || "-",
+        a.action || "-",
+        formatarData(a.created_at)
+      ]);
     });
 
     const csv = linhas.map(l => l.join(";")).join("\n");
@@ -77,15 +92,23 @@ function Admin() {
     a.click();
   };
 
+  // ================= CRUD =================
+
   const adicionarProfessor = async () => {
     if (!novoProfessor || !novoEmail) return;
-    await api.post("/professores", { nome: novoProfessor, email: novoEmail });
-    setNovoProfessor(""); setNovoEmail("");
+
+    await api.post("/professores", {
+      nome: novoProfessor,
+      email: novoEmail
+    });
+
+    setNovoProfessor("");
+    setNovoEmail("");
     carregarDados();
   };
 
   const deletarProfessor = async (id) => {
-    if (!window.confirm("Excluir?")) return;
+    if (!window.confirm("Excluir professor?")) return;
     await api.delete(`/professores/${id}`);
     carregarDados();
   };
@@ -97,10 +120,22 @@ function Admin() {
     carregarDados();
   };
 
+  const deletarTurma = async (id) => {
+    if (!window.confirm("Excluir turma?")) return;
+    await api.delete(`/turmas/${id}`);
+    carregarDados();
+  };
+
   const adicionarDisciplina = async () => {
     if (!novaDisciplina) return;
     await api.post("/disciplinas", { nome: novaDisciplina });
     setNovaDisciplina("");
+    carregarDados();
+  };
+
+  const deletarDisciplina = async (id) => {
+    if (!window.confirm("Excluir disciplina?")) return;
+    await api.delete(`/disciplinas/${id}`);
     carregarDados();
   };
 
@@ -119,14 +154,20 @@ function Admin() {
     carregarDados();
   };
 
-  if (loading) return <div style={{ padding: 40 }}>Carregando...</div>;
+  const deletarAtribuicao = async (id) => {
+    if (!window.confirm("Excluir atribuição?")) return;
+    await api.delete(`/atribuicoes/${id}`);
+    carregarDados();
+  };
+
+  if (loading) return <div style={styles.loading}>Carregando...</div>;
 
   return (
     <div style={styles.page}>
 
       {/* SIDEBAR */}
       <div style={styles.sidebar}>
-        <h2>⚙️ Admin</h2>
+        <h2 style={{ marginBottom: 20 }}>⚙️ Admin</h2>
 
         {["dashboard","professores","turmas","disciplinas","atribuicoes","logs"].map(a => (
           <button
@@ -176,42 +217,12 @@ function Admin() {
             <Table headers={["Nome","Email",""]}>
               {filtrar(professores).map(p => (
                 <tr key={p.id}>
-                  <td>{p.nome}</td>
-                  <td>{p.email}</td>
-                  <td><button style={styles.danger} onClick={()=>deletarProfessor(p.id)}>Excluir</button></td>
+                  <td>{p.nome || "-"}</td>
+                  <td>{p.email || "-"}</td>
+                  <td>
+                    <button style={styles.danger} onClick={() => deletarProfessor(p.id)}>Excluir</button>
+                  </td>
                 </tr>
-              ))}
-            </Table>
-          </>
-        )}
-
-        {/* TURMAS */}
-        {aba === "turmas" && (
-          <>
-            <Form>
-              <input value={novaTurma} onChange={e => setNovaTurma(e.target.value)} style={styles.input}/>
-              <button onClick={adicionarTurma} style={styles.primary}>Adicionar</button>
-            </Form>
-
-            <Table headers={["Nome"]}>
-              {filtrar(turmas).map(t => (
-                <tr key={t.id}><td>{t.nome}</td></tr>
-              ))}
-            </Table>
-          </>
-        )}
-
-        {/* DISCIPLINAS */}
-        {aba === "disciplinas" && (
-          <>
-            <Form>
-              <input value={novaDisciplina} onChange={e => setNovaDisciplina(e.target.value)} style={styles.input}/>
-              <button onClick={adicionarDisciplina} style={styles.primary}>Adicionar</button>
-            </Form>
-
-            <Table headers={["Nome"]}>
-              {filtrar(disciplinas).map(d => (
-                <tr key={d.id}><td>{d.nome}</td></tr>
               ))}
             </Table>
           </>
@@ -242,9 +253,9 @@ function Admin() {
             <Table headers={["Professor","Turma","Disciplina"]}>
               {filtrar(atribuicoes).map(a => (
                 <tr key={a.id}>
-                  <td>{a.professor?.nome}</td>
-                  <td>{a.turma?.nome}</td>
-                  <td>{a.disciplina?.nome}</td>
+                  <td>{a.professor?.nome || "-"}</td>
+                  <td>{a.turma?.nome || "-"}</td>
+                  <td>{a.disciplina?.nome || "-"}</td>
                 </tr>
               ))}
             </Table>
@@ -259,8 +270,8 @@ function Admin() {
             <Table headers={["Email","Ação","Data"]}>
               {filtrar(actions).map(l => (
                 <tr key={l.id}>
-                  <td>{l.email}</td>
-                  <td>{l.action}</td>
+                  <td>{l.email || "-"}</td>
+                  <td>{l.action || "-"}</td>
                   <td>{formatarData(l.created_at)}</td>
                 </tr>
               ))}
@@ -276,26 +287,22 @@ function Admin() {
 /* COMPONENTES */
 
 const Card = ({ title, value }) => (
-  <div style={{
-    flex:1,
-    padding:20,
-    background:"white",
-    borderRadius:12,
-    boxShadow:"0 5px 20px rgba(0,0,0,0.05)"
-  }}>
+  <div style={styles.card}>
     <span>{title}</span>
     <h2>{value}</h2>
   </div>
 );
 
 const Form = ({ children }) => (
-  <div style={{ display:"flex", gap:10, marginBottom:20 }}>{children}</div>
+  <div style={styles.form}>{children}</div>
 );
 
 const Table = ({ headers, children }) => (
-  <table style={{ width:"100%", marginTop:20 }}>
+  <table style={styles.table}>
     <thead>
-      <tr>{headers.map(h => <th key={h}>{h}</th>)}</tr>
+      <tr>
+        {headers.map((h,i) => <th key={i}>{h || "-"}</th>)}
+      </tr>
     </thead>
     <tbody>{children}</tbody>
   </table>
@@ -313,7 +320,11 @@ const styles = {
   search: { marginBottom:20, padding:10, width:"100%", borderRadius:8, border:"1px solid #ddd" },
   input: { flex:1, padding:10, borderRadius:8, border:"1px solid #ddd" },
   primary: { background:"#2563eb", color:"white", border:"none", padding:"10px 16px", borderRadius:8, cursor:"pointer" },
-  danger: { background:"#ef4444", color:"white", border:"none", padding:"6px 10px", borderRadius:6 }
+  danger: { background:"#ef4444", color:"white", border:"none", padding:"6px 10px", borderRadius:6 },
+  table: { width:"100%", marginTop:20, borderCollapse:"collapse" },
+  card: { flex:1, padding:20, background:"white", borderRadius:12 },
+  form: { display:"flex", gap:10, marginBottom:20 },
+  loading: { padding:40 }
 };
 
 export default Admin;
