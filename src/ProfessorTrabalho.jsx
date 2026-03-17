@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
+import { supabase } from "./supabaseClient"; // 🔥 NOVO
 
 function ProfessorTrabalho() {
 
@@ -10,7 +11,6 @@ function ProfessorTrabalho() {
   const [professorSelecionado, setProfessorSelecionado] = useState("");
   const [atribuicaoSelecionada, setAtribuicaoSelecionada] = useState("");
 
-  // NOVO
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
   const [bimestre, setBimestre] = useState(1);
@@ -23,6 +23,9 @@ function ProfessorTrabalho() {
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
+
+  // 🔥 NOVO
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const inputStyle = {
     width: "100%",
@@ -66,7 +69,7 @@ function ProfessorTrabalho() {
   };
 
   // =========================
-  // CARREGAR PROFESSORES
+  // CARREGAR PROFESSORES + ADMIN
   // =========================
 
   useEffect(() => {
@@ -80,6 +83,28 @@ function ProfessorTrabalho() {
       );
 
       setProfessores(ordenados);
+
+      const ADMIN_EMAIL = "sharlayne.fonseca@professor.barueri.br";
+
+      const { data } = await supabase.auth.getSession();
+      const email = data.session?.user?.email;
+
+      console.log("EMAIL LOGADO:", email);
+
+      // 🔥 ADMIN
+      if (email === ADMIN_EMAIL) {
+        setIsAdmin(true);
+      }
+
+      // 🔥 AUTO SELEÇÃO
+      const professor = ordenados.find(
+        p => p.email?.toLowerCase() === email?.toLowerCase()
+      );
+
+      if (professor) {
+        setProfessorSelecionado(professor.id);
+        carregarAtribuicoes(professor.id);
+      }
 
     }
 
@@ -128,7 +153,7 @@ function ProfessorTrabalho() {
   };
 
   // =========================
-  // URL PARAMETROS (EDIÇÃO)
+  // URL PARAMETROS
   // =========================
 
   useEffect(() => {
@@ -201,7 +226,6 @@ function ProfessorTrabalho() {
     }
 
     setAtribuicoesSelecionadas(novas);
-
     setAtribuicaoSelecionada(novas[0] || "");
 
   };
@@ -224,7 +248,6 @@ function ProfessorTrabalho() {
   const removerTopico = (index) => {
 
     const novos = topicos.filter((_, i) => i !== index);
-
     setTopicos(novos.length ? novos : [""]);
 
   };
@@ -307,9 +330,17 @@ function ProfessorTrabalho() {
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
+      {/* 🔥 ADMIN */}
+      {isAdmin && (
+        <p style={{ color: "green", fontWeight: "bold" }}>
+          🔥 Modo Administrador
+        </p>
+      )}
+
       <select
         style={inputStyle}
         value={professorSelecionado}
+        disabled={!isAdmin}
         onChange={(e) => {
           setProfessorSelecionado(e.target.value);
           carregarAtribuicoes(e.target.value);
