@@ -27,7 +27,7 @@ function Login() {
       <div style={styles.left}>
         <h1 style={styles.brandTitle}>Sistema Escolar</h1>
         <p style={styles.brandSubtitle}>
-          Gestão de conteúdos, trabalhos <br>EMEIEF ENG. YOJIRO TAKAOKA</br>
+          Gestão de conteúdos, trabalhos EMEIEF ENG. YOJIRO TAKAOKA
         </p>
       </div>
 
