@@ -1,5 +1,5 @@
 // ==========================================
-// ADMIN COMPLETO COM CRUD REAL
+// ADMIN COMPLETO (LOGS + DASHBOARD + CRUD REAL)
 // ==========================================
 
 import { useEffect, useState } from "react";
@@ -28,18 +28,22 @@ function Admin() {
 
   useEffect(() => {
     carregarDados();
+    const interval = setInterval(carregarDados, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   async function carregarDados() {
     setLoading(true);
 
-    const { data } = await supabase
+    // LOGS (mantido)
+    const { data: actionData } = await supabase
       .from("action_logs")
       .select("*")
       .order("created_at", { ascending: false });
 
-    setActions(data || []);
+    setActions(actionData || []);
 
+    // CRUD
     const prof = await api.get("/professores");
     const tur = await api.get("/turmas");
     const disc = await api.get("/disciplinas");
@@ -50,6 +54,77 @@ function Admin() {
 
     setLoading(false);
   }
+
+  // =========================
+  // FORMATAR DATA (SEU ORIGINAL)
+  // =========================
+
+  const formatarDataHora = (dataISO) => {
+    if (!dataISO) return "-";
+
+    try {
+      const date = new Date(dataISO);
+
+      const dia = String(date.getDate()).padStart(2, "0");
+      const mes = String(date.getMonth() + 1).padStart(2, "0");
+      const ano = date.getFullYear();
+      const hora = String(date.getHours()).padStart(2, "0");
+      const min = String(date.getMinutes()).padStart(2, "0");
+      const seg = String(date.getSeconds()).padStart(2, "0");
+
+      return `${dia}/${mes}/${ano} ${hora}:${min}:${seg}`;
+    } catch {
+      return dataISO;
+    }
+  };
+
+  // =========================
+  // FILTRO LOGS (SEU ORIGINAL)
+  // =========================
+
+  const filtrarLogs = (logs) => {
+    return logs.filter(log => {
+      const matchEmail =
+        !filtroEmail || log.email?.toLowerCase().includes(filtroEmail.toLowerCase());
+
+      const matchData =
+        !filtroData || log.created_at?.startsWith(filtroData);
+
+      return matchEmail && matchData;
+    });
+  };
+
+  // =========================
+  // EXPORTAR CSV (SEU ORIGINAL)
+  // =========================
+
+  const exportarCSV = () => {
+    const linhas = [
+      ["Email", "Ação", "Turma", "Disciplina", "Bimestre", "Detalhes", "Data"]
+    ];
+
+    actions.forEach(a => {
+      linhas.push([
+        a.email,
+        a.action,
+        a.turma || "",
+        a.disciplina || "",
+        a.bimestre ? `${a.bimestre}º` : "",
+        a.detalhes || "",
+        formatarDataHora(a.created_at)
+      ]);
+    });
+
+    const csv = linhas.map(l => l.join(";")).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "relatorio_acoes.csv";
+    a.click();
+  };
 
   // =========================
   // CRUD PROFESSOR
@@ -115,18 +190,16 @@ function Admin() {
     carregarDados();
   };
 
-  // =========================
-  // UI
-  // =========================
-
-  if (loading) return <div style={{ padding: 40 }}>Carregando...</div>;
+  if (loading) {
+    return <div style={{ padding: "40px" }}>Carregando...</div>;
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
 
       {/* MENU */}
       <div style={menuStyle}>
-        <h2>⚙️ Admin</h2>
+        <h2>Painel</h2>
 
         <button onClick={() => setAba("dashboard")} style={menuButton}>📊 Dashboard</button>
         <button onClick={() => setAba("professores")} style={menuButton}>👨‍🏫 Professores</button>
@@ -136,25 +209,25 @@ function Admin() {
       </div>
 
       {/* CONTEÚDO */}
-      <div style={{ flex: 1, padding: "30px" }}>
+      <div style={{ flex: 1, padding: "40px", maxWidth: "1200px", margin: "auto" }}>
 
         {/* DASHBOARD */}
         {aba === "dashboard" && (
-          <div>
-            <h2>📊 Dashboard</h2>
+          <>
+            <h2>📊 Visão Geral</h2>
 
             <div style={cards}>
-              <div style={card}>👨‍🏫 {professores.length} Professores</div>
-              <div style={card}>🏫 {turmas.length} Turmas</div>
-              <div style={card}>📚 {disciplinas.length} Disciplinas</div>
+              <div style={card}>👨‍🏫 {professores.length}</div>
+              <div style={card}>🏫 {turmas.length}</div>
+              <div style={card}>📚 {disciplinas.length}</div>
             </div>
-          </div>
+          </>
         )}
 
         {/* PROFESSORES */}
         {aba === "professores" && (
-          <div>
-            <h2>👨‍🏫 Professores</h2>
+          <>
+            <h2>Professores</h2>
 
             <input placeholder="Nome" value={novoProfessor} onChange={e => setNovoProfessor(e.target.value)} style={inputStyle}/>
             <input placeholder="Email" value={novoEmail} onChange={e => setNovoEmail(e.target.value)} style={inputStyle}/>
@@ -166,13 +239,13 @@ function Admin() {
                 <button onClick={() => deletarProfessor(p.id)}>❌</button>
               </div>
             ))}
-          </div>
+          </>
         )}
 
         {/* TURMAS */}
         {aba === "turmas" && (
-          <div>
-            <h2>🏫 Turmas</h2>
+          <>
+            <h2>Turmas</h2>
 
             <input placeholder="Nome" value={novaTurma} onChange={e => setNovaTurma(e.target.value)} style={inputStyle}/>
             <button onClick={adicionarTurma} style={buttonStyle}>Adicionar</button>
@@ -183,13 +256,13 @@ function Admin() {
                 <button onClick={() => deletarTurma(t.id)}>❌</button>
               </div>
             ))}
-          </div>
+          </>
         )}
 
         {/* DISCIPLINAS */}
         {aba === "disciplinas" && (
-          <div>
-            <h2>📚 Disciplinas</h2>
+          <>
+            <h2>Disciplinas</h2>
 
             <input placeholder="Nome" value={novaDisciplina} onChange={e => setNovaDisciplina(e.target.value)} style={inputStyle}/>
             <button onClick={adicionarDisciplina} style={buttonStyle}>Adicionar</button>
@@ -200,20 +273,44 @@ function Admin() {
                 <button onClick={() => deletarDisciplina(d.id)}>❌</button>
               </div>
             ))}
-          </div>
+          </>
         )}
 
-        {/* LOGS (SEU ORIGINAL MANTIDO) */}
+        {/* LOGS (SEU ORIGINAL INTACTO) */}
         {aba === "logs" && (
-          <div>
-            <h2>📋 Logs</h2>
+          <>
+            <h3>Histórico de Ações</h3>
 
-            {actions.map(a => (
-              <div key={a.id}>
-                {a.email} - {a.action}
-              </div>
-            ))}
-          </div>
+            <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+              <input placeholder="Filtrar email" value={filtroEmail} onChange={(e) => setFiltroEmail(e.target.value)} style={inputStyle}/>
+              <input type="date" value={filtroData} onChange={(e) => setFiltroData(e.target.value)} style={inputStyle}/>
+              <button onClick={exportarCSV} style={buttonStyle}>Exportar CSV</button>
+            </div>
+
+            <table style={tableStyle}>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Ação</th>
+                  <th>Turma</th>
+                  <th>Disciplina</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filtrarLogs(actions).map(log => (
+                  <tr key={log.id}>
+                    <td>{log.email}</td>
+                    <td>{log.action}</td>
+                    <td>{log.turma}</td>
+                    <td>{log.disciplina}</td>
+                    <td>{formatarDataHora(log.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
 
       </div>
@@ -251,20 +348,27 @@ const cards = {
 const card = {
   padding: "20px",
   background: "#f1f5f9",
-  borderRadius: "10px"
+  borderRadius: "10px",
+  fontSize: "22px"
 };
 
 const inputStyle = {
   padding: "8px",
-  marginRight: "10px"
+  borderRadius: "6px",
+  border: "1px solid #ccc"
 };
 
 const buttonStyle = {
-  padding: "8px 12px",
-  background: "#1e3a8a",
+  padding: "8px 14px",
+  backgroundColor: "#1e3a8a",
   color: "white",
   border: "none",
   borderRadius: "6px"
+};
+
+const tableStyle = {
+  width: "100%",
+  borderCollapse: "collapse"
 };
 
 const item = {
