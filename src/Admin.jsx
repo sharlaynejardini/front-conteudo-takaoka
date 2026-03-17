@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { supabase } from "./supabaseClient";
 import api from "./api";
 
 import {
@@ -26,6 +25,17 @@ function Admin() {
   const [disciplinas, setDisciplinas] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
 
+  // FORM STATES
+  const [nomeProf, setNomeProf] = useState("");
+  const [emailProf, setEmailProf] = useState("");
+
+  const [nomeTurma, setNomeTurma] = useState("");
+  const [nomeDisc, setNomeDisc] = useState("");
+
+  const [profId, setProfId] = useState("");
+  const [turmaId, setTurmaId] = useState("");
+  const [discId, setDiscId] = useState("");
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -38,24 +48,92 @@ function Admin() {
     const disc = await api.get("/disciplinas");
     const atrib = await api.get("/atribuicoes");
 
-    setProfessores(prof.data);
-    setTurmas(tur.data);
-    setDisciplinas(disc.data);
-    setAtribuicoes(atrib.data);
+    setProfessores(prof.data || []);
+    setTurmas(tur.data || []);
+    setDisciplinas(disc.data || []);
+    setAtribuicoes(atrib.data || []);
 
     setLoading(false);
   }
 
+  // ================= CRUD =================
+
+  const addProfessor = async () => {
+    if (!nomeProf || !emailProf) return;
+    await api.post("/professores", { nome: nomeProf, email: emailProf });
+    setNomeProf(""); setEmailProf("");
+    carregarDados();
+  };
+
+  const delProfessor = async (id) => {
+    if (!window.confirm("Excluir?")) return;
+    await api.delete(`/professores/${id}`);
+    carregarDados();
+  };
+
+  const addTurma = async () => {
+    if (!nomeTurma) return;
+    await api.post("/turmas", { nome: nomeTurma });
+    setNomeTurma("");
+    carregarDados();
+  };
+
+  const delTurma = async (id) => {
+    if (!window.confirm("Excluir?")) return;
+    await api.delete(`/turmas/${id}`);
+    carregarDados();
+  };
+
+  const addDisc = async () => {
+    if (!nomeDisc) return;
+    await api.post("/disciplinas", { nome: nomeDisc });
+    setNomeDisc("");
+    carregarDados();
+  };
+
+  const delDisc = async (id) => {
+    if (!window.confirm("Excluir?")) return;
+    await api.delete(`/disciplinas/${id}`);
+    carregarDados();
+  };
+
+  const addAtrib = async () => {
+    if (!profId || !turmaId || !discId) return;
+
+    await api.post("/atribuicoes", {
+      professor_id: profId,
+      turma_id: turmaId,
+      disciplina_id: discId
+    });
+
+    carregarDados();
+  };
+
+  const delAtrib = async (id) => {
+    if (!window.confirm("Excluir?")) return;
+    await api.delete(`/atribuicoes/${id}`);
+    carregarDados();
+  };
+
+  // ================= HELPERS =================
+
   const filtrar = (lista) =>
     lista.filter(item =>
-      JSON.stringify(item).toLowerCase().includes(busca.toLowerCase())
+      JSON.stringify(item || "")
+        .toLowerCase()
+        .includes(busca.toLowerCase())
     );
+
+  const safe = (v) => String(v ?? "-");
+
+  const get = (obj, path) =>
+    path.split(".").reduce((o,k)=>o?.[k], obj) ?? "-";
 
   const chartData = {
     labels: ["Professores", "Turmas", "Disciplinas", "Atribuições"],
     datasets: [
       {
-        label: "Dados do Sistema",
+        label: "Dados",
         data: [
           professores.length,
           turmas.length,
@@ -76,14 +154,8 @@ function Admin() {
         <h2>⚙️ Admin</h2>
 
         {["dashboard","professores","turmas","disciplinas","atribuicoes"].map(a => (
-          <button
-            key={a}
-            onClick={() => setAba(a)}
-            style={{
-              ...styles.menuBtn,
-              ...(aba === a ? styles.active : {})
-            }}
-          >
+          <button key={a} onClick={()=>setAba(a)}
+            style={{...styles.menuBtn, ...(aba===a?styles.active:{})}}>
             {a.toUpperCase()}
           </button>
         ))}
@@ -96,7 +168,7 @@ function Admin() {
           <input
             placeholder="🔍 Buscar..."
             value={busca}
-            onChange={e => setBusca(e.target.value)}
+            onChange={e=>setBusca(e.target.value)}
             style={styles.search}
           />
         )}
@@ -105,10 +177,10 @@ function Admin() {
         {aba === "dashboard" && (
           <>
             <div style={styles.cards}>
-              <Card title="Professores" value={professores.length} color="#3b82f6"/>
-              <Card title="Turmas" value={turmas.length} color="#22c55e"/>
-              <Card title="Disciplinas" value={disciplinas.length} color="#f59e0b"/>
-              <Card title="Atribuições" value={atribuicoes.length} color="#ef4444"/>
+              <Card title="Professores" value={professores.length} />
+              <Card title="Turmas" value={turmas.length} />
+              <Card title="Disciplinas" value={disciplinas.length} />
+              <Card title="Atribuições" value={atribuicoes.length} />
             </div>
 
             <div style={styles.chart}>
@@ -119,28 +191,65 @@ function Admin() {
 
         {/* PROFESSORES */}
         {aba === "professores" && (
-          <Table
-            data={filtrar(professores)}
-            cols={["nome","email"]}
-          />
+          <>
+            <div style={styles.form}>
+              <input placeholder="Nome" value={nomeProf} onChange={e=>setNomeProf(e.target.value)} />
+              <input placeholder="Email" value={emailProf} onChange={e=>setEmailProf(e.target.value)} />
+              <button onClick={addProfessor}>Adicionar</button>
+            </div>
+
+            <Table data={filtrar(professores)} cols={["nome","email"]} onDelete={delProfessor}/>
+          </>
         )}
 
         {/* TURMAS */}
         {aba === "turmas" && (
-          <Table data={filtrar(turmas)} cols={["nome"]} />
+          <>
+            <div style={styles.form}>
+              <input value={nomeTurma} onChange={e=>setNomeTurma(e.target.value)} />
+              <button onClick={addTurma}>Adicionar</button>
+            </div>
+
+            <Table data={filtrar(turmas)} cols={["nome"]} onDelete={delTurma}/>
+          </>
         )}
 
         {/* DISCIPLINAS */}
         {aba === "disciplinas" && (
-          <Table data={filtrar(disciplinas)} cols={["nome"]} />
+          <>
+            <div style={styles.form}>
+              <input value={nomeDisc} onChange={e=>setNomeDisc(e.target.value)} />
+              <button onClick={addDisc}>Adicionar</button>
+            </div>
+
+            <Table data={filtrar(disciplinas)} cols={["nome"]} onDelete={delDisc}/>
+          </>
         )}
 
         {/* ATRIBUIÇÕES */}
         {aba === "atribuicoes" && (
-          <Table
-            data={filtrar(atribuicoes)}
-            cols={["professor.nome","turma.nome","disciplina.nome"]}
-          />
+          <>
+            <div style={styles.form}>
+              <select onChange={e=>setProfId(e.target.value)}>
+                <option>Professor</option>
+                {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              </select>
+
+              <select onChange={e=>setTurmaId(e.target.value)}>
+                <option>Turma</option>
+                {turmas.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>
+
+              <select onChange={e=>setDiscId(e.target.value)}>
+                <option>Disciplina</option>
+                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </select>
+
+              <button onClick={addAtrib}>Criar</button>
+            </div>
+
+            <Table data={filtrar(atribuicoes)} cols={["professor.nome","turma.nome","disciplina.nome"]} onDelete={delAtrib}/>
+          </>
         )}
 
       </div>
@@ -150,92 +259,47 @@ function Admin() {
 
 /* COMPONENTES */
 
-const Card = ({ title, value, color }) => (
-  <div style={{
-    flex: 1,
-    padding: 20,
-    borderRadius: 12,
-    background: "white",
-    borderLeft: `6px solid ${color}`,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.05)"
-  }}>
+const Card = ({ title, value }) => (
+  <div style={{ flex:1, padding:20, background:"white", borderRadius:12 }}>
     <span>{title}</span>
     <h2>{value}</h2>
   </div>
 );
 
-const Table = ({ data, cols }) => (
-  <div style={{ background: "white", borderRadius: 12, overflow: "hidden" }}>
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-      <thead style={{ background: "#f1f5f9" }}>
-        <tr>
-          {cols.map(c => <th key={c} style={styles.th}>{c}</th>)}
+const Table = ({ data, cols, onDelete }) => (
+  <table style={{ width:"100%", marginTop:20 }}>
+    <thead>
+      <tr>{cols.map(c => <th key={c}>{c}</th>)}<th></th></tr>
+    </thead>
+    <tbody>
+      {data.map((item,i)=>(
+        <tr key={i}>
+          {cols.map(c=>(
+            <td key={c}>
+              {c.split(".").reduce((o,k)=>o?.[k], item) || "-"}
+            </td>
+          ))}
+          <td>
+            {onDelete && <button onClick={()=>onDelete(item.id)}>❌</button>}
+          </td>
         </tr>
-      </thead>
-      <tbody>
-        {data.map((item, i) => (
-          <tr key={i} style={{ background: i % 2 ? "#f9fafb" : "white" }}>
-            {cols.map(c => (
-              <td key={c} style={styles.td}>
-                {c.split(".").reduce((o,k)=>o?.[k], item)}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
+      ))}
+    </tbody>
+  </table>
 );
 
 /* ESTILOS */
 
 const styles = {
-  page: { display: "flex", gap: 20 },
-
-  sidebar: {
-    width: 220,
-    background: "#0f172a",
-    color: "white",
-    padding: 20,
-    borderRadius: 12
-  },
-
-  menuBtn: {
-    width: "100%",
-    padding: 10,
-    marginBottom: 10,
-    background: "transparent",
-    color: "white",
-    border: "none",
-    cursor: "pointer"
-  },
-
-  active: {
-    background: "#2563eb",
-    borderRadius: 6
-  },
-
-  content: { flex: 1 },
-
-  cards: { display: "flex", gap: 20 },
-
-  chart: {
-    marginTop: 30,
-    background: "white",
-    padding: 20,
-    borderRadius: 12
-  },
-
-  search: {
-    marginBottom: 20,
-    padding: 10,
-    width: "100%",
-    borderRadius: 8,
-    border: "1px solid #ddd"
-  },
-
-  th: { textAlign: "left", padding: 10 },
-  td: { padding: 10 }
+  page:{display:"flex",gap:20},
+  sidebar:{width:220,background:"#0f172a",color:"white",padding:20},
+  menuBtn:{width:"100%",padding:10,marginBottom:10,background:"transparent",color:"white",border:"none"},
+  active:{background:"#2563eb"},
+  content:{flex:1},
+  cards:{display:"flex",gap:20},
+  chart:{marginTop:20,background:"white",padding:20},
+  form:{display:"flex",gap:10,marginBottom:10},
+  search:{marginBottom:20,padding:10,width:"100%"}
 };
 
 export default Admin;
