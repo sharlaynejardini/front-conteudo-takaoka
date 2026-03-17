@@ -33,6 +33,14 @@ function App() {
 
   }, []);
 
+  // 🔥🔥🔥 NOVO USEEFFECT (ESSA É A CORREÇÃO REAL)
+  useEffect(() => {
+    if (user?.email) {
+      localStorage.setItem("user_email", user.email);
+      console.log("💾 Email salvo no localStorage:", user.email);
+    }
+  }, [user]);
+
   console.log("APP: Renderizando com session:", session === undefined ? "UNDEFINED" : session ? "EXISTE" : "NULL");
 
   if (session === undefined) {
@@ -64,12 +72,6 @@ function App() {
         <p>Email usado: {email}</p>
       </div>
     );
-  }
-
-  // 🔥🔥🔥 ADICIONEI AQUI (ESSENCIAL)
-  if (email) {
-    localStorage.setItem("user_email", email);
-    console.log("💾 Email salvo no localStorage:", email);
   }
 
   console.log("APP: Acesso permitido, renderizando Outlet");
