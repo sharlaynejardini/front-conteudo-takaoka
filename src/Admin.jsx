@@ -1,7 +1,3 @@
-// ==========================================
-// ADMIN COMPLETO FINAL (OTIMIZADO)
-// ==========================================
-
 import { useEffect, useState } from "react";
 import { supabase } from "./supabaseClient";
 import api from "./api";
@@ -38,7 +34,6 @@ function Admin() {
 
     setLoading(true);
 
-    // LOGS
     const { data } = await supabase
       .from("action_logs")
       .select("*")
@@ -46,11 +41,10 @@ function Admin() {
 
     setActions(data || []);
 
-    // BASE
     const prof = await api.get("/professores");
     const tur = await api.get("/turmas");
     const disc = await api.get("/disciplinas");
-    const atrib = await api.get("/atribuicoes"); // 🔥 OTIMIZADO
+    const atrib = await api.get("/atribuicoes");
 
     setProfessores(prof.data);
     setTurmas(tur.data);
@@ -60,18 +54,10 @@ function Admin() {
     setLoading(false);
   }
 
-  // =========================
-  // FORMATAR DATA
-  // =========================
-
   const formatarDataHora = (dataISO) => {
     if (!dataISO) return "-";
     return new Date(dataISO).toLocaleString("pt-BR");
   };
-
-  // =========================
-  // FILTRO LOGS
-  // =========================
 
   const filtrarLogs = (logs) => {
     return logs.filter(log => {
@@ -84,10 +70,6 @@ function Admin() {
       return matchEmail && matchData;
     });
   };
-
-  // =========================
-  // EXPORTAR CSV
-  // =========================
 
   const exportarCSV = () => {
     const linhas = [["Email", "Ação", "Turma", "Disciplina", "Data"]];
@@ -113,10 +95,6 @@ function Admin() {
     a.click();
   };
 
-  // =========================
-  // CRUD PROFESSOR
-  // =========================
-
   const adicionarProfessor = async () => {
     if (!novoProfessor || !novoEmail) return;
 
@@ -136,13 +114,8 @@ function Admin() {
     carregarDados();
   };
 
-  // =========================
-  // TURMAS
-  // =========================
-
   const adicionarTurma = async () => {
     if (!novaTurma) return;
-
     await api.post("/turmas", { nome: novaTurma });
     setNovaTurma("");
     carregarDados();
@@ -154,13 +127,8 @@ function Admin() {
     carregarDados();
   };
 
-  // =========================
-  // DISCIPLINAS
-  // =========================
-
   const adicionarDisciplina = async () => {
     if (!novaDisciplina) return;
-
     await api.post("/disciplinas", { nome: novaDisciplina });
     setNovaDisciplina("");
     carregarDados();
@@ -171,10 +139,6 @@ function Admin() {
     await api.delete(`/disciplinas/${id}`);
     carregarDados();
   };
-
-  // =========================
-  // ATRIBUIÇÕES
-  // =========================
 
   const criarAtribuicao = async () => {
     if (!professorAtrib || !turmaAtrib || !disciplinaAtrib) {
@@ -197,136 +161,148 @@ function Admin() {
     carregarDados();
   };
 
-  if (loading) return <div style={{ padding: 40 }}>Carregando...</div>;
+  if (loading) return <div style={styles.loading}>Carregando...</div>;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div style={styles.container}>
 
       {/* MENU */}
-      <div style={menuStyle}>
-        <h2>Admin</h2>
+      <div style={styles.menu}>
+        <h2 style={{ marginBottom: 20 }}>Admin</h2>
 
-        <button onClick={() => setAba("dashboard")} style={menuButton}>📊 Dashboard</button>
-        <button onClick={() => setAba("professores")} style={menuButton}>👨‍🏫 Professores</button>
-        <button onClick={() => setAba("turmas")} style={menuButton}>🏫 Turmas</button>
-        <button onClick={() => setAba("disciplinas")} style={menuButton}>📚 Disciplinas</button>
-        <button onClick={() => setAba("atribuicoes")} style={menuButton}>🔗 Atribuições</button>
-        <button onClick={() => setAba("logs")} style={menuButton}>📋 Logs</button>
+        {["dashboard","professores","turmas","disciplinas","atribuicoes","logs"].map(a => (
+          <button
+            key={a}
+            onClick={() => setAba(a)}
+            style={{
+              ...styles.menuButton,
+              ...(aba === a ? styles.menuActive : {})
+            }}
+          >
+            {a.toUpperCase()}
+          </button>
+        ))}
       </div>
 
       {/* CONTEÚDO */}
-      <div style={{ flex: 1, padding: 30 }}>
+      <div style={styles.content}>
 
-        {/* DASHBOARD */}
         {aba === "dashboard" && (
-          <>
-            <h2>📊 Dashboard</h2>
-            <div style={cards}>
-              <div style={card}>👨‍🏫 {professores.length}</div>
-              <div style={card}>🏫 {turmas.length}</div>
-              <div style={card}>📚 {disciplinas.length}</div>
-              <div style={card}>🔗 {atribuicoes.length}</div>
-            </div>
-          </>
+          <div style={styles.cards}>
+            <Card title="Professores" value={professores.length} />
+            <Card title="Turmas" value={turmas.length} />
+            <Card title="Disciplinas" value={disciplinas.length} />
+            <Card title="Atribuições" value={atribuicoes.length} />
+          </div>
         )}
 
-        {/* PROFESSORES */}
         {aba === "professores" && (
           <>
-            <h2>Professores</h2>
+            <FormRow>
+              <input placeholder="Nome" value={novoProfessor} onChange={e => setNovoProfessor(e.target.value)} style={styles.input}/>
+              <input placeholder="Email" value={novoEmail} onChange={e => setNovoEmail(e.target.value)} style={styles.input}/>
+              <button onClick={adicionarProfessor} style={styles.primary}>Adicionar</button>
+            </FormRow>
 
-            <input placeholder="Nome" value={novoProfessor} onChange={e => setNovoProfessor(e.target.value)} />
-            <input placeholder="Email" value={novoEmail} onChange={e => setNovoEmail(e.target.value)} />
-            <button onClick={adicionarProfessor}>Adicionar</button>
-
-            {professores.map(p => (
-              <div key={p.id}>
-                {p.nome} - {p.email}
-                <button onClick={() => deletarProfessor(p.id)}>❌</button>
-              </div>
-            ))}
+            <Table headers={["Nome","Email",""]}>
+              {professores.map(p => (
+                <tr key={p.id}>
+                  <td>{p.nome}</td>
+                  <td>{p.email}</td>
+                  <td><button onClick={() => deletarProfessor(p.id)} style={styles.danger}>Excluir</button></td>
+                </tr>
+              ))}
+            </Table>
           </>
         )}
 
-        {/* TURMAS */}
         {aba === "turmas" && (
           <>
-            <h2>Turmas</h2>
+            <FormRow>
+              <input value={novaTurma} onChange={e => setNovaTurma(e.target.value)} style={styles.input}/>
+              <button onClick={adicionarTurma} style={styles.primary}>Adicionar</button>
+            </FormRow>
 
-            <input value={novaTurma} onChange={e => setNovaTurma(e.target.value)} />
-            <button onClick={adicionarTurma}>Adicionar</button>
-
-            {turmas.map(t => (
-              <div key={t.id}>
-                {t.nome}
-                <button onClick={() => deletarTurma(t.id)}>❌</button>
-              </div>
-            ))}
+            <Table headers={["Nome",""]}>
+              {turmas.map(t => (
+                <tr key={t.id}>
+                  <td>{t.nome}</td>
+                  <td><button onClick={() => deletarTurma(t.id)} style={styles.danger}>Excluir</button></td>
+                </tr>
+              ))}
+            </Table>
           </>
         )}
 
-        {/* DISCIPLINAS */}
         {aba === "disciplinas" && (
           <>
-            <h2>Disciplinas</h2>
+            <FormRow>
+              <input value={novaDisciplina} onChange={e => setNovaDisciplina(e.target.value)} style={styles.input}/>
+              <button onClick={adicionarDisciplina} style={styles.primary}>Adicionar</button>
+            </FormRow>
 
-            <input value={novaDisciplina} onChange={e => setNovaDisciplina(e.target.value)} />
-            <button onClick={adicionarDisciplina}>Adicionar</button>
-
-            {disciplinas.map(d => (
-              <div key={d.id}>
-                {d.nome}
-                <button onClick={() => deletarDisciplina(d.id)}>❌</button>
-              </div>
-            ))}
+            <Table headers={["Nome",""]}>
+              {disciplinas.map(d => (
+                <tr key={d.id}>
+                  <td>{d.nome}</td>
+                  <td><button onClick={() => deletarDisciplina(d.id)} style={styles.danger}>Excluir</button></td>
+                </tr>
+              ))}
+            </Table>
           </>
         )}
 
-        {/* ATRIBUIÇÕES */}
         {aba === "atribuicoes" && (
           <>
-            <h2>Atribuições</h2>
+            <FormRow>
+              <select onChange={e => setProfessorAtrib(e.target.value)} style={styles.input}>
+                <option>Professor</option>
+                {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              </select>
 
-            <select onChange={e => setProfessorAtrib(e.target.value)}>
-              <option>Professor</option>
-              {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
+              <select onChange={e => setTurmaAtrib(e.target.value)} style={styles.input}>
+                <option>Turma</option>
+                {turmas.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+              </select>
 
-            <select onChange={e => setTurmaAtrib(e.target.value)}>
-              <option>Turma</option>
-              {turmas.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
-            </select>
+              <select onChange={e => setDisciplinaAtrib(e.target.value)} style={styles.input}>
+                <option>Disciplina</option>
+                {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
+              </select>
 
-            <select onChange={e => setDisciplinaAtrib(e.target.value)}>
-              <option>Disciplina</option>
-              {disciplinas.map(d => <option key={d.id} value={d.id}>{d.nome}</option>)}
-            </select>
+              <button onClick={criarAtribuicao} style={styles.primary}>Criar</button>
+            </FormRow>
 
-            <button onClick={criarAtribuicao}>Criar</button>
-
-            {atribuicoes.map(a => (
-              <div key={a.id}>
-                {a.professor?.nome} - {a.turma?.nome} - {a.disciplina?.nome}
-                <button onClick={() => deletarAtribuicao(a.id)}>❌</button>
-              </div>
-            ))}
+            <Table headers={["Professor","Turma","Disciplina",""]}>
+              {atribuicoes.map(a => (
+                <tr key={a.id}>
+                  <td>{a.professor?.nome}</td>
+                  <td>{a.turma?.nome}</td>
+                  <td>{a.disciplina?.nome}</td>
+                  <td><button onClick={() => deletarAtribuicao(a.id)} style={styles.danger}>Excluir</button></td>
+                </tr>
+              ))}
+            </Table>
           </>
         )}
 
-        {/* LOGS */}
         {aba === "logs" && (
           <>
-            <h2>Logs</h2>
+            <FormRow>
+              <input placeholder="Email" value={filtroEmail} onChange={e => setFiltroEmail(e.target.value)} style={styles.input}/>
+              <input type="date" value={filtroData} onChange={e => setFiltroData(e.target.value)} style={styles.input}/>
+              <button onClick={exportarCSV} style={styles.primary}>Exportar CSV</button>
+            </FormRow>
 
-            <input placeholder="Email" value={filtroEmail} onChange={(e) => setFiltroEmail(e.target.value)} />
-            <input type="date" value={filtroData} onChange={(e) => setFiltroData(e.target.value)} />
-            <button onClick={exportarCSV}>Exportar CSV</button>
-
-            {filtrarLogs(actions).map(log => (
-              <div key={log.id}>
-                {log.email} - {log.action}
-              </div>
-            ))}
+            <Table headers={["Email","Ação","Data"]}>
+              {filtrarLogs(actions).map(log => (
+                <tr key={log.id}>
+                  <td>{log.email}</td>
+                  <td>{log.action}</td>
+                  <td>{formatarDataHora(log.created_at)}</td>
+                </tr>
+              ))}
+            </Table>
           </>
         )}
 
@@ -335,39 +311,107 @@ function Admin() {
   );
 }
 
-// =========================
+// COMPONENTES AUXILIARES
+
+const Card = ({ title, value }) => (
+  <div style={styles.card}>
+    <span>{title}</span>
+    <h2>{value}</h2>
+  </div>
+);
+
+const FormRow = ({ children }) => (
+  <div style={styles.formRow}>{children}</div>
+);
+
+const Table = ({ headers, children }) => (
+  <table style={styles.table}>
+    <thead>
+      <tr>
+        {headers.map(h => <th key={h}>{h}</th>)}
+      </tr>
+    </thead>
+    <tbody>{children}</tbody>
+  </table>
+);
+
 // ESTILOS
-// =========================
 
-const menuStyle = {
-  width: 220,
-  background: "#1e3a8a",
-  color: "white",
-  padding: 20
-};
+const styles = {
+  container: { display: "flex", gap: 20 },
 
-const menuButton = {
-  display: "block",
-  width: "100%",
-  marginBottom: 10,
-  padding: 10,
-  background: "white",
-  color: "#1e3a8a",
-  border: "none",
-  borderRadius: 6,
-  cursor: "pointer"
-};
+  menu: {
+    width: 200,
+    background: "#0f172a",
+    color: "white",
+    padding: 20,
+    borderRadius: 10
+  },
 
-const cards = {
-  display: "flex",
-  gap: 20
-};
+  menuButton: {
+    width: "100%",
+    padding: 10,
+    marginBottom: 8,
+    background: "transparent",
+    color: "white",
+    border: "none",
+    cursor: "pointer",
+    textAlign: "left"
+  },
 
-const card = {
-  padding: 20,
-  background: "#f1f5f9",
-  borderRadius: 10,
-  fontSize: 20
+  menuActive: {
+    background: "#2563eb",
+    borderRadius: 6
+  },
+
+  content: { flex: 1 },
+
+  cards: { display: "flex", gap: 20 },
+
+  card: {
+    flex: 1,
+    padding: 20,
+    background: "white",
+    borderRadius: 10,
+    boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
+  },
+
+  formRow: { display: "flex", gap: 10, marginBottom: 20 },
+
+  input: {
+    padding: 10,
+    borderRadius: 6,
+    border: "1px solid #ddd",
+    flex: 1
+  },
+
+  primary: {
+    background: "#2563eb",
+    color: "white",
+    border: "none",
+    padding: "10px 15px",
+    borderRadius: 6,
+    cursor: "pointer"
+  },
+
+  danger: {
+    background: "#ef4444",
+    color: "white",
+    border: "none",
+    padding: "6px 10px",
+    borderRadius: 6,
+    cursor: "pointer"
+  },
+
+  table: {
+    width: "100%",
+    background: "white",
+    borderRadius: 10,
+    overflow: "hidden",
+    borderCollapse: "collapse"
+  },
+
+  loading: { padding: 40 }
 };
 
 export default Admin;

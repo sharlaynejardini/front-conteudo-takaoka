@@ -6,6 +6,7 @@ function Layout() {
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const location = useLocation();
@@ -14,7 +15,6 @@ function Layout() {
 
     const checkAdmin = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
-
       if (!sessionData.session) return;
 
       const { data } = await supabase
@@ -23,20 +23,16 @@ function Layout() {
         .eq("id", sessionData.session.user.id)
         .single();
 
-      if (data?.role === "admin") {
-        setIsAdmin(true);
-      }
+      if (data?.role === "admin") setIsAdmin(true);
     };
 
     checkAdmin();
 
-    // 🔥 DETECTAR RESPONSIVO
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
 
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
 
   }, []);
@@ -48,9 +44,9 @@ function Layout() {
 
   const menu = [
     { path: "/", label: "Provas", icon: "📝" },
-    { path: "/cronograma", label: "Cronograma Provas", icon: "📅" },
+    { path: "/cronograma", label: "Cronograma", icon: "📅" },
     { path: "/trabalho", label: "Trabalhos", icon: "📚" },
-    { path: "/cronograma-trabalho", label: "Cronograma Trabalhos", icon: "🗂️" },
+    { path: "/cronograma-trabalho", label: "Cronograma Trab.", icon: "🗂️" },
     { path: "/horario", label: "Horário", icon: "🕒" },
   ];
 
@@ -58,27 +54,35 @@ function Layout() {
     menu.push({ path: "/admin", label: "Admin", icon: "⚙️" });
   }
 
+  const getTitle = () => {
+    const current = menu.find(m => m.path === location.pathname);
+    return current ? current.label : "Sistema";
+  };
+
   return (
     <div style={styles.container}>
 
-      {/* OVERLAY (MOBILE) */}
+      {/* OVERLAY MOBILE */}
       {menuOpen && isMobile && (
-        <div
-          style={styles.overlay}
-          onClick={() => setMenuOpen(false)}
-        />
+        <div style={styles.overlay} onClick={() => setMenuOpen(false)} />
       )}
 
       {/* SIDEBAR */}
       <div
         style={{
           ...styles.sidebar,
+          width: collapsed ? "70px" : "240px",
           ...(isMobile
             ? (menuOpen ? styles.sidebarOpen : styles.sidebarClosed)
             : {})
         }}
       >
-        <h2 style={styles.logo}>Sistema</h2>
+
+        <div style={styles.sidebarTop}>
+          <span style={styles.logo}>📘</span>
+
+          {!collapsed && <span>Sistema</span>}
+        </div>
 
         {menu.map((item) => (
           <Link
@@ -90,9 +94,21 @@ function Layout() {
             }}
             onClick={() => setMenuOpen(false)}
           >
-            <span>{item.icon}</span> {item.label}
+            <span>{item.icon}</span>
+            {!collapsed && item.label}
           </Link>
         ))}
+
+        {/* COLAPSAR */}
+        {!isMobile && (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            style={styles.collapseBtn}
+          >
+            {collapsed ? "➡️" : "⬅️"}
+          </button>
+        )}
+
       </div>
 
       {/* MAIN */}
@@ -108,8 +124,10 @@ function Layout() {
             ☰
           </button>
 
+          <h3 style={styles.title}>{getTitle()}</h3>
+
           <button onClick={logout} style={styles.logout}>
-            🚪 Sair
+            Sair
           </button>
 
         </div>
@@ -131,49 +149,38 @@ const styles = {
     display: "flex",
     height: "100vh",
     width: "100%",
-    position: "relative"
+    background: "#f1f5f9"
   },
 
-  /* OVERLAY */
   overlay: {
     position: "fixed",
-    top: 0,
-    left: 0,
     width: "100%",
     height: "100%",
-    background: "rgba(0,0,0,0.4)",
+    background: "rgba(0,0,0,0.3)",
     zIndex: 999
   },
 
-  /* SIDEBAR */
   sidebar: {
-    width: "240px",
-    background: "#1e293b",
+    background: "#0f172a",
     color: "white",
-    padding: "20px",
+    padding: "20px 10px",
     display: "flex",
     flexDirection: "column",
     gap: "10px",
-    transition: "all 0.3s ease",
+    transition: "0.3s",
     zIndex: 1000
   },
 
-  sidebarOpen: {
-    position: "fixed",
-    left: 0,
-    top: 0,
-    height: "100%"
-  },
-
-  sidebarClosed: {
-    position: "fixed",
-    left: "-240px",
-    top: 0,
-    height: "100%"
+  sidebarTop: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "20px",
+    fontWeight: "bold"
   },
 
   logo: {
-    marginBottom: "20px"
+    fontSize: "20px"
   },
 
   link: {
@@ -183,6 +190,7 @@ const styles = {
     borderRadius: "8px",
     display: "flex",
     gap: "10px",
+    alignItems: "center",
     fontSize: "14px"
   },
 
@@ -191,7 +199,14 @@ const styles = {
     color: "white"
   },
 
-  /* MAIN */
+  collapseBtn: {
+    marginTop: "auto",
+    background: "none",
+    border: "none",
+    color: "white",
+    cursor: "pointer"
+  },
+
   main: {
     flex: 1,
     display: "flex",
@@ -206,6 +221,11 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "0 20px"
+  },
+
+  title: {
+    margin: 0,
+    fontSize: "16px"
   },
 
   menuButton: {
@@ -224,11 +244,9 @@ const styles = {
     cursor: "pointer"
   },
 
-  /* CONTENT */
   content: {
     flex: 1,
     padding: "20px",
-    background: "#f1f5f9",
     overflow: "auto"
   }
 };
