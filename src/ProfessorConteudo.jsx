@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
-import { supabase } from "./supabaseClient"; // 🔥 NOVO
+import { supabase } from "./supabaseClient";
 
 function ProfessorConteudo() {
 
@@ -31,6 +31,9 @@ function ProfessorConteudo() {
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
+
+  // 🔥 NOVO
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const inputStyle = {
     width: "100%",
@@ -88,13 +91,18 @@ function ProfessorConteudo() {
 
       setProfessores(ordenados);
 
-      // 🔥 pega email do usuário logado
+      const ADMIN_EMAIL = "sharlayne.fonseca@professor.barueri.br";
+
       const { data } = await supabase.auth.getSession();
       const email = data.session?.user?.email;
 
       console.log("EMAIL LOGADO:", email);
 
-      // 🔥 encontra professor correspondente
+      // 🔥 ADMIN
+      if (email === ADMIN_EMAIL) {
+        setIsAdmin(true);
+      }
+
       const professor = ordenados.find(
         p => p.email?.toLowerCase() === email?.toLowerCase()
       );
@@ -202,10 +210,6 @@ function ProfessorConteudo() {
 
   }, [atribuicaoSelecionada, bimestre]);
 
-  // ==========================================
-  // PARAMETROS URL (MANTIDO)
-  // ==========================================
-
   useEffect(() => {
 
     const params = new URLSearchParams(window.location.search);
@@ -310,9 +314,24 @@ function ProfessorConteudo() {
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
-      {/* 🔒 PROFESSOR BLOQUEADO AUTOMATICAMENTE */}
-      <select style={inputStyle} value={professorSelecionado} disabled>
-        <option value="">Carregando professor...</option>
+      {/* 🔥 MODO ADMIN */}
+      {isAdmin && (
+        <p style={{ color: "green", fontWeight: "bold" }}>
+          🔥 Modo Administrador
+        </p>
+      )}
+
+      <select
+        style={inputStyle}
+        value={professorSelecionado}
+        disabled={!isAdmin}
+        onChange={(e) => {
+          setProfessorSelecionado(e.target.value);
+          carregarAtribuicoes(e.target.value);
+        }}
+      >
+        <option value="">Selecione Professor</option>
+
         {professores.map(p => (
           <option key={p.id} value={p.id}>{p.nome}</option>
         ))}
