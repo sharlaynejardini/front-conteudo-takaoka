@@ -12,19 +12,37 @@ function App() {
 
     console.log("=== APP.JSX INICIANDO ===");
 
+    // 🔥 PEGAR SESSÃO INICIAL
     supabase.auth.getSession().then(({ data }) => {
-      console.log("APP: Sessão obtida:", data.session ? "SIM" : "NÃO");
-      console.log("APP: Usuário:", data.session?.user?.email);
+      console.log("APP: Sessão inicial:", data.session);
       setSession(data.session);
       setUser(data.session?.user);
+
+      // 🔥 SALVAR AQUI TAMBÉM
+      const email = data.session?.user?.email;
+      if (email) {
+        localStorage.setItem("user_email", email);
+        console.log("💾 Email salvo (init):", email);
+      }
     });
 
+    // 🔥 O MAIS IMPORTANTE (LOGIN REAL ACONTECE AQUI)
     const { data: listener } =
       supabase.auth.onAuthStateChange((_event, session) => {
-        console.log("APP: Mudança de estado de auth:", _event);
-        console.log("APP: Nova sessão:", session ? "SIM" : "NÃO");
+
+        console.log("🔁 EVENTO AUTH:", _event);
+        console.log("SESSION:", session);
+
         setSession(session);
         setUser(session?.user);
+
+        // 🔥🔥🔥 SALVAR AQUI (GARANTIDO)
+        const email = session?.user?.email;
+
+        if (email) {
+          localStorage.setItem("user_email", email);
+          console.log("💾 Email salvo (evento):", email);
+        }
       });
 
     return () => {
@@ -33,59 +51,33 @@ function App() {
 
   }, []);
 
-  // 🔥🔥🔥 NOVO BLOCO (IGUAL AO DEBUG)
-  useEffect(() => {
-    async function salvarEmail() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const email = sessionData.session?.user?.email;
-
-      console.log("💾 Salvando email via getSession:", email);
-
-      if (email) {
-        localStorage.setItem("user_email", email);
-      }
-    }
-
-    salvarEmail();
-  }, []);
-
-  console.log("APP: Renderizando com session:", session === undefined ? "UNDEFINED" : session ? "EXISTE" : "NULL");
+  console.log("APP: Renderizando:", session);
 
   if (session === undefined) {
-    console.log("APP: Aguardando sessão...");
     return null;
   }
 
   if (!session) {
-    console.log("APP: Sem sessão, mostrando Login");
     return <Login />;
   }
 
   const email = user?.email || "";
-  console.log("APP: Verificando domínio para:", email);
 
   const dominioPermitido =
     email.endsWith("@professor.barueri.br") ||
     email.endsWith("@educbarueri.sp.gov.br");
 
-  console.log("APP: Domínio permitido:", dominioPermitido);
-
   if (!dominioPermitido) {
-    console.log("APP: Domínio não permitido, fazendo logout");
     supabase.auth.signOut();
     return (
       <div style={{ textAlign: "center", marginTop: "100px" }}>
         <h2>Acesso não autorizado</h2>
-        <p>Use um email institucional.</p>
-        <p>Email usado: {email}</p>
+        <p>Email: {email}</p>
       </div>
     );
   }
 
-  console.log("APP: Acesso permitido, renderizando Outlet");
   return <Outlet />;
 }
-
-alert(localStorage.getItem("user_email"));
 
 export default App;
