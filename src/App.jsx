@@ -66,6 +66,12 @@ function App() {
     );
   }
 
+  // 🔥🔥🔥 ADICIONEI AQUI (ESSENCIAL)
+  if (email) {
+    localStorage.setItem("user_email", email);
+    console.log("💾 Email salvo no localStorage:", email);
+  }
+
   console.log("APP: Acesso permitido, renderizando Outlet");
   return <Outlet />;
 }
