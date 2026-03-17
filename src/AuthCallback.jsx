@@ -33,18 +33,20 @@ function AuthCallback() {
         
         if (error) {
           console.error("\n❌ ERRO no getSession:", error);
-          console.error("   - Message:", error.message);
-          console.error("   - Status:", error.status);
-          console.error("   - Stack:", error.stack);
           navigate("/login");
           return;
         }
 
         if (data.session) {
           const email = data.session.user.email;
+
           console.log("\n4. SESSÃO ENCONTRADA!");
           console.log("   - Email do usuário:", email);
           
+          // 🔥 SALVAR EMAIL LOCALMENTE
+          localStorage.setItem("user_email", email);
+          console.log("   - Email salvo no localStorage");
+
           // Verifica se é um domínio permitido
           const dominioPermitido = email.endsWith("@professor.barueri.br") || email.endsWith("@educbarueri.sp.gov.br");
           console.log("   - Domínio permitido?", dominioPermitido);
@@ -63,20 +65,15 @@ function AuthCallback() {
             navigate("/");
           } else {
             console.log("\n❌ DOMÍNIO NÃO AUTORIZADO!");
-            console.log("   - Fazendo logout...");
             await supabase.auth.signOut();
             navigate("/login");
           }
         } else {
           console.log("\n❌ NENHUMA SESSÃO ENCONTRADA");
-          console.log("   - Redirecionando para login...");
           navigate("/login");
         }
       } catch (error) {
         console.error("\n❌❌❌ ERRO CRÍTICO:", error);
-        console.error("   - Message:", error.message);
-        console.error("   - Stack:", error.stack);
-        console.error("   - Objeto completo:", JSON.stringify(error, null, 2));
         navigate("/login");
       }
       
