@@ -86,4 +86,6 @@ function App() {
   return <Outlet />;
 }
 
+alert(localStorage.getItem("user_email"));
+
 export default App;
