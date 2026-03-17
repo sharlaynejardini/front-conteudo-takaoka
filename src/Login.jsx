@@ -5,106 +5,158 @@ function Login() {
 
   const loginGoogle = async (domain) => {
 
-    console.log("=== LOGIN INICIADO ===");
-    console.log("Domínio selecionado:", domain);
-
     const redirectUrl = `${window.location.origin}/auth/callback`;
-    console.log("Redirect URL:", redirectUrl);
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: redirectUrl,
-        queryParams: {
-          hd: domain
-        },
-        skipBrowserRedirect: false,
-        scopes: 'email profile'
+        queryParams: { hd: domain },
+        scopes: "email profile"
       }
     });
 
-    console.log("OAuth Response Data:", data);
-    console.log("OAuth Response Error:", error);
-
     if (error) {
-      console.error("Erro no login:", error);
       alert(`Erro ao fazer login: ${error.message}`);
     }
   };
 
-  const pageStyle = {
+  return (
+    <div style={styles.page}>
+      
+      {/* FUNDO COM GRADIENTE + EFEITO */}
+      <div style={styles.backgroundGlow}></div>
+
+      <div style={styles.card}>
+
+        <img
+          src={logoTakaoka}
+          alt="Logo"
+          style={styles.logo}
+        />
+
+        <h2 style={styles.title}>
+          Acesso Restrito
+        </h2>
+
+        <p style={styles.subtitle}>
+          Use sua conta institucional para continuar
+        </p>
+
+        {/* BOTÃO PROFESSOR */}
+        <button
+          onClick={() => loginGoogle("professor.barueri.br")}
+          style={{ ...styles.button, ...styles.blue }}
+        >
+          <span style={styles.icon}>👨‍🏫</span>
+          Entrar como Professor
+        </button>
+
+        {/* BOTÃO EDUCAÇÃO */}
+        <button
+          onClick={() => loginGoogle("educbarueri.sp.gov.br")}
+          style={{ ...styles.button, ...styles.green }}
+        >
+          <span style={styles.icon}>🏫</span>
+          Entrar como Educação
+        </button>
+
+        <p style={styles.footer}>
+          Prefeitura de Barueri • Sistema Escolar 2026
+        </p>
+
+      </div>
+    </div>
+  );
+}
+
+const styles = {
+
+  page: {
     minHeight: "100vh",
+    width: "100%",
     background: "linear-gradient(135deg, #1e3a8a, #2563eb)",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    fontFamily: "Arial, sans-serif"
-  };
+    fontFamily: "Segoe UI, sans-serif",
+    position: "relative",
+    overflow: "hidden"
+  },
 
-  const cardStyle = {
+  backgroundGlow: {
+    position: "absolute",
+    width: "600px",
+    height: "600px",
+    background: "rgba(255,255,255,0.08)",
+    filter: "blur(120px)",
+    top: "-100px",
+    right: "-100px"
+  },
+
+  card: {
     backgroundColor: "white",
-    padding: "50px 40px",
-    borderRadius: "16px",
-    boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+    padding: "45px 35px",
+    borderRadius: "18px",
+    boxShadow: "0 25px 60px rgba(0,0,0,0.2)",
     width: "100%",
     maxWidth: "420px",
-    textAlign: "center"
-  };
+    textAlign: "center",
+    animation: "fadeIn 0.6s ease"
+  },
 
-  const buttonStyle = {
+  logo: {
+    width: "90%",
+    marginBottom: "20px"
+  },
+
+  title: {
+    marginBottom: "8px",
+    color: "#1e3a8a",
+    fontSize: "22px"
+  },
+
+  subtitle: {
+    color: "#6b7280",
+    fontSize: "14px",
+    marginBottom: "25px"
+  },
+
+  button: {
     width: "100%",
     padding: "12px",
-    marginTop: "20px",
-    borderRadius: "8px",
+    borderRadius: "10px",
     border: "none",
-    backgroundColor: "#4285F4",
-    color: "white",
     fontSize: "15px",
     fontWeight: "600",
     cursor: "pointer",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: "10px"
-  };
-
-  const subtitleStyle = {
-    color: "#6b7280",
-    fontSize: "14px",
+    gap: "10px",
+    transition: "all 0.2s ease",
     marginTop: "10px"
-  };
+  },
 
-  return (
-    <div style={pageStyle}>
-      <div style={cardStyle}>
+  blue: {
+    backgroundColor: "#2563eb",
+    color: "white"
+  },
 
-        <img
-          src={logoTakaoka}
-          alt="Logo"
-          style={{ width: "100%", marginBottom: "25px" }}
-        />
+  green: {
+    backgroundColor: "#16a34a",
+    color: "white"
+  },
 
-        <h2 style={{ marginBottom: "10px", color: "#1e3a8a" }}>
-          Acesso Restrito
-        </h2>
+  icon: {
+    fontSize: "18px"
+  },
 
-        <p style={subtitleStyle}>
-          Escolha seu domínio de acesso:
-        </p>
-
-        <button onClick={() => loginGoogle("professor.barueri.br")} style={buttonStyle}>
-          <span style={{ fontSize: "18px" }}>👨‍🏫</span>
-          Professor (@professor.barueri.br)
-        </button>
-
-        <button onClick={() => loginGoogle("educbarueri.sp.gov.br")} style={{...buttonStyle, backgroundColor: "#34A853", marginTop: "10px"}}>
-          <span style={{ fontSize: "18px" }}>🏫</span>
-          Educação (@educbarueri.sp.gov.br)
-        </button>
-
-      </div>
-    </div>
-  );
-}
+  footer: {
+    marginTop: "25px",
+    fontSize: "12px",
+    color: "#9ca3af"
+  }
+};
 
 export default Login;
