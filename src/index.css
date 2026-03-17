@@ -1,21 +1,35 @@
 /* ==========================================
-   CONFIGURAÇÃO GLOBAL DE IMPRESSÃO
+   RESET GLOBAL (REMOVE BORDA BRANCA)
    ========================================== */
-html, body {
-  margin: 0 !important;
-  padding: 0 !important;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* GARANTE QUE A TELA OCUPE 100% */
+html, body, #root {
+  height: 100%;
   width: 100%;
 }
 
+/* REMOVE MARGEM PADRÃO DO NAVEGADOR */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* ROOT SEM LIMITAÇÃO */
 #root {
   margin: 0;
   padding: 0;
   width: 100%;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ==========================================
+   CONFIGURAÇÃO DE IMPRESSÃO (MANTIDA)
+   ========================================== */
 
 @media print {
 
