@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
+import { supabase } from "./supabaseClient"; // 🔥 NOVO
 
 function ProfessorConteudo() {
 
@@ -62,15 +63,17 @@ function ProfessorConteudo() {
     fontSize: "14px",
     fontWeight: "600",
     marginTop: "10px",
-    marginRight: "10px",
-    transition: "all 0.3s ease",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+    marginRight: "10px"
   };
 
   const limparFormulario = () => {
     setTopicos([""]);
     setModoEdicao(false);
   };
+
+  // ==========================================
+  // 🔥 CARREGAR PROFESSORES + AUTO SELEÇÃO
+  // ==========================================
 
   useEffect(() => {
     async function carregar() {
@@ -82,6 +85,21 @@ function ProfessorConteudo() {
       );
 
       setProfessores(ordenados);
+
+      // 🔥 PEGAR EMAIL LOGADO
+      const { data } = await supabase.auth.getSession();
+      const email = data.session?.user?.email;
+
+      // 🔥 ENCONTRAR PROFESSOR
+      const professor = ordenados.find(
+        p => p.email?.toLowerCase() === email?.toLowerCase()
+      );
+
+      if (professor) {
+        setProfessorSelecionado(professor.id);
+        carregarAtribuicoes(professor.id);
+      }
+
     }
 
     carregar();
@@ -175,27 +193,6 @@ function ProfessorConteudo() {
 
   }, [atribuicaoSelecionada, bimestre]);
 
-  // ==========================================
-  // NOVO - PARAMETROS DA URL (EDIÇÃO)
-  // ==========================================
-
-  useEffect(() => {
-
-    const params = new URLSearchParams(window.location.search);
-
-    const atribuicao = params.get("atribuicao");
-    const bimestreParam = params.get("bimestre");
-
-    if (atribuicao) {
-      setAtribuicaoSelecionada(atribuicao);
-    }
-
-    if (bimestreParam) {
-      setBimestre(Number(bimestreParam));
-    }
-
-  }, []);
-
   const adicionarTopico = () => setTopicos([...topicos, ""]);
 
   const atualizarTopico = (index, valor) => {
@@ -251,33 +248,13 @@ function ProfessorConteudo() {
 
       }
 
-      const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
-
-      await logAction({
-        action: modoEdicao ? "Atualizou avaliação" : "Criou avaliação",
-        entidade: "Avaliação",
-        turma: atribuicaoAtual?.turma?.nome,
-        disciplina: atribuicaoAtual?.disciplina?.nome,
-        bimestre,
-        detalhes: `Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
-      });
-
-      setMensagem(
-        modoEdicao
-          ? "Conteúdo atualizado com sucesso!"
-          : "Conteúdo salvo com sucesso!"
-      );
-
+      setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
 
-      setTimeout(() => {
-        limparFormulario();
-        setMensagem("");
-      }, 1200);
+    } catch (err) {
 
-    } catch {
-
-      setMensagem("Já existem 2 provas para essa turma nesse dia.");
+      console.error(err);
+      setMensagem("Erro ou falta de permissão.");
       setTipoMensagem("error");
 
     }
@@ -285,113 +262,40 @@ function ProfessorConteudo() {
   };
 
   return (
-    <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
+    <div style={{ maxWidth: "700px", margin: "0 auto" }}>
 
-      <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "20px" }}>
+      <h2 style={{ textAlign: "center", color: "#1e3a8a" }}>
         Lançamento de Avaliação
       </h2>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
-      <select
-        style={inputStyle}
-        value={professorSelecionado}
-        onChange={(e) => {
-          setProfessorSelecionado(e.target.value);
-          carregarAtribuicoes(e.target.value);
-        }}
-      >
-
-        <option value="">Selecione Professor</option>
-
+      {/* 🔒 agora só exibe, não depende mais */}
+      <select style={inputStyle} value={professorSelecionado} disabled>
         {professores.map(p => (
           <option key={p.id} value={p.id}>{p.nome}</option>
         ))}
-
       </select>
 
       {atribuicoes.length > 0 && (
-
-        <div
-          style={{
-            border: "1px solid #ddd",
-            borderRadius: "10px",
-            padding: "10px",
-            marginBottom: "15px",
-            maxHeight: "200px",
-            overflowY: "auto"
-          }}
-        >
-
-          <strong>Selecione as Turmas</strong>
-
+        <div>
           {atribuicoes.map(a => (
-
             <div key={a.id}>
-
               <label>
-
                 <input
                   type="checkbox"
                   checked={atribuicoesSelecionadas.includes(a.id)}
                   onChange={() => toggleTurma(a.id)}
                 />
-
-                {" "}
                 {a.turma.nome} - {a.disciplina.nome}
-
               </label>
-
             </div>
-
           ))}
-
         </div>
-
       )}
 
-      <select
-        style={inputStyle}
-        value={bimestre}
-        onChange={(e) => setBimestre(Number(e.target.value))}
-      >
-
-        <option value={1}>1º Bimestre</option>
-        <option value={2}>2º Bimestre</option>
-        <option value={3}>3º Bimestre</option>
-        <option value={4}>4º Bimestre</option>
-
-      </select>
-
-      <input
-        type="date"
-        style={inputStyle}
-        value={dataAvaliacao}
-        min={semanasProva[bimestre].inicio}
-        max={semanasProva[bimestre].fim}
-        onChange={(e) => setDataAvaliacao(e.target.value)}
-      />
-
-      <h4>Conteúdos:</h4>
-
-      {topicos.map((topico, index) => (
-        <div key={index} style={{ display: "flex", gap: "10px" }}>
-          <input
-            type="text"
-            value={topico}
-            onChange={(e) => atualizarTopico(index, e.target.value)}
-            style={{ ...inputStyle, marginBottom: "0" }}
-          />
-          <button onClick={() => removerTopico(index)}>❌</button>
-        </div>
-      ))}
-
-      <button onClick={adicionarTopico} style={buttonStyle}>
-        + Adicionar Tópico
-      </button>
-
       <button onClick={salvarConteudo} style={buttonStyle}>
-        {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
+        Salvar Conteúdo
       </button>
 
     </div>
