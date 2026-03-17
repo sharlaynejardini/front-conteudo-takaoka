@@ -4,7 +4,6 @@ import logoTakaoka from "./assets/logo_takaoka.png";
 function Login() {
 
   const loginGoogle = async (domain) => {
-
     const redirectUrl = `${window.location.origin}/auth/callback`;
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -22,49 +21,42 @@ function Login() {
   };
 
   return (
-    <div style={styles.page}>
-      
-      {/* FUNDO COM GRADIENTE + EFEITO */}
-      <div style={styles.backgroundGlow}></div>
+    <div style={styles.container}>
 
-      <div style={styles.card}>
-
-        <img
-          src={logoTakaoka}
-          alt="Logo"
-          style={styles.logo}
-        />
-
-        <h2 style={styles.title}>
-          Acesso Restrito
-        </h2>
-
-        <p style={styles.subtitle}>
-          Use sua conta institucional para continuar
+      {/* LADO ESQUERDO */}
+      <div style={styles.left}>
+        <h1 style={styles.brandTitle}>Sistema Escolar</h1>
+        <p style={styles.brandSubtitle}>
+          Gestão de conteúdos, trabalhos e horários em um só lugar
         </p>
+      </div>
 
-        {/* BOTÃO PROFESSOR */}
-        <button
-          onClick={() => loginGoogle("professor.barueri.br")}
-          style={{ ...styles.button, ...styles.blue }}
-        >
-          <span style={styles.icon}>👨‍🏫</span>
-          Entrar como Professor
-        </button>
+      {/* LADO DIREITO */}
+      <div style={styles.right}>
+        <div style={styles.card}>
 
-        {/* BOTÃO EDUCAÇÃO */}
-        <button
-          onClick={() => loginGoogle("educbarueri.sp.gov.br")}
-          style={{ ...styles.button, ...styles.green }}
-        >
-          <span style={styles.icon}>🏫</span>
-          Entrar como Educação
-        </button>
+          <img src={logoTakaoka} alt="Logo" style={styles.logo} />
 
-        <p style={styles.footer}>
-          Prefeitura de Barueri • Sistema Escolar 2026
-        </p>
+          <h2 style={styles.title}>Entrar</h2>
+          <p style={styles.subtitle}>
+            Use sua conta institucional
+          </p>
 
+          <button
+            onClick={() => loginGoogle("professor.barueri.br")}
+            style={styles.googleBtn}
+          >
+            <span>🔐</span> Entrar como Professor
+          </button>
+
+          <button
+            onClick={() => loginGoogle("educbarueri.sp.gov.br")}
+            style={{ ...styles.googleBtn, background: "#16a34a" }}
+          >
+            <span>🏫</span> Entrar como Educação
+          </button>
+
+        </div>
       </div>
     </div>
   );
@@ -72,90 +64,84 @@ function Login() {
 
 const styles = {
 
-  page: {
+  container: {
+    display: "flex",
     minHeight: "100vh",
     width: "100%",
+    fontFamily: "Segoe UI, sans-serif"
+  },
+
+  /* ESQUERDA */
+  left: {
+    flex: 1,
     background: "linear-gradient(135deg, #1e3a8a, #2563eb)",
+    color: "white",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    padding: "60px"
+  },
+
+  brandTitle: {
+    fontSize: "36px",
+    fontWeight: "700"
+  },
+
+  brandSubtitle: {
+    marginTop: "10px",
+    opacity: 0.9,
+    maxWidth: "400px"
+  },
+
+  /* DIREITA */
+  right: {
+    flex: 1,
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    fontFamily: "Segoe UI, sans-serif",
-    position: "relative",
-    overflow: "hidden"
-  },
-
-  backgroundGlow: {
-    position: "absolute",
-    width: "600px",
-    height: "600px",
-    background: "rgba(255,255,255,0.08)",
-    filter: "blur(120px)",
-    top: "-100px",
-    right: "-100px"
+    background: "#f8fafc"
   },
 
   card: {
-    backgroundColor: "white",
-    padding: "45px 35px",
-    borderRadius: "18px",
-    boxShadow: "0 25px 60px rgba(0,0,0,0.2)",
+    background: "white",
+    padding: "40px",
+    borderRadius: "16px",
     width: "100%",
-    maxWidth: "420px",
-    textAlign: "center",
-    animation: "fadeIn 0.6s ease"
+    maxWidth: "380px",
+    boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+    textAlign: "center"
   },
 
   logo: {
-    width: "90%",
+    width: "80%",
     marginBottom: "20px"
   },
 
   title: {
-    marginBottom: "8px",
-    color: "#1e3a8a",
-    fontSize: "22px"
+    marginBottom: "5px"
   },
 
   subtitle: {
     color: "#6b7280",
     fontSize: "14px",
-    marginBottom: "25px"
+    marginBottom: "20px"
   },
 
-  button: {
+  googleBtn: {
     width: "100%",
     padding: "12px",
     borderRadius: "10px",
     border: "none",
-    fontSize: "15px",
+    background: "#2563eb",
+    color: "white",
     fontWeight: "600",
     cursor: "pointer",
+    marginTop: "10px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: "10px",
-    transition: "all 0.2s ease",
-    marginTop: "10px"
-  },
-
-  blue: {
-    backgroundColor: "#2563eb",
-    color: "white"
-  },
-
-  green: {
-    backgroundColor: "#16a34a",
-    color: "white"
-  },
-
-  icon: {
-    fontSize: "18px"
-  },
-
-  footer: {
-    marginTop: "25px",
-    fontSize: "12px",
-    color: "#9ca3af"
+    gap: "8px",
+    transition: "0.2s"
   }
 };
 

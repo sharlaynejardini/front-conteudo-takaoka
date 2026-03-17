@@ -1,10 +1,12 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import { useEffect, useState } from "react";
 
 function Layout() {
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
 
@@ -31,90 +33,163 @@ function Layout() {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    window.location.href = "/login";
   };
 
+  const menu = [
+    { path: "/", label: "Provas", icon: "📝" },
+    { path: "/cronograma", label: "Cronograma Provas", icon: "📅" },
+    { path: "/trabalho", label: "Trabalhos", icon: "📚" },
+    { path: "/cronograma-trabalho", label: "Cronograma Trabalhos", icon: "🗂️" },
+    { path: "/horario", label: "Horário", icon: "🕒" },
+  ];
+
+  if (isAdmin) {
+    menu.push({ path: "/admin", label: "Admin", icon: "⚙️" });
+  }
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f5f5f5", margin: 0, padding: 0 }}>
+    <div style={styles.container}>
 
-      <div
-        style={{
-          background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
-          padding: "18px 40px",
-          color: "white",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-        }}
-      >
-        <div style={{ display: "flex", gap: "30px", alignItems: "center" }}>
+      {/* SIDEBAR */}
+      <div style={{
+        ...styles.sidebar,
+        ...(menuOpen ? styles.sidebarMobileOpen : {})
+      }}>
 
-          {/* PROVAS */}
-          <Link to="/" style={linkStyle}>
-            📝 Provas Bimestrais
+        <h2 style={styles.logo}>Sistema</h2>
+
+        {menu.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            style={{
+              ...styles.link,
+              ...(location.pathname === item.path ? styles.active : {})
+            }}
+            onClick={() => setMenuOpen(false)}
+          >
+            <span>{item.icon}</span> {item.label}
           </Link>
+        ))}
 
-          <Link to="/cronograma" style={linkStyle}>
-            📅 Cronograma Provas
-          </Link>
+      </div>
 
-          {/* TRABALHOS */}
-          <Link to="/trabalho" style={linkStyle}>
-            📚 Trabalhos Mensais
-          </Link>
+      {/* MAIN */}
+      <div style={styles.main}>
 
-          <Link to="/cronograma-trabalho" style={linkStyle}>
-             📅 Cronograma Trabalhos
-          </Link>
+        {/* HEADER */}
+        <div style={styles.header}>
 
-          {/* HORÁRIO */}
-          <Link to="/horario" style={linkStyle}>
-            🕒 Horário Escolar
-          </Link>
+          <button
+            style={styles.menuButton}
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            ☰
+          </button>
 
-          {isAdmin && (
-            <Link to="/admin" style={linkStyle}>
-              ⚙️ Admin
-            </Link>
-          )}
+          <button onClick={logout} style={styles.logout}>
+            🚪 Sair
+          </button>
 
         </div>
 
-        <button onClick={logout} style={buttonStyle}>
-          🚪 Sair
-        </button>
-      </div>
+        {/* CONTENT */}
+        <div style={styles.content}>
+          <Outlet />
+        </div>
 
-      <div style={{ padding: "20px" }}>
-        <Outlet />
       </div>
 
     </div>
   );
 }
 
-const linkStyle = {
-  color: "white",
-  textDecoration: "none",
-  fontWeight: "600",
-  fontSize: "15px",
-  padding: "8px 16px",
-  borderRadius: "6px",
-  transition: "all 0.3s ease",
-  display: "inline-block"
-};
+const styles = {
 
-const buttonStyle = {
-  backgroundColor: "white",
-  color: "#1e3a8a",
-  border: "none",
-  padding: "10px 20px",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontWeight: "600",
-  fontSize: "14px",
-  transition: "all 0.3s ease",
-  boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+  container: {
+    display: "flex",
+    height: "100vh",
+    width: "100%"
+  },
+
+  /* SIDEBAR */
+  sidebar: {
+    width: "240px",
+    background: "#1e293b",
+    color: "white",
+    padding: "20px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    transition: "0.3s"
+  },
+
+  sidebarMobileOpen: {
+    position: "absolute",
+    zIndex: 1000,
+    height: "100%"
+  },
+
+  logo: {
+    marginBottom: "20px"
+  },
+
+  link: {
+    color: "#cbd5f5",
+    textDecoration: "none",
+    padding: "10px",
+    borderRadius: "8px",
+    display: "flex",
+    gap: "10px",
+    fontSize: "14px"
+  },
+
+  active: {
+    background: "#2563eb",
+    color: "white"
+  },
+
+  /* MAIN */
+  main: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column"
+  },
+
+  header: {
+    height: "60px",
+    background: "white",
+    borderBottom: "1px solid #e5e7eb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "0 20px"
+  },
+
+  menuButton: {
+    fontSize: "20px",
+    background: "none",
+    border: "none",
+    cursor: "pointer"
+  },
+
+  logout: {
+    background: "#ef4444",
+    color: "white",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    cursor: "pointer"
+  },
+
+  /* CONTENT */
+  content: {
+    flex: 1,
+    padding: "20px",
+    background: "#f1f5f9",
+    overflow: "auto"
+  }
 };
 
 export default Layout;
