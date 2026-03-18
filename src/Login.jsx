@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient";
 import logoTakaoka from "./assets/logo_takaoka.png";
+import logoTakaokaImg from "./assets/logo_takaoka_img.png";
 
 function Login() {
 
@@ -25,10 +26,19 @@ function Login() {
 
       {/* LADO ESQUERDO */}
       <div style={styles.left}>
+
+        <img
+          src={logoTakaokaImg}
+          alt="Imagem Escola"
+          style={styles.leftImage}
+        />
+
         <h1 style={styles.brandTitle}>Sistema Escolar</h1>
+
         <p style={styles.brandSubtitle}>
           Gestão de conteúdos, trabalhos EMEIEF ENG. YOJIRO TAKAOKA
         </p>
+
       </div>
 
       {/* LADO DIREITO */}
@@ -38,6 +48,7 @@ function Login() {
           <img src={logoTakaoka} alt="Logo" style={styles.logo} />
 
           <h2 style={styles.title}>Entrar</h2>
+
           <p style={styles.subtitle}>
             Use sua conta institucional
           </p>
@@ -79,11 +90,21 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    padding: "60px"
+    alignItems: "center",
+    padding: "60px",
+    textAlign: "center"
+  },
+
+  leftImage: {
+    width: "100%",
+    maxWidth: "320px",
+    marginBottom: "30px",
+    borderRadius: "12px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
   },
 
   brandTitle: {
-    fontSize: "36px",
+    fontSize: "34px",
     fontWeight: "700"
   },
 
@@ -118,7 +139,8 @@ const styles = {
   },
 
   title: {
-    marginBottom: "5px"
+    marginBottom: "5px",
+    fontSize: "22px"
   },
 
   subtitle: {
