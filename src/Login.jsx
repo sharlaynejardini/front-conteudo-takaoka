@@ -42,7 +42,7 @@ function Login() {
         <h1 style={styles.brandTitle}>Sistema Escolar</h1>
 
         <p style={styles.brandSubtitle}>
-          Gestão de conteúdos, trabalhos EMEIEF ENG. YOJIRO TAKAOKA
+          Gestão de provas e trabalhos  da EMEIEF ENG. YOJIRO TAKAOKA!
         </p>
 
       </div>
