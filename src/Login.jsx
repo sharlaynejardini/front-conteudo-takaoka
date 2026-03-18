@@ -27,11 +27,17 @@ function Login() {
       {/* LADO ESQUERDO */}
       <div style={styles.left}>
 
-        <img
-          src={logoTakaokaImg}
-          alt="Imagem Escola"
-          style={styles.leftImage}
-        />
+        {/* OVERLAY SUAVE */}
+        <div style={styles.overlay}></div>
+
+        {/* IMAGEM COM FUNDO CORRIGIDO */}
+        <div style={styles.imageBox}>
+          <img
+            src={logoTakaokaImg}
+            alt="Imagem Escola"
+            style={styles.leftImage}
+          />
+        </div>
 
         <h1 style={styles.brandTitle}>Sistema Escolar</h1>
 
@@ -92,15 +98,34 @@ const styles = {
     justifyContent: "center",
     alignItems: "center",
     padding: "60px",
-    textAlign: "center"
+    textAlign: "center",
+    position: "relative",
+    overflow: "hidden"
+  },
+
+  overlay: {
+    position: "absolute",
+    width: "500px",
+    height: "500px",
+    background: "rgba(255,255,255,0.08)",
+    borderRadius: "50%",
+    top: "-100px",
+    right: "-100px",
+    filter: "blur(100px)"
+  },
+
+  imageBox: {
+    background: "white", // 👈 resolve transparência
+    padding: "12px",
+    borderRadius: "16px",
+    marginBottom: "30px",
+    boxShadow: "0 15px 40px rgba(0,0,0,0.25)"
   },
 
   leftImage: {
     width: "100%",
-    maxWidth: "320px",
-    marginBottom: "30px",
-    borderRadius: "12px",
-    boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
+    maxWidth: "280px",
+    borderRadius: "10px"
   },
 
   brandTitle: {
@@ -111,7 +136,8 @@ const styles = {
   brandSubtitle: {
     marginTop: "10px",
     opacity: 0.9,
-    maxWidth: "400px"
+    maxWidth: "400px",
+    lineHeight: "1.4"
   },
 
   /* DIREITA */
