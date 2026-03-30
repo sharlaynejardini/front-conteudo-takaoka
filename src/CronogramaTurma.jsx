@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import api from "./api";
 import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf"; // ✅ NOVO
 import logoTakaoka from "./assets/logo_takaoka.png";
 
 function CronogramaTurma() {
@@ -56,13 +57,11 @@ function CronogramaTurma() {
     const [ano, mes, dia] = dataISO.split("T")[0].split("-");
 
     return `${dia}/${mes}/${ano}`;
-
   };
 
   const gerarImagem = async () => {
 
     const ocultar = document.querySelectorAll(".no-print");
-
     ocultar.forEach(el => el.style.display = "none");
 
     const canvas = await html2canvas(printRef.current, {
@@ -110,10 +109,59 @@ function CronogramaTurma() {
 
   };
 
+  // ✅ NOVA FUNÇÃO PDF
+  const gerarPDF = async () => {
+
+    const ocultar = document.querySelectorAll(".no-print");
+    ocultar.forEach(el => el.style.display = "none");
+
+    const canvas = await html2canvas(printRef.current, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true
+    });
+
+    ocultar.forEach(el => el.style.display = "");
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let position = 0;
+
+    // 🔥 quebra automática de página
+    if (imgHeight <= pageHeight) {
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    } else {
+      let heightLeft = imgHeight;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+    }
+
+    const turmaNome =
+      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+    pdf.save(`${turmaNome}_${bimestre}Bimestre.pdf`);
+
+  };
+
   const excluirAvaliacao = async (id) => {
 
     const confirmar = window.confirm("Deseja realmente excluir esta avaliação?");
-
     if (!confirmar) return;
 
     try {
@@ -127,7 +175,6 @@ function CronogramaTurma() {
     } catch (error) {
 
       console.error(error);
-
       alert("Erro ao excluir avaliação.");
 
     }
@@ -156,7 +203,6 @@ function CronogramaTurma() {
       try {
 
         const convertido = JSON.parse(conteudo);
-
         return Array.isArray(convertido) ? convertido : [convertido];
 
       } catch {
@@ -190,12 +236,9 @@ function CronogramaTurma() {
   ].sort((a, b) => new Date(a) - new Date(b));
 
   datasOrdenadas.forEach(data => {
-
     mapaCores[data] =
       coresAlternadas[indiceCor % coresAlternadas.length];
-
     indiceCor++;
-
   });
 
   const pageStyle = {
@@ -250,7 +293,6 @@ function CronogramaTurma() {
   return (
 
     <div style={pageStyle}>
-
       <div style={cardStyle}>
 
         <h2 style={{ textAlign: "center", color: "#2c4a8a" }}>
@@ -259,11 +301,8 @@ function CronogramaTurma() {
 
         <div style={{ marginBottom: "30px", textAlign: "center" }}>
 
-          <select
-            style={selectStyle}
-            value={turmaSelecionada}
-            onChange={(e) => setTurmaSelecionada(e.target.value)}
-          >
+          <select style={selectStyle} value={turmaSelecionada}
+            onChange={(e) => setTurmaSelecionada(e.target.value)}>
 
             <option value="">Selecione a Turma</option>
 
@@ -275,11 +314,8 @@ function CronogramaTurma() {
 
           </select>
 
-          <select
-            style={selectStyle}
-            value={bimestre}
-            onChange={(e) => setBimestre(Number(e.target.value))}
-          >
+          <select style={selectStyle} value={bimestre}
+            onChange={(e) => setBimestre(Number(e.target.value))}>
 
             <option value={1}>1º Bimestre</option>
             <option value={2}>2º Bimestre</option>
@@ -296,6 +332,11 @@ function CronogramaTurma() {
             Baixar Imagem
           </button>
 
+          {/* ✅ NOVO BOTÃO */}
+          <button style={buttonStyle} onClick={gerarPDF}>
+            Baixar PDF
+          </button>
+
         </div>
 
         <div ref={printRef}>
@@ -306,19 +347,40 @@ function CronogramaTurma() {
             style={{ width: "100%", marginBottom: "20px" }}
           />
 
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            borderRadius: "12px",
+            overflow: "hidden"
+          }}>
 
             <thead>
 
               <tr>
                 <th colSpan="5" style={{
-                  padding: "14px",
-                  fontSize: "18px",
-                  backgroundColor: "#1e3a8a",
+                  padding: "20px",
+                  background: "linear-gradient(90deg, #1e3a8a, #2c4a8a)",
                   color: "white",
                   textAlign: "center"
                 }}>
-                  {turmaNome} - {bimestre}º Bimestre
+                  <div style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "10px",
+                    flexWrap: "wrap"
+                  }}>
+                    <span style={{ fontSize: "20px", fontWeight: "bold" }}>
+                      {turmaNome}
+                    </span>
+
+                    <span style={{
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      padding: "6px 12px",
+                      borderRadius: "20px"
+                    }}>
+                      {bimestre}º Bimestre
+                    </span>
+                  </div>
                 </th>
               </tr>
 
@@ -365,10 +427,8 @@ function CronogramaTurma() {
                     </td>
 
                     <td style={tdStyle} className="no-print">
-
                       <button onClick={() => editarAvaliacao(item)}>✏️</button>
                       <button onClick={() => excluirAvaliacao(item.id)}>🗑</button>
-
                     </td>
 
                   </tr>
@@ -384,7 +444,6 @@ function CronogramaTurma() {
         </div>
 
       </div>
-
     </div>
 
   );
