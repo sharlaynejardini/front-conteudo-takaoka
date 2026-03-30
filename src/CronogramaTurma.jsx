@@ -82,14 +82,13 @@ function CronogramaTurma() {
     const newCanvas = document.createElement("canvas");
 
     newCanvas.width = canvas.width + padding * 2;
-    newCanvas.height = canvas.height + padding * 2 + 80; // 🔥 espaço extra para título
+    newCanvas.height = canvas.height + padding * 2 + 80;
 
     const ctx = newCanvas.getContext("2d");
 
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
 
-    // 🔥 TEXTO ADICIONADO (TURMA + BIMESTRE)
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
@@ -103,7 +102,6 @@ function CronogramaTurma() {
       40
     );
 
-    // 🔥 DESENHAR IMAGEM ABAIXO DO TÍTULO
     ctx.drawImage(canvas, padding, padding + 40);
 
     const link = document.createElement("a");
@@ -258,6 +256,9 @@ function CronogramaTurma() {
     border: "1px solid #ddd"
   };
 
+  const turmaNome =
+    turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
   return (
 
     <div style={pageStyle}>
@@ -321,6 +322,19 @@ function CronogramaTurma() {
 
             <thead>
 
+              {/* ✅ NOVO: TURMA + BIMESTRE */}
+              <tr>
+                <th colSpan="5" style={{
+                  padding: "14px",
+                  fontSize: "18px",
+                  backgroundColor: "#1e3a8a",
+                  color: "white",
+                  textAlign: "center"
+                }}>
+                  {turmaNome} - {bimestre}º Bimestre
+                </th>
+              </tr>
+
               <tr>
 
                 <th style={thStyle}>Data</th>
@@ -333,78 +347,7 @@ function CronogramaTurma() {
 
             </thead>
 
-            <tbody>
-
-              {cronograma.map((item) => {
-
-                const listaTopicos =
-                  transformarConteudoEmLista(item.conteudo);
-
-                const corLinha =
-                  mapaCores[item.data_avaliacao] || "white";
-
-                return (
-
-                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
-
-                    <td style={tdStyle}>
-                      {formatarData(item.data_avaliacao)}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {item.atribuicao.professor.nome}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {item.atribuicao.disciplina.nome}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {listaTopicos.map((topico, i) => (
-                        <div key={i}>• {topico}</div>
-                      ))}
-                    </td>
-
-                    <td style={tdStyle} className="no-print">
-
-                      <button
-                        onClick={() => editarAvaliacao(item)}
-                        style={{
-                          backgroundColor: "#2563eb",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          padding: "6px 10px",
-                          marginRight: "5px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        ✏️ Editar
-                      </button>
-
-                      <button
-                        onClick={() => excluirAvaliacao(item.id)}
-                        style={{
-                          backgroundColor: "#dc2626",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          padding: "6px 10px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        🗑 Excluir
-                      </button>
-
-                    </td>
-
-                  </tr>
-
-                );
-
-              })}
-
-            </tbody>
+            <tbody></tbody>
 
           </table>
 
