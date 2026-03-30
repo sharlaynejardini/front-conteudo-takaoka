@@ -25,6 +25,8 @@ function ProfessorConteudo() {
   const [bimestre, setBimestre] = useState(1);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
+  const [atribuicaoCopiar, setAtribuicaoCopiar] = useState(""); // 🔥 NOVO
+
   const [topicos, setTopicos] = useState([""]);
   const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
 
@@ -32,7 +34,6 @@ function ProfessorConteudo() {
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
 
-  // 🔥 NOVO
   const [isAdmin, setIsAdmin] = useState(false);
 
   const inputStyle = {
@@ -76,10 +77,6 @@ function ProfessorConteudo() {
     setModoEdicao(false);
   };
 
-  // ==========================================
-  // 🔥 CARREGAR PROFESSORES + AUTO LOGIN
-  // ==========================================
-
   useEffect(() => {
     async function carregar() {
 
@@ -98,7 +95,6 @@ function ProfessorConteudo() {
 
       console.log("EMAIL LOGADO:", email);
 
-      // 🔥 ADMIN
       if (email === ADMIN_EMAIL) {
         setIsAdmin(true);
       }
@@ -255,6 +251,43 @@ function ProfessorConteudo() {
 
   };
 
+  // 🔥 NOVO
+  const copiarDeOutraTurma = async () => {
+    if (!atribuicaoCopiar) return;
+
+    try {
+
+      const response = await api.get("/conteudos", {
+        params: {
+          atribuicao_id: atribuicaoCopiar,
+          bimestre
+        }
+      });
+
+      const salvo = response.data;
+
+      setTopicos(
+        Array.isArray(salvo.conteudo)
+          ? salvo.conteudo
+          : [salvo.conteudo]
+      );
+
+      setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
+
+      setMensagem("Conteúdo copiado com sucesso!");
+      setTipoMensagem("success");
+
+      setMostrarCopiar(false);
+
+    } catch (err) {
+
+      console.error(err);
+      setMensagem("Erro ao copiar conteúdo.");
+      setTipoMensagem("error");
+
+    }
+  };
+
   const salvarConteudo = async () => {
 
     if (!atribuicaoSelecionada && atribuicoesSelecionadas.length === 0) {
@@ -295,7 +328,6 @@ function ProfessorConteudo() {
       setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
 
-      // ✅ NOVO: LIMPAR CAMPOS
       limparFormulario();
       setAtribuicaoSelecionada("");
       setAtribuicoesSelecionadas([]);
@@ -320,7 +352,6 @@ function ProfessorConteudo() {
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
-      {/* 🔥 MODO ADMIN */}
       {isAdmin && (
         <p style={{ color: "green", fontWeight: "bold" }}>
           🔥 Modo Administrador
@@ -415,6 +446,33 @@ function ProfessorConteudo() {
       <button onClick={salvarConteudo} style={buttonStyle}>
         {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
       </button>
+
+      {/* 🔥 NOVO */}
+      <button onClick={() => setMostrarCopiar(!mostrarCopiar)} style={buttonStyle}>
+        📋 Copiar de outra turma
+      </button>
+
+      {mostrarCopiar && (
+        <div style={{ marginTop: "10px" }}>
+          <select
+            style={inputStyle}
+            value={atribuicaoCopiar}
+            onChange={(e) => setAtribuicaoCopiar(e.target.value)}
+          >
+            <option value="">Selecione a turma para copiar</option>
+
+            {atribuicoes.map(a => (
+              <option key={a.id} value={a.id}>
+                {a.turma.nome} - {a.disciplina.nome}
+              </option>
+            ))}
+          </select>
+
+          <button onClick={copiarDeOutraTurma} style={buttonStyle}>
+            Confirmar cópia
+          </button>
+        </div>
+      )}
 
     </div>
   );
