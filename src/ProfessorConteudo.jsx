@@ -25,8 +25,6 @@ function ProfessorConteudo() {
   const [bimestre, setBimestre] = useState(1);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
-  const [atribuicaoCopiar, setAtribuicaoCopiar] = useState(""); // 🔥 NOVO
-
   const [topicos, setTopicos] = useState([""]);
   const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
 
@@ -35,6 +33,9 @@ function ProfessorConteudo() {
   const [tipoMensagem, setTipoMensagem] = useState("");
 
   const [isAdmin, setIsAdmin] = useState(false);
+
+  // 🔥 NOVO
+  const [atribuicaoCopiar, setAtribuicaoCopiar] = useState("");
 
   const inputStyle = {
     width: "100%",
@@ -251,12 +252,11 @@ function ProfessorConteudo() {
 
   };
 
-  // 🔥 NOVO
-  const copiarDeOutraTurma = async () => {
+  // 🔥 NOVO - copiar conteúdo
+  const copiarConteudo = async () => {
     if (!atribuicaoCopiar) return;
 
     try {
-
       const response = await api.get("/conteudos", {
         params: {
           atribuicao_id: atribuicaoCopiar,
@@ -277,14 +277,10 @@ function ProfessorConteudo() {
       setMensagem("Conteúdo copiado com sucesso!");
       setTipoMensagem("success");
 
-      setMostrarCopiar(false);
-
     } catch (err) {
-
       console.error(err);
       setMensagem("Erro ao copiar conteúdo.");
       setTipoMensagem("error");
-
     }
   };
 
@@ -447,9 +443,9 @@ function ProfessorConteudo() {
         {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
       </button>
 
-      {/* 🔥 NOVO */}
+      {/* 🔥 NOVO - UI copiar */}
       <button onClick={() => setMostrarCopiar(!mostrarCopiar)} style={buttonStyle}>
-        📋 Copiar de outra turma
+        📋 Copiar conteúdo de outra turma
       </button>
 
       {mostrarCopiar && (
@@ -468,7 +464,7 @@ function ProfessorConteudo() {
             ))}
           </select>
 
-          <button onClick={copiarDeOutraTurma} style={buttonStyle}>
+          <button onClick={copiarConteudo} style={buttonStyle}>
             Confirmar cópia
           </button>
         </div>
