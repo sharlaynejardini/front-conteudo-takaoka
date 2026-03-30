@@ -295,6 +295,12 @@ function ProfessorConteudo() {
       setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
 
+      // ✅ NOVO: LIMPAR CAMPOS
+      limparFormulario();
+      setAtribuicaoSelecionada("");
+      setAtribuicoesSelecionadas([]);
+      setDataAvaliacao(semanasProva[bimestre].inicio);
+
     } catch (err) {
 
       console.error(err);
