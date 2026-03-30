@@ -82,19 +82,31 @@ function CronogramaTurma() {
     const newCanvas = document.createElement("canvas");
 
     newCanvas.width = canvas.width + padding * 2;
-    newCanvas.height = canvas.height + padding * 2;
+    newCanvas.height = canvas.height + padding * 2 + 80; // 🔥 espaço extra para título
 
     const ctx = newCanvas.getContext("2d");
 
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
 
-    ctx.drawImage(canvas, padding, padding);
-
-    const link = document.createElement("a");
-
+    // 🔥 TEXTO ADICIONADO (TURMA + BIMESTRE)
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+    ctx.fillStyle = "#2c4a8a";
+    ctx.font = "bold 28px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+      `${turmaNome} - ${bimestre}º Bimestre`,
+      newCanvas.width / 2,
+      40
+    );
+
+    // 🔥 DESENHAR IMAGEM ABAIXO DO TÍTULO
+    ctx.drawImage(canvas, padding, padding + 40);
+
+    const link = document.createElement("a");
 
     link.download = `${turmaNome}_${bimestre}Bimestre.png`;
 
