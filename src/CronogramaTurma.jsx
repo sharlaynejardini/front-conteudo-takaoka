@@ -59,10 +59,6 @@ function CronogramaTurma() {
 
   };
 
-  // ===============================
-  // GERAR IMAGEM (ESCONDE AÇÕES)
-  // ===============================
-
   const gerarImagem = async () => {
 
     const ocultar = document.querySelectorAll(".no-print");
@@ -114,10 +110,6 @@ function CronogramaTurma() {
 
   };
 
-  // ===============================
-  // EXCLUIR
-  // ===============================
-
   const excluirAvaliacao = async (id) => {
 
     const confirmar = window.confirm("Deseja realmente excluir esta avaliação?");
@@ -141,10 +133,6 @@ function CronogramaTurma() {
     }
 
   };
-
-  // ===============================
-  // EDITAR
-  // ===============================
 
   const editarAvaliacao = (item) => {
 
@@ -322,7 +310,6 @@ function CronogramaTurma() {
 
             <thead>
 
-              {/* ✅ NOVO: TURMA + BIMESTRE */}
               <tr>
                 <th colSpan="5" style={{
                   padding: "14px",
@@ -336,18 +323,61 @@ function CronogramaTurma() {
               </tr>
 
               <tr>
-
                 <th style={thStyle}>Data</th>
                 <th style={thStyle}>Professor</th>
                 <th style={thStyle}>Disciplina</th>
                 <th style={thStyle}>Conteúdo</th>
                 <th style={thStyle} className="no-print">Ações</th>
-
               </tr>
 
             </thead>
 
-            <tbody></tbody>
+            <tbody>
+
+              {cronograma.map((item) => {
+
+                const listaTopicos =
+                  transformarConteudoEmLista(item.conteudo);
+
+                const corLinha =
+                  mapaCores[item.data_avaliacao] || "white";
+
+                return (
+
+                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
+
+                    <td style={tdStyle}>
+                      {formatarData(item.data_avaliacao)}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao.professor.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {item.atribuicao.disciplina.nome}
+                    </td>
+
+                    <td style={tdStyle}>
+                      {listaTopicos.map((topico, i) => (
+                        <div key={i}>• {topico}</div>
+                      ))}
+                    </td>
+
+                    <td style={tdStyle} className="no-print">
+
+                      <button onClick={() => editarAvaliacao(item)}>✏️</button>
+                      <button onClick={() => excluirAvaliacao(item.id)}>🗑</button>
+
+                    </td>
+
+                  </tr>
+
+                );
+
+              })}
+
+            </tbody>
 
           </table>
 
