@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import api from "./api";
 import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf"; // ✅ NOVO
+import { jsPDF } from "jspdf";
 import logoTakaoka from "./assets/logo_takaoka.png";
 
 function CronogramaTurma() {
@@ -102,14 +102,11 @@ function CronogramaTurma() {
     const link = document.createElement("a");
 
     link.download = `${turmaNome}_${bimestre}Bimestre.png`;
-
     link.href = newCanvas.toDataURL("image/png");
-
     link.click();
 
   };
 
-  // ✅ NOVA FUNÇÃO PDF
   const gerarPDF = async () => {
 
     const ocultar = document.querySelectorAll(".no-print");
@@ -130,33 +127,28 @@ function CronogramaTurma() {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
 
-    const imgWidth = pageWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const margin = 10;
+    const usableWidth = pageWidth - margin * 2;
 
-    let position = 0;
+    const imgHeight = (canvas.height * usableWidth) / canvas.width;
 
-    // 🔥 quebra automática de página
-    if (imgHeight <= pageHeight) {
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    } else {
-      let heightLeft = imgHeight;
+    let heightLeft = imgHeight;
+    let position = margin;
 
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+    pdf.addImage(imgData, "PNG", margin, position, usableWidth, imgHeight);
+    heightLeft -= (pageHeight - margin * 2);
 
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+    while (heightLeft > 0) {
+      pdf.addPage();
+      position = margin - imgHeight + heightLeft;
+      pdf.addImage(imgData, "PNG", margin, position, usableWidth, imgHeight);
+      heightLeft -= (pageHeight - margin * 2);
     }
 
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
     pdf.save(`${turmaNome}_${bimestre}Bimestre.pdf`);
-
   };
 
   const excluirAvaliacao = async (id) => {
@@ -165,7 +157,6 @@ function CronogramaTurma() {
     if (!confirmar) return;
 
     try {
-
       await api.delete(`/conteudos/${id}`);
 
       setCronograma(prev =>
@@ -173,10 +164,8 @@ function CronogramaTurma() {
       );
 
     } catch (error) {
-
       console.error(error);
       alert("Erro ao excluir avaliação.");
-
     }
 
   };
@@ -189,7 +178,6 @@ function CronogramaTurma() {
     });
 
     window.location.href = `/?${params.toString()}`;
-
   };
 
   const transformarConteudoEmLista = (conteudo) => {
@@ -201,23 +189,17 @@ function CronogramaTurma() {
     if (typeof conteudo === "string") {
 
       try {
-
         const convertido = JSON.parse(conteudo);
         return Array.isArray(convertido) ? convertido : [convertido];
-
       } catch {
-
         return conteudo
           .split(",")
           .map(item => item.trim())
           .filter(item => item.length > 0);
-
       }
-
     }
 
     return [String(conteudo)];
-
   };
 
   const coresAlternadas = [
@@ -276,15 +258,19 @@ function CronogramaTurma() {
   };
 
   const thStyle = {
-    padding: "12px",
-    border: "1px solid #ddd",
+    padding: "14px",
+    borderBottom: "2px solid #e0e6ed",
     backgroundColor: "#2c4a8a",
-    color: "white"
+    color: "white",
+    fontWeight: "600",
+    fontSize: "14px"
   };
 
   const tdStyle = {
-    padding: "12px",
-    border: "1px solid #ddd"
+    padding: "14px",
+    borderBottom: "1px solid #eaeef3",
+    fontSize: "14px",
+    color: "#333"
   };
 
   const turmaNome =
@@ -293,6 +279,7 @@ function CronogramaTurma() {
   return (
 
     <div style={pageStyle}>
+
       <div style={cardStyle}>
 
         <h2 style={{ textAlign: "center", color: "#2c4a8a" }}>
@@ -301,7 +288,8 @@ function CronogramaTurma() {
 
         <div style={{ marginBottom: "30px", textAlign: "center" }}>
 
-          <select style={selectStyle} value={turmaSelecionada}
+          <select style={selectStyle}
+            value={turmaSelecionada}
             onChange={(e) => setTurmaSelecionada(e.target.value)}>
 
             <option value="">Selecione a Turma</option>
@@ -314,7 +302,8 @@ function CronogramaTurma() {
 
           </select>
 
-          <select style={selectStyle} value={bimestre}
+          <select style={selectStyle}
+            value={bimestre}
             onChange={(e) => setBimestre(Number(e.target.value))}>
 
             <option value={1}>1º Bimestre</option>
@@ -332,7 +321,6 @@ function CronogramaTurma() {
             Baixar Imagem
           </button>
 
-          {/* ✅ NOVO BOTÃO */}
           <button style={buttonStyle} onClick={gerarPDF}>
             Baixar PDF
           </button>
@@ -349,9 +337,11 @@ function CronogramaTurma() {
 
           <table style={{
             width: "100%",
-            borderCollapse: "collapse",
+            borderCollapse: "separate",
+            borderSpacing: "0",
             borderRadius: "12px",
-            overflow: "hidden"
+            overflow: "hidden",
+            boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
           }}>
 
             <thead>
@@ -406,7 +396,10 @@ function CronogramaTurma() {
 
                 return (
 
-                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
+                  <tr key={item.id} style={{
+                    backgroundColor: corLinha,
+                    transition: "0.2s"
+                  }}>
 
                     <td style={tdStyle}>
                       {formatarData(item.data_avaliacao)}
@@ -427,8 +420,28 @@ function CronogramaTurma() {
                     </td>
 
                     <td style={tdStyle} className="no-print">
-                      <button onClick={() => editarAvaliacao(item)}>✏️</button>
-                      <button onClick={() => excluirAvaliacao(item.id)}>🗑</button>
+
+                      <button style={{
+                        marginRight: "8px",
+                        padding: "6px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                        backgroundColor: "#e3f2fd"
+                      }} onClick={() => editarAvaliacao(item)}>
+                        ✏️
+                      </button>
+
+                      <button style={{
+                        padding: "6px 10px",
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                        backgroundColor: "#fdecea"
+                      }} onClick={() => excluirAvaliacao(item.id)}>
+                        🗑
+                      </button>
+
                     </td>
 
                   </tr>
@@ -444,6 +457,7 @@ function CronogramaTurma() {
         </div>
 
       </div>
+
     </div>
 
   );
