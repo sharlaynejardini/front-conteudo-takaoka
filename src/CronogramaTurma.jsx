@@ -62,6 +62,7 @@ function CronogramaTurma() {
   const gerarImagem = async () => {
 
     const ocultar = document.querySelectorAll(".no-print");
+
     ocultar.forEach(el => el.style.display = "none");
 
     const canvas = await html2canvas(printRef.current, {
@@ -102,7 +103,9 @@ function CronogramaTurma() {
     const link = document.createElement("a");
 
     link.download = `${turmaNome}_${bimestre}Bimestre.png`;
+
     link.href = newCanvas.toDataURL("image/png");
+
     link.click();
 
   };
@@ -124,26 +127,13 @@ function CronogramaTurma() {
 
     const pdf = new jsPDF("p", "mm", "a4");
 
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-
     const margin = 10;
+    const pageWidth = pdf.internal.pageSize.getWidth();
     const usableWidth = pageWidth - margin * 2;
 
     const imgHeight = (canvas.height * usableWidth) / canvas.width;
 
-    let heightLeft = imgHeight;
-    let position = margin;
-
-    pdf.addImage(imgData, "PNG", margin, position, usableWidth, imgHeight);
-    heightLeft -= (pageHeight - margin * 2);
-
-    while (heightLeft > 0) {
-      pdf.addPage();
-      position = margin - imgHeight + heightLeft;
-      pdf.addImage(imgData, "PNG", margin, position, usableWidth, imgHeight);
-      heightLeft -= (pageHeight - margin * 2);
-    }
+    pdf.addImage(imgData, "PNG", margin, 10, usableWidth, imgHeight);
 
     const turmaNome =
       turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
@@ -154,9 +144,11 @@ function CronogramaTurma() {
   const excluirAvaliacao = async (id) => {
 
     const confirmar = window.confirm("Deseja realmente excluir esta avaliação?");
+
     if (!confirmar) return;
 
     try {
+
       await api.delete(`/conteudos/${id}`);
 
       setCronograma(prev =>
@@ -164,8 +156,11 @@ function CronogramaTurma() {
       );
 
     } catch (error) {
+
       console.error(error);
+
       alert("Erro ao excluir avaliação.");
+
     }
 
   };
@@ -178,6 +173,7 @@ function CronogramaTurma() {
     });
 
     window.location.href = `/?${params.toString()}`;
+
   };
 
   const transformarConteudoEmLista = (conteudo) => {
@@ -189,17 +185,24 @@ function CronogramaTurma() {
     if (typeof conteudo === "string") {
 
       try {
+
         const convertido = JSON.parse(conteudo);
+
         return Array.isArray(convertido) ? convertido : [convertido];
+
       } catch {
+
         return conteudo
           .split(",")
           .map(item => item.trim())
           .filter(item => item.length > 0);
+
       }
+
     }
 
     return [String(conteudo)];
+
   };
 
   const coresAlternadas = [
@@ -218,162 +221,82 @@ function CronogramaTurma() {
   ].sort((a, b) => new Date(a) - new Date(b));
 
   datasOrdenadas.forEach(data => {
+
     mapaCores[data] =
       coresAlternadas[indiceCor % coresAlternadas.length];
+
     indiceCor++;
+
   });
-
-  const pageStyle = {
-    backgroundColor: "#f2f5fa",
-    minHeight: "100vh",
-    padding: "50px 20px"
-  };
-
-  const cardStyle = {
-    maxWidth: "1000px",
-    margin: "auto",
-    backgroundColor: "white",
-    padding: "40px",
-    borderRadius: "16px",
-    boxShadow: "0 15px 35px rgba(0,0,0,0.08)"
-  };
-
-  const selectStyle = {
-    padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #d0d7e2",
-    marginRight: "10px",
-    minWidth: "180px"
-  };
-
-  const buttonStyle = {
-    padding: "12px 20px",
-    backgroundColor: "#2c4a8a",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    marginRight: "10px",
-    fontSize: "14px"
-  };
-
-  const thStyle = {
-    padding: "14px",
-    borderBottom: "2px solid #e0e6ed",
-    backgroundColor: "#2c4a8a",
-    color: "white",
-    fontWeight: "600",
-    fontSize: "14px"
-  };
-
-  const tdStyle = {
-    padding: "14px",
-    borderBottom: "1px solid #eaeef3",
-    fontSize: "14px",
-    color: "#333"
-  };
 
   const turmaNome =
     turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
   return (
 
-    <div style={pageStyle}>
+    <div style={{ backgroundColor: "#f2f5fa", minHeight: "100vh", padding: "40px" }}>
 
-      <div style={cardStyle}>
+      <div style={{ maxWidth: "1000px", margin: "auto", background: "white", padding: "30px" }}>
 
         <h2 style={{ textAlign: "center", color: "#2c4a8a" }}>
           Cronograma de Avaliações
         </h2>
 
-        <div style={{ marginBottom: "30px", textAlign: "center" }}>
+        {/* CONTROLES */}
+        <div style={{ marginBottom: "20px", textAlign: "center" }}>
 
-          <select style={selectStyle}
-            value={turmaSelecionada}
-            onChange={(e) => setTurmaSelecionada(e.target.value)}>
-
+          <select value={turmaSelecionada} onChange={(e) => setTurmaSelecionada(e.target.value)}>
             <option value="">Selecione a Turma</option>
-
             {turmas.map((turma) => (
               <option key={turma.id} value={turma.id}>
                 {turma.nome}
               </option>
             ))}
-
           </select>
 
-          <select style={selectStyle}
-            value={bimestre}
-            onChange={(e) => setBimestre(Number(e.target.value))}>
-
+          <select value={bimestre} onChange={(e) => setBimestre(Number(e.target.value))}>
             <option value={1}>1º Bimestre</option>
             <option value={2}>2º Bimestre</option>
             <option value={3}>3º Bimestre</option>
             <option value={4}>4º Bimestre</option>
-
           </select>
 
-          <button style={buttonStyle} onClick={buscarCronograma}>
-            Buscar
-          </button>
-
-          <button style={buttonStyle} onClick={gerarImagem}>
-            Baixar Imagem
-          </button>
-
-          <button style={buttonStyle} onClick={gerarPDF}>
-            Baixar PDF
-          </button>
+          <button onClick={buscarCronograma}>Buscar</button>
+          <button onClick={gerarImagem}>Imagem</button>
+          <button onClick={gerarPDF}>PDF</button>
 
         </div>
 
         <div ref={printRef}>
 
-          <img
-            src={logoTakaoka}
-            alt="Cabeçalho"
-            style={{ width: "100%", marginBottom: "20px" }}
-          />
+          {/* CABEÇALHO INSTITUCIONAL */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 
-          <table style={{
-            width: "100%",
-            borderCollapse: "separate",
-            borderSpacing: "0",
-            borderRadius: "12px",
-            overflow: "hidden",
-            boxShadow: "0 5px 15px rgba(0,0,0,0.05)"
-          }}>
+            <div style={{ fontSize: "13px", fontWeight: "600" }}>
+              SECRETARIA DE EDUCAÇÃO
+            </div>
+
+            <div style={{ textAlign: "center", fontSize: "14px" }}>
+              <div><strong>EMEIEF YOJIRO TAKAOKA - ENG.</strong></div>
+              <div>Av. Queimada, 505 - Barueri</div>
+              <div>Tel: (11) 4192-1369</div>
+            </div>
+
+            <img src={logoTakaoka} style={{ height: "50px" }} />
+
+          </div>
+
+          <div style={{ borderBottom: "1px solid #ccc", margin: "15px 0" }} />
+
+          {/* TÍTULO */}
+          <div style={{ textAlign: "center", marginBottom: "20px", fontWeight: "bold", fontSize: "18px" }}>
+            {turmaNome} - {bimestre}º Bimestre
+          </div>
+
+          {/* TABELA ORIGINAL MANTIDA */}
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
 
             <thead>
-
-              <tr>
-                <th colSpan="5" style={{
-                  padding: "20px",
-                  background: "linear-gradient(90deg, #1e3a8a, #2c4a8a)",
-                  color: "white",
-                  textAlign: "center"
-                }}>
-                  <div style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "10px",
-                    flexWrap: "wrap"
-                  }}>
-                    <span style={{ fontSize: "20px", fontWeight: "bold" }}>
-                      {turmaNome}
-                    </span>
-
-                    <span style={{
-                      backgroundColor: "rgba(255,255,255,0.2)",
-                      padding: "6px 12px",
-                      borderRadius: "20px"
-                    }}>
-                      {bimestre}º Bimestre
-                    </span>
-                  </div>
-                </th>
-              </tr>
-
               <tr>
                 <th style={thStyle}>Data</th>
                 <th style={thStyle}>Professor</th>
@@ -381,7 +304,6 @@ function CronogramaTurma() {
                 <th style={thStyle}>Conteúdo</th>
                 <th style={thStyle} className="no-print">Ações</th>
               </tr>
-
             </thead>
 
             <tbody>
@@ -396,22 +318,11 @@ function CronogramaTurma() {
 
                 return (
 
-                  <tr key={item.id} style={{
-                    backgroundColor: corLinha,
-                    transition: "0.2s"
-                  }}>
+                  <tr key={item.id} style={{ backgroundColor: corLinha }}>
 
-                    <td style={tdStyle}>
-                      {formatarData(item.data_avaliacao)}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {item.atribuicao.professor.nome}
-                    </td>
-
-                    <td style={tdStyle}>
-                      {item.atribuicao.disciplina.nome}
-                    </td>
+                    <td style={tdStyle}>{formatarData(item.data_avaliacao)}</td>
+                    <td style={tdStyle}>{item.atribuicao.professor.nome}</td>
+                    <td style={tdStyle}>{item.atribuicao.disciplina.nome}</td>
 
                     <td style={tdStyle}>
                       {listaTopicos.map((topico, i) => (
@@ -420,28 +331,8 @@ function CronogramaTurma() {
                     </td>
 
                     <td style={tdStyle} className="no-print">
-
-                      <button style={{
-                        marginRight: "8px",
-                        padding: "6px 10px",
-                        borderRadius: "6px",
-                        border: "none",
-                        cursor: "pointer",
-                        backgroundColor: "#e3f2fd"
-                      }} onClick={() => editarAvaliacao(item)}>
-                        ✏️
-                      </button>
-
-                      <button style={{
-                        padding: "6px 10px",
-                        borderRadius: "6px",
-                        border: "none",
-                        cursor: "pointer",
-                        backgroundColor: "#fdecea"
-                      }} onClick={() => excluirAvaliacao(item.id)}>
-                        🗑
-                      </button>
-
+                      <button onClick={() => editarAvaliacao(item)}>✏️</button>
+                      <button onClick={() => excluirAvaliacao(item.id)}>🗑</button>
                     </td>
 
                   </tr>
@@ -463,5 +354,17 @@ function CronogramaTurma() {
   );
 
 }
+
+const thStyle = {
+  padding: "10px",
+  border: "1px solid #ccc",
+  backgroundColor: "#2c4a8a",
+  color: "white"
+};
+
+const tdStyle = {
+  padding: "10px",
+  border: "1px solid #ccc"
+};
 
 export default CronogramaTurma;
