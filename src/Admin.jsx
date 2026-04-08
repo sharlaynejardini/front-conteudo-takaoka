@@ -467,15 +467,29 @@ const styles = {
   td:{padding:"10px 12px"}
 };
 
-const CalendarioSegmento = ({ dados, formatarData }) => {
+const CORES_DISCIPLINA = [
+  { bg:"#dbeafe", color:"#1e40af" },
+  { bg:"#dcfce7", color:"#166534" },
+  { bg:"#fef9c3", color:"#854d0e" },
+  { bg:"#fce7f3", color:"#9d174d" },
+  { bg:"#ede9fe", color:"#5b21b6" },
+  { bg:"#ffedd5", color:"#9a3412" },
+  { bg:"#cffafe", color:"#155e75" },
+  { bg:"#f1f5f9", color:"#334155" },
+];
+
+const CalendarioSegmento = ({ dados, formatarData, refEl }) => {
   const datasOrdenadas = Object.keys(dados).sort();
   if (datasOrdenadas.length === 0) return <p style={{ color:"#94a3b8" }}>Nenhuma avaliação lançada.</p>;
 
   const turmasNomes = [...new Set(Object.values(dados).flat().map(i => i.turmaNome))]
     .sort((a,b) => a.localeCompare(b, "pt-BR"));
 
+  const todasDisciplinas = [...new Set(Object.values(dados).flat().map(i => i.atribuicao?.disciplina?.nome).filter(Boolean))];
+  const mapaCores = Object.fromEntries(todasDisciplinas.map((d, i) => [d, CORES_DISCIPLINA[i % CORES_DISCIPLINA.length]]));
+
   return (
-    <div style={{ overflowX:"auto" }}>
+    <div style={{ overflowX:"auto" }} ref={refEl}>
       <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
         <thead>
           <tr>
@@ -496,14 +510,18 @@ const CalendarioSegmento = ({ dados, formatarData }) => {
                   return (
                     <td key={turma} style={{ ...tdCal, verticalAlign:"top" }}>
                       {provas.length === 0 ? <span style={{ color:"#cbd5e1" }}>—</span> :
-                        provas.map((p, j) => (
-                          <div key={j} style={{
-                            background:"#dbeafe", borderRadius:6, padding:"3px 7px",
-                            marginBottom:3, color:"#1e40af", fontWeight:500
-                          }}>
-                            {p.atribuicao?.disciplina?.nome || "-"}
-                          </div>
-                        ))
+                        provas.map((p, j) => {
+                          const disc = p.atribuicao?.disciplina?.nome || "-";
+                          const cor = mapaCores[disc] || CORES_DISCIPLINA[0];
+                          return (
+                            <div key={j} style={{
+                              background: cor.bg, borderRadius:6, padding:"3px 7px",
+                              marginBottom:3, color: cor.color, fontWeight:500
+                            }}>
+                              {disc}
+                            </div>
+                          );
+                        })
                       }
                     </td>
                   );
