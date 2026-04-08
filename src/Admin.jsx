@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "./api";
+import { supabase } from "./supabaseClient";
+import { logAction } from "./utils/logAction";
 
 import {
   Chart as ChartJS,
@@ -24,6 +26,7 @@ function Admin() {
   const [turmas, setTurmas] = useState([]);
   const [disciplinas, setDisciplinas] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
+  const [logs, setLogs] = useState([]);
 
   // FORM STATES
   const [nomeProf, setNomeProf] = useState("");
@@ -47,11 +50,17 @@ function Admin() {
     const tur = await api.get("/turmas");
     const disc = await api.get("/disciplinas");
     const atrib = await api.get("/atribuicoes");
+    const { data: logsData } = await supabase
+      .from("action_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     setProfessores(prof.data || []);
     setTurmas(tur.data || []);
     setDisciplinas(disc.data || []);
     setAtribuicoes(atrib.data || []);
+    setLogs(logsData || []);
 
     setLoading(false);
   }
@@ -61,57 +70,66 @@ function Admin() {
   const addProfessor = async () => {
     if (!nomeProf || !emailProf) return;
     await api.post("/professores", { nome: nomeProf, email: emailProf });
+    await logAction({ action: "CREATE", entidade: "Professor", detalhes: `Nome: ${nomeProf}` });
     setNomeProf(""); setEmailProf("");
     carregarDados();
   };
 
   const delProfessor = async (id) => {
     if (!window.confirm("Excluir?")) return;
+    const prof = professores.find(p => p.id === id);
     await api.delete(`/professores/${id}`);
+    await logAction({ action: "DELETE", entidade: "Professor", detalhes: `Nome: ${prof?.nome}` });
     carregarDados();
   };
 
   const addTurma = async () => {
     if (!nomeTurma) return;
     await api.post("/turmas", { nome: nomeTurma });
+    await logAction({ action: "CREATE", entidade: "Turma", detalhes: `Nome: ${nomeTurma}` });
     setNomeTurma("");
     carregarDados();
   };
 
   const delTurma = async (id) => {
     if (!window.confirm("Excluir?")) return;
+    const turma = turmas.find(t => t.id === id);
     await api.delete(`/turmas/${id}`);
+    await logAction({ action: "DELETE", entidade: "Turma", detalhes: `Nome: ${turma?.nome}` });
     carregarDados();
   };
 
   const addDisc = async () => {
     if (!nomeDisc) return;
     await api.post("/disciplinas", { nome: nomeDisc });
+    await logAction({ action: "CREATE", entidade: "Disciplina", detalhes: `Nome: ${nomeDisc}` });
     setNomeDisc("");
     carregarDados();
   };
 
   const delDisc = async (id) => {
     if (!window.confirm("Excluir?")) return;
+    const disc = disciplinas.find(d => d.id === id);
     await api.delete(`/disciplinas/${id}`);
+    await logAction({ action: "DELETE", entidade: "Disciplina", detalhes: `Nome: ${disc?.nome}` });
     carregarDados();
   };
 
   const addAtrib = async () => {
     if (!profId || !turmaId || !discId) return;
-
-    await api.post("/atribuicoes", {
-      professor_id: profId,
-      turma_id: turmaId,
-      disciplina_id: discId
-    });
-
+    const prof = professores.find(p => p.id == profId);
+    const turma = turmas.find(t => t.id == turmaId);
+    const disc = disciplinas.find(d => d.id == discId);
+    await api.post("/atribuicoes", { professor_id: profId, turma_id: turmaId, disciplina_id: discId });
+    await logAction({ action: "CREATE", entidade: "Atribuição", detalhes: `${prof?.nome} → ${turma?.nome} / ${disc?.nome}` });
     carregarDados();
   };
 
   const delAtrib = async (id) => {
     if (!window.confirm("Excluir?")) return;
+    const atrib = atribuicoes.find(a => a.id === id);
     await api.delete(`/atribuicoes/${id}`);
+    await logAction({ action: "DELETE", entidade: "Atribuição", detalhes: `ID: ${id}` });
     carregarDados();
   };
 
@@ -153,7 +171,7 @@ function Admin() {
       <div style={styles.sidebar}>
         <h2>⚙️ Admin</h2>
 
-        {["dashboard","professores","turmas","disciplinas","atribuicoes"].map(a => (
+        {["dashboard","professores","turmas","disciplinas","atribuicoes","historico"].map(a => (
           <button key={a} onClick={()=>setAba(a)}
             style={{...styles.menuBtn, ...(aba===a?styles.active:{})}}>
             {a.toUpperCase()}
@@ -223,6 +241,37 @@ function Admin() {
             </div>
 
             <Table data={filtrar(disciplinas)} cols={["nome"]} onDelete={delDisc}/>
+          </>
+        )}
+
+        {/* HISTÓRICO */}
+        {aba === "historico" && (
+          <>
+            <h2>📜 Histórico de Ações</h2>
+            <table style={{ width:"100%", marginTop:20, borderCollapse:"collapse" }}>
+              <thead>
+                <tr style={{ background:"#f1f5f9" }}>
+                  <th style={styles.th}>Usuário</th>
+                  <th style={styles.th}>Ação</th>
+                  <th style={styles.th}>Entidade</th>
+                  <th style={styles.th}>Detalhes</th>
+                  <th style={styles.th}>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtrar(logs).map((log, i) => (
+                  <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
+                    <td style={styles.td}>{log.email || "-"}</td>
+                    <td style={{ ...styles.td, color: log.action==="CREATE"?"green":"red", fontWeight:"bold" }}>
+                      {log.action === "CREATE" ? "🟢 Criou" : "🔴 Excluiu"}
+                    </td>
+                    <td style={styles.td}>{log.entidade}</td>
+                    <td style={styles.td}>{log.detalhes}</td>
+                    <td style={styles.td}>{new Date(log.created_at).toLocaleString("pt-BR")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </>
         )}
 
@@ -299,7 +348,9 @@ const styles = {
   cards:{display:"flex",gap:20},
   chart:{marginTop:20,background:"white",padding:20},
   form:{display:"flex",gap:10,marginBottom:10},
-  search:{marginBottom:20,padding:10,width:"100%"}
+  search:{marginBottom:20,padding:10,width:"100%"},
+  th:{padding:"10px 12px",textAlign:"left",fontWeight:"bold"},
+  td:{padding:"10px 12px"}
 };
 
 export default Admin;
