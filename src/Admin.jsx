@@ -324,14 +324,14 @@ function Admin() {
             {!loadingCal && Object.keys(calendarioFund1).length > 0 && (
               <>
                 <h3 style={{ color:"#1e3a8a", marginBottom:12 }}>📚 1º ao 5º ano</h3>
-                <CalendarioSegmento dados={calendarioFund1} formatarData={formatarData} transformarConteudo={transformarConteudo} />
+                <CalendarioSegmento dados={calendarioFund1} formatarData={formatarData} />
               </>
             )}
 
             {!loadingCal && Object.keys(calendarioFund2).length > 0 && (
               <>
                 <h3 style={{ color:"#1e3a8a", margin:"32px 0 12px" }}>📚 6º ao 9º ano</h3>
-                <CalendarioSegmento dados={calendarioFund2} formatarData={formatarData} transformarConteudo={transformarConteudo} />
+                <CalendarioSegmento dados={calendarioFund2} formatarData={formatarData} />
               </>
             )}
           </>
@@ -467,42 +467,64 @@ const styles = {
   td:{padding:"10px 12px"}
 };
 
-const CalendarioSegmento = ({ dados, formatarData, transformarConteudo }) => {
+const CalendarioSegmento = ({ dados, formatarData }) => {
   const datasOrdenadas = Object.keys(dados).sort();
   if (datasOrdenadas.length === 0) return <p style={{ color:"#94a3b8" }}>Nenhuma avaliação lançada.</p>;
 
+  const turmasNomes = [...new Set(Object.values(dados).flat().map(i => i.turmaNome))]
+    .sort((a,b) => a.localeCompare(b, "pt-BR"));
+
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-      {datasOrdenadas.map(data => {
-        const itens = [...dados[data]].sort((a,b) => a.turmaNome?.localeCompare(b.turmaNome, "pt-BR"));
-        return (
-          <div key={data} style={{ background:"white", borderRadius:12, padding:16, boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
-            <div style={{ fontWeight:"bold", fontSize:15, color:"#1e3a8a", marginBottom:10 }}>
-              📅 {formatarData(data)}
-            </div>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-              <thead>
-                <tr style={{ background:"#f1f5f9" }}>
-                  <th style={{ padding:"6px 10px", textAlign:"left" }}>Turma</th>
-                  <th style={{ padding:"6px 10px", textAlign:"left" }}>Disciplina</th>
-                  <th style={{ padding:"6px 10px", textAlign:"left" }}>Professor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {itens.map((item, i) => (
-                  <tr key={i} style={{ borderBottom:"1px solid #e2e8f0", background: i%2===0?"white":"#f8fafc" }}>
-                    <td style={{ padding:"6px 10px", fontWeight:"600" }}>{item.turmaNome}</td>
-                    <td style={{ padding:"6px 10px" }}>{item.atribuicao?.disciplina?.nome || "-"}</td>
-                    <td style={{ padding:"6px 10px" }}>{item.atribuicao?.professor?.nome || "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        );
-      })}
+    <div style={{ overflowX:"auto" }}>
+      <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+        <thead>
+          <tr>
+            <th style={thCal}>Data</th>
+            {turmasNomes.map(t => <th key={t} style={thCal}>{t}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {datasOrdenadas.map((data, i) => {
+            const itens = dados[data];
+            return (
+              <tr key={data} style={{ background: i%2===0 ? "#f8fafc" : "white" }}>
+                <td style={{ ...tdCal, fontWeight:"600", whiteSpace:"nowrap", color:"#1e3a8a" }}>
+                  {formatarData(data)}
+                </td>
+                {turmasNomes.map(turma => {
+                  const provas = itens.filter(it => it.turmaNome === turma);
+                  return (
+                    <td key={turma} style={{ ...tdCal, verticalAlign:"top" }}>
+                      {provas.length === 0 ? <span style={{ color:"#cbd5e1" }}>—</span> :
+                        provas.map((p, j) => (
+                          <div key={j} style={{
+                            background:"#dbeafe", borderRadius:6, padding:"3px 7px",
+                            marginBottom:3, color:"#1e40af", fontWeight:500
+                          }}>
+                            {p.atribuicao?.disciplina?.nome || "-"}
+                          </div>
+                        ))
+                      }
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
+};
+
+const thCal = {
+  padding:"10px 12px", background:"#1e3a8a", color:"white",
+  textAlign:"center", fontWeight:"600", whiteSpace:"nowrap",
+  border:"1px solid #1e40af"
+};
+
+const tdCal = {
+  padding:"8px 10px", border:"1px solid #e2e8f0", textAlign:"center"
 };
 
 export default Admin;
