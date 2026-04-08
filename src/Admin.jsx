@@ -255,9 +255,10 @@ function Admin() {
               style={{ marginBottom:16, padding:"8px 12px", borderRadius:8, border:"1px solid #cbd5e1", minWidth:260 }}
             >
               <option value="">Todos os professores</option>
-              {[...new Set(logs.map(l => l.email).filter(Boolean))].sort().map(email => (
-                <option key={email} value={email}>{email}</option>
-              ))}
+              {[...new Set(logs.map(l => l.email).filter(Boolean))].sort().map(email => {
+                const prof = professores.find(p => p.email?.toLowerCase() === email.toLowerCase());
+                return <option key={email} value={email}>{prof ? prof.nome : email}</option>;
+              })}
             </select>
             <table style={{ width:"100%", marginTop:20, borderCollapse:"collapse" }}>
               <thead>
@@ -275,7 +276,7 @@ function Admin() {
               <tbody>
                 {filtrar(logs).filter(log => !filtroProfessor || log.email === filtroProfessor).map((log, i) => (
                   <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
-                    <td style={styles.td}>{log.email || "-"}</td>
+                    <td style={styles.td}>{professores.find(p => p.email?.toLowerCase() === log.email?.toLowerCase())?.nome || log.email || "-"}</td>
                     <td style={{ ...styles.td, fontWeight:"bold",
                       color: log.action==="CREATE"?"green": log.action==="DELETE"?"red":"orange" }}>
                       {log.action === "CREATE" && "🟢 Criou"}
