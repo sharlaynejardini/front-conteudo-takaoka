@@ -28,6 +28,10 @@ function Admin() {
   const [atribuicoes, setAtribuicoes] = useState([]);
   const [logs, setLogs] = useState([]);
   const [filtroProfessor, setFiltroProfessor] = useState("");
+  const [bimestreCal, setBimestreCal] = useState(1);
+  const [calendarioFund1, setCalendarioFund1] = useState({});
+  const [calendarioFund2, setCalendarioFund2] = useState({});
+  const [loadingCal, setLoadingCal] = useState(false);
 
   // FORM STATES
   const [nomeProf, setNomeProf] = useState("");
@@ -39,6 +43,44 @@ function Admin() {
   const [profId, setProfId] = useState("");
   const [turmaId, setTurmaId] = useState("");
   const [discId, setDiscId] = useState("");
+
+  const FUND1 = ["1","2","3","4","5"];
+  const FUND2 = ["6","7","8","9"];
+
+  const pertenceAo = (nomeTurma, anos) => anos.some(a => nomeTurma.startsWith(a));
+
+  const formatarData = (dataISO) => {
+    if (!dataISO) return "";
+    const [ano, mes, dia] = dataISO.split("T")[0].split("-");
+    return `${dia}/${mes}/${ano}`;
+  };
+
+  const transformarConteudo = (conteudo) => {
+    if (!conteudo) return [];
+    if (Array.isArray(conteudo)) return conteudo;
+    try { const c = JSON.parse(conteudo); return Array.isArray(c) ? c : [c]; }
+    catch { return conteudo.split(",").map(i => i.trim()).filter(Boolean); }
+  };
+
+  const buscarCalendario = async (bim) => {
+    setLoadingCal(true);
+    const turmasF1 = turmas.filter(t => pertenceAo(t.nome, FUND1));
+    const turmasF2 = turmas.filter(t => pertenceAo(t.nome, FUND2));
+    const fetchTurma = async (turma) => {
+      try {
+        const res = await api.get("/cronograma", { params: { turma_id: turma.id, bimestre: bim } });
+        return { turma: turma.nome, dados: [...res.data].sort((a,b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)) };
+      } catch { return { turma: turma.nome, dados: [] }; }
+    };
+    const [r1, r2] = await Promise.all([
+      Promise.all(turmasF1.map(fetchTurma)),
+      Promise.all(turmasF2.map(fetchTurma))
+    ]);
+    const toMap = (arr) => Object.fromEntries(arr.map(r => [r.turma, r.dados]));
+    setCalendarioFund1(toMap(r1));
+    setCalendarioFund2(toMap(r2));
+    setLoadingCal(false);
+  };
 
   useEffect(() => {
     carregarDados();
@@ -171,7 +213,7 @@ function Admin() {
       <div style={styles.sidebar}>
         <h2>⚙️ Admin</h2>
 
-        {["dashboard","professores","turmas","disciplinas","atribuicoes","historico"].map(a => (
+        {["dashboard","professores","turmas","disciplinas","atribuicoes","historico","calendario"].map(a => (
           <button key={a} onClick={()=>setAba(a)}
             style={{...styles.menuBtn, ...(aba===a?styles.active:{})}}>
             {a.toUpperCase()}
@@ -241,6 +283,44 @@ function Admin() {
             </div>
 
             <Table data={filtrar(disciplinas)} cols={["nome"]} onDelete={delDisc}/>
+          </>
+        )}
+
+        {/* CALENDÁRIO */}
+        {aba === "calendario" && (
+          <>
+            <h2>📅 Calendário Geral de Provas</h2>
+            <div style={{ display:"flex", gap:12, alignItems:"center", marginBottom:20 }}>
+              <select
+                value={bimestreCal}
+                onChange={e => setBimestreCal(Number(e.target.value))}
+                style={{ padding:"8px 12px", borderRadius:8, border:"1px solid #cbd5e1" }}
+              >
+                {[1,2,3,4].map(b => <option key={b} value={b}>{b}º Bimestre</option>)}
+              </select>
+              <button
+                onClick={() => buscarCalendario(bimestreCal)}
+                style={{ padding:"8px 20px", background:"#2563eb", color:"white", border:"none", borderRadius:8, cursor:"pointer" }}
+              >
+                Buscar
+              </button>
+            </div>
+
+            {loadingCal && <div>Carregando...</div>}
+
+            {!loadingCal && Object.keys(calendarioFund1).length > 0 && (
+              <>
+                <h3 style={{ color:"#1e3a8a", marginBottom:12 }}>📚 1º ao 5º ano</h3>
+                <CalendarioSegmento dados={calendarioFund1} formatarData={formatarData} transformarConteudo={transformarConteudo} />
+              </>
+            )}
+
+            {!loadingCal && Object.keys(calendarioFund2).length > 0 && (
+              <>
+                <h3 style={{ color:"#1e3a8a", margin:"32px 0 12px" }}>📚 6º ao 9º ano</h3>
+                <CalendarioSegmento dados={calendarioFund2} formatarData={formatarData} transformarConteudo={transformarConteudo} />
+              </>
+            )}
           </>
         )}
 
@@ -373,5 +453,38 @@ const styles = {
   th:{padding:"10px 12px",textAlign:"left",fontWeight:"bold"},
   td:{padding:"10px 12px"}
 };
+
+const CalendarioSegmento = ({ dados, formatarData, transformarConteudo }) => (
+  <div style={{ display:"flex", flexWrap:"wrap", gap:20 }}>
+    {Object.entries(dados).sort(([a],[b]) => a.localeCompare(b, "pt-BR")).map(([turma, itens]) => (
+      <div key={turma} style={{ flex:"1 1 420px", background:"white", borderRadius:12, padding:16, boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
+        <h4 style={{ color:"#1e3a8a", marginBottom:10 }}>{turma}</h4>
+        {itens.length === 0
+          ? <p style={{ color:"#94a3b8", fontSize:13 }}>Nenhuma avaliação lançada</p>
+          : <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+              <thead>
+                <tr style={{ background:"#f1f5f9" }}>
+                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Data</th>
+                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Disciplina</th>
+                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Professor</th>
+                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Conteúdo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itens.map((item, i) => (
+                  <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
+                    <td style={{ padding:"6px 8px", whiteSpace:"nowrap" }}>{formatarData(item.data_avaliacao)}</td>
+                    <td style={{ padding:"6px 8px" }}>{item.atribuicao?.disciplina?.nome || "-"}</td>
+                    <td style={{ padding:"6px 8px" }}>{item.atribuicao?.professor?.nome || "-"}</td>
+                    <td style={{ padding:"6px 8px" }}>{transformarConteudo(item.conteudo).join(", ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+        }
+      </div>
+    ))}
+  </div>
+);
 
 export default Admin;
