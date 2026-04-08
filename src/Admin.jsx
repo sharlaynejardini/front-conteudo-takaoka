@@ -27,6 +27,7 @@ function Admin() {
   const [disciplinas, setDisciplinas] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [filtroProfessor, setFiltroProfessor] = useState("");
 
   // FORM STATES
   const [nomeProf, setNomeProf] = useState("");
@@ -248,6 +249,16 @@ function Admin() {
         {aba === "historico" && (
           <>
             <h2>📜 Histórico de Ações</h2>
+            <select
+              value={filtroProfessor}
+              onChange={e => setFiltroProfessor(e.target.value)}
+              style={{ marginBottom:16, padding:"8px 12px", borderRadius:8, border:"1px solid #cbd5e1", minWidth:260 }}
+            >
+              <option value="">Todos os professores</option>
+              {[...new Set(logs.map(l => l.email).filter(Boolean))].sort().map(email => (
+                <option key={email} value={email}>{email}</option>
+              ))}
+            </select>
             <table style={{ width:"100%", marginTop:20, borderCollapse:"collapse" }}>
               <thead>
                 <tr style={{ background:"#f1f5f9" }}>
@@ -262,7 +273,7 @@ function Admin() {
                 </tr>
               </thead>
               <tbody>
-                {filtrar(logs).map((log, i) => (
+                {filtrar(logs).filter(log => !filtroProfessor || log.email === filtroProfessor).map((log, i) => (
                   <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
                     <td style={styles.td}>{log.email || "-"}</td>
                     <td style={{ ...styles.td, fontWeight:"bold",
