@@ -313,7 +313,7 @@ function ProfessorConteudo() {
       const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
 
       await logAction({
-        action: modoEdicao ? "Atualizou avaliação" : "Criou avaliação",
+        action: modoEdicao ? "UPDATE" : "CREATE",
         entidade: "Avaliação",
         turma: atribuicaoAtual?.turma?.nome,
         disciplina: atribuicaoAtual?.disciplina?.nome,

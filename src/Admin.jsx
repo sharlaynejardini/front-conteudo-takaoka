@@ -269,7 +269,8 @@ function Admin() {
                       color: log.action==="CREATE"?"green": log.action==="DELETE"?"red":"orange" }}>
                       {log.action === "CREATE" && "🟢 Criou"}
                       {log.action === "DELETE" && "🔴 Excluiu"}
-                      {log.action !== "CREATE" && log.action !== "DELETE" && `🟡 ${log.action}`}
+                      {log.action === "UPDATE" && "🟡 Alterou"}
+                      {log.action !== "CREATE" && log.action !== "DELETE" && log.action !== "UPDATE" && `🟡 ${log.action}`}
                     </td>
                     <td style={styles.td}>{log.entidade || "-"}</td>
                     <td style={styles.td}>{log.turma || "-"}</td>
