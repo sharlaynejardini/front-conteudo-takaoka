@@ -54,8 +54,7 @@ function Admin() {
     const { data: logsData } = await supabase
       .from("action_logs")
       .select("*")
-      .order("created_at", { ascending: false })
-      .limit(100);
+      .order("created_at", { ascending: false });
 
     setProfessores(prof.data || []);
     setTurmas(tur.data || []);
