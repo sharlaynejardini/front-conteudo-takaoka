@@ -66,19 +66,32 @@ function Admin() {
     setLoadingCal(true);
     const turmasF1 = turmas.filter(t => pertenceAo(t.nome, FUND1));
     const turmasF2 = turmas.filter(t => pertenceAo(t.nome, FUND2));
+
     const fetchTurma = async (turma) => {
       try {
         const res = await api.get("/cronograma", { params: { turma_id: turma.id, bimestre: bim } });
-        return { turma: turma.nome, dados: [...res.data].sort((a,b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)) };
-      } catch { return { turma: turma.nome, dados: [] }; }
+        return res.data.map(item => ({ ...item, turmaNome: turma.nome }));
+      } catch { return []; }
     };
+
+    const agruparPorData = (itens) => {
+      const mapa = {};
+      itens.forEach(item => {
+        const data = item.data_avaliacao?.split("T")[0];
+        if (!data) return;
+        if (!mapa[data]) mapa[data] = [];
+        mapa[data].push(item);
+      });
+      return mapa;
+    };
+
     const [r1, r2] = await Promise.all([
       Promise.all(turmasF1.map(fetchTurma)),
       Promise.all(turmasF2.map(fetchTurma))
     ]);
-    const toMap = (arr) => Object.fromEntries(arr.map(r => [r.turma, r.dados]));
-    setCalendarioFund1(toMap(r1));
-    setCalendarioFund2(toMap(r2));
+
+    setCalendarioFund1(agruparPorData(r1.flat()));
+    setCalendarioFund2(agruparPorData(r2.flat()));
     setLoadingCal(false);
   };
 
@@ -454,37 +467,42 @@ const styles = {
   td:{padding:"10px 12px"}
 };
 
-const CalendarioSegmento = ({ dados, formatarData, transformarConteudo }) => (
-  <div style={{ display:"flex", flexWrap:"wrap", gap:20 }}>
-    {Object.entries(dados).sort(([a],[b]) => a.localeCompare(b, "pt-BR")).map(([turma, itens]) => (
-      <div key={turma} style={{ flex:"1 1 420px", background:"white", borderRadius:12, padding:16, boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
-        <h4 style={{ color:"#1e3a8a", marginBottom:10 }}>{turma}</h4>
-        {itens.length === 0
-          ? <p style={{ color:"#94a3b8", fontSize:13 }}>Nenhuma avaliação lançada</p>
-          : <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+const CalendarioSegmento = ({ dados, formatarData, transformarConteudo }) => {
+  const datasOrdenadas = Object.keys(dados).sort();
+  if (datasOrdenadas.length === 0) return <p style={{ color:"#94a3b8" }}>Nenhuma avaliação lançada.</p>;
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+      {datasOrdenadas.map(data => {
+        const itens = [...dados[data]].sort((a,b) => a.turmaNome?.localeCompare(b.turmaNome, "pt-BR"));
+        return (
+          <div key={data} style={{ background:"white", borderRadius:12, padding:16, boxShadow:"0 2px 8px rgba(0,0,0,0.07)" }}>
+            <div style={{ fontWeight:"bold", fontSize:15, color:"#1e3a8a", marginBottom:10 }}>
+              📅 {formatarData(data)}
+            </div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
               <thead>
                 <tr style={{ background:"#f1f5f9" }}>
-                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Data</th>
-                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Disciplina</th>
-                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Professor</th>
-                  <th style={{ padding:"6px 8px", textAlign:"left" }}>Conteúdo</th>
+                  <th style={{ padding:"6px 10px", textAlign:"left" }}>Turma</th>
+                  <th style={{ padding:"6px 10px", textAlign:"left" }}>Disciplina</th>
+                  <th style={{ padding:"6px 10px", textAlign:"left" }}>Professor</th>
                 </tr>
               </thead>
               <tbody>
                 {itens.map((item, i) => (
-                  <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
-                    <td style={{ padding:"6px 8px", whiteSpace:"nowrap" }}>{formatarData(item.data_avaliacao)}</td>
-                    <td style={{ padding:"6px 8px" }}>{item.atribuicao?.disciplina?.nome || "-"}</td>
-                    <td style={{ padding:"6px 8px" }}>{item.atribuicao?.professor?.nome || "-"}</td>
-                    <td style={{ padding:"6px 8px" }}>{transformarConteudo(item.conteudo).join(", ")}</td>
+                  <tr key={i} style={{ borderBottom:"1px solid #e2e8f0", background: i%2===0?"white":"#f8fafc" }}>
+                    <td style={{ padding:"6px 10px", fontWeight:"600" }}>{item.turmaNome}</td>
+                    <td style={{ padding:"6px 10px" }}>{item.atribuicao?.disciplina?.nome || "-"}</td>
+                    <td style={{ padding:"6px 10px" }}>{item.atribuicao?.professor?.nome || "-"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-        }
-      </div>
-    ))}
-  </div>
-);
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 export default Admin;
