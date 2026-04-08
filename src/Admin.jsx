@@ -254,6 +254,9 @@ function Admin() {
                   <th style={styles.th}>Usuário</th>
                   <th style={styles.th}>Ação</th>
                   <th style={styles.th}>Entidade</th>
+                  <th style={styles.th}>Turma</th>
+                  <th style={styles.th}>Disciplina</th>
+                  <th style={styles.th}>Bimestre</th>
                   <th style={styles.th}>Detalhes</th>
                   <th style={styles.th}>Data</th>
                 </tr>
@@ -262,11 +265,17 @@ function Admin() {
                 {filtrar(logs).map((log, i) => (
                   <tr key={i} style={{ borderBottom:"1px solid #e2e8f0" }}>
                     <td style={styles.td}>{log.email || "-"}</td>
-                    <td style={{ ...styles.td, color: log.action==="CREATE"?"green":"red", fontWeight:"bold" }}>
-                      {log.action === "CREATE" ? "🟢 Criou" : "🔴 Excluiu"}
+                    <td style={{ ...styles.td, fontWeight:"bold",
+                      color: log.action==="CREATE"?"green": log.action==="DELETE"?"red":"orange" }}>
+                      {log.action === "CREATE" && "🟢 Criou"}
+                      {log.action === "DELETE" && "🔴 Excluiu"}
+                      {log.action !== "CREATE" && log.action !== "DELETE" && `🟡 ${log.action}`}
                     </td>
-                    <td style={styles.td}>{log.entidade}</td>
-                    <td style={styles.td}>{log.detalhes}</td>
+                    <td style={styles.td}>{log.entidade || "-"}</td>
+                    <td style={styles.td}>{log.turma || "-"}</td>
+                    <td style={styles.td}>{log.disciplina || "-"}</td>
+                    <td style={styles.td}>{log.bimestre ? `${log.bimestre}º` : "-"}</td>
+                    <td style={styles.td}>{log.detalhes || "-"}</td>
                     <td style={styles.td}>{new Date(log.created_at).toLocaleString("pt-BR")}</td>
                   </tr>
                 ))}
