@@ -489,7 +489,18 @@ const CalendarioSegmento = ({ dados, formatarData, refEl }) => {
   const mapaCores = Object.fromEntries(todasDisciplinas.map((d, i) => [d, CORES_DISCIPLINA[i % CORES_DISCIPLINA.length]]));
 
   return (
-    <div style={{ overflowX:"auto" }} ref={refEl}>
+    <div ref={refEl}>
+      <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginBottom:12 }}>
+        {todasDisciplinas.map(d => {
+          const cor = mapaCores[d];
+          return (
+            <span key={d} style={{ background:cor.bg, color:cor.color, padding:"3px 10px", borderRadius:6, fontWeight:500, fontSize:12 }}>
+              {d}
+            </span>
+          );
+        })}
+      </div>
+      <div style={{ overflowX:"auto" }}>
       <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
         <thead>
           <tr>
@@ -531,6 +542,7 @@ const CalendarioSegmento = ({ dados, formatarData, refEl }) => {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 };
