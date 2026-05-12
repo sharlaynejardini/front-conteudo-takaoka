@@ -9,7 +9,7 @@ function ProfessorConteudo() {
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
-    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-12` },
+    2: { inicio: `${anoAtual}-05-18`, fim: `${anoAtual}-05-20` },
     3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
