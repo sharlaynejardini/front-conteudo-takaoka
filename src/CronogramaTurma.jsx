@@ -10,6 +10,11 @@ function CronogramaTurma() {
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
   const [cronograma, setCronograma] = useState([]);
+  const [editandoId, setEditandoId] = useState(null);
+  const [edicao, setEdicao] = useState({
+    data_avaliacao: "",
+    conteudo: ""
+  });
 
   const printRef = useRef();
 
@@ -167,12 +172,62 @@ function CronogramaTurma() {
 
   const editarAvaliacao = (item) => {
 
-    const params = new URLSearchParams({
-      atribuicao: item.atribuicao.id,
-      bimestre: item.bimestre
+    setEditandoId(item.id);
+    setEdicao({
+      data_avaliacao: item.data_avaliacao?.split("T")[0] || "",
+      conteudo: transformarConteudoEmLista(item.conteudo).join("\n")
     });
 
-    window.location.href = `/?${params.toString()}`;
+  };
+
+  const cancelarEdicao = () => {
+
+    setEditandoId(null);
+    setEdicao({
+      data_avaliacao: "",
+      conteudo: ""
+    });
+
+  };
+
+  const salvarEdicao = async (item) => {
+
+    const topicos = edicao.conteudo
+      .split("\n")
+      .map(topico => topico.trim())
+      .filter(Boolean);
+
+    if (!edicao.data_avaliacao || topicos.length === 0) {
+      alert("Preencha a data e ao menos um conteÃºdo.");
+      return;
+    }
+
+    try {
+
+      const response = await api.post("/conteudos", {
+        id: item.id,
+        atribuicao_id: item.atribuicao.id,
+        bimestre: item.bimestre,
+        conteudo: JSON.stringify(topicos),
+        data_avaliacao: edicao.data_avaliacao
+      });
+
+      setCronograma(prev =>
+        prev
+          .map(avaliacao =>
+            avaliacao.id === item.id ? response.data : avaliacao
+          )
+          .sort((a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao))
+      );
+
+      cancelarEdicao();
+
+    } catch (error) {
+
+      console.error(error);
+      alert(error.response?.data?.detail || "Erro ao editar avaliaÃ§Ã£o.");
+
+    }
 
   };
 
@@ -277,6 +332,23 @@ function CronogramaTurma() {
     borderBottom: "1px solid #eaeef3",
     fontSize: "14px",
     color: "#333"
+  };
+
+  const inputStyle = {
+    width: "100%",
+    padding: "8px",
+    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    boxSizing: "border-box",
+    fontSize: "14px"
+  };
+
+  const actionButtonStyle = {
+    border: "none",
+    borderRadius: "6px",
+    padding: "7px 9px",
+    marginRight: "6px",
+    cursor: "pointer"
   };
 
   const turmaNome =
@@ -405,25 +477,82 @@ function CronogramaTurma() {
                 const corLinha =
                   mapaCores[item.data_avaliacao] || "white";
 
+                const emEdicao = editandoId === item.id;
+
                 return (
 
                   <tr key={item.id} style={{ backgroundColor: corLinha }}>
 
-                    <td style={tdStyle}>{formatarData(item.data_avaliacao)}</td>
+                    <td style={tdStyle}>
+                      {emEdicao ? (
+                        <input
+                          type="date"
+                          style={inputStyle}
+                          value={edicao.data_avaliacao}
+                          onChange={(e) =>
+                            setEdicao(prev => ({
+                              ...prev,
+                              data_avaliacao: e.target.value
+                            }))
+                          }
+                        />
+                      ) : (
+                        formatarData(item.data_avaliacao)
+                      )}
+                    </td>
                     <td style={tdStyle}>{item.atribuicao.professor.nome}</td>
                     <td style={tdStyle}>{item.atribuicao.disciplina.nome}</td>
 
                     <td style={tdStyle}>
-                      {listaTopicos.map((topico, i) => (
+                      {emEdicao ? (
+                        <textarea
+                          style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
+                          value={edicao.conteudo}
+                          onChange={(e) =>
+                            setEdicao(prev => ({
+                              ...prev,
+                              conteudo: e.target.value
+                            }))
+                          }
+                        />
+                      ) : listaTopicos.map((topico, i) => (
                         <div key={i}>• {topico}</div>
                       ))}
                     </td>
 
                     <td style={tdStyle} className="no-print">
-                      <button onClick={() => editarAvaliacao(item)}>✏️</button>
-                      <button onClick={() => excluirAvaliacao(item.id)}>🗑</button>
+                      {emEdicao ? (
+                        <>
+                          <button
+                            style={{ ...actionButtonStyle, backgroundColor: "#16a34a", color: "white" }}
+                            onClick={() => salvarEdicao(item)}
+                          >
+                            Salvar
+                          </button>
+                          <button
+                            style={{ ...actionButtonStyle, backgroundColor: "#e2e8f0", color: "#334155" }}
+                            onClick={cancelarEdicao}
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            style={{ ...actionButtonStyle, backgroundColor: "#dbeafe", color: "#1e40af" }}
+                            onClick={() => editarAvaliacao(item)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            style={{ ...actionButtonStyle, backgroundColor: "#fee2e2", color: "#991b1b" }}
+                            onClick={() => excluirAvaliacao(item.id)}
+                          >
+                            Excluir
+                          </button>
+                        </>
+                      )}
                     </td>
-
                   </tr>
 
                 );
