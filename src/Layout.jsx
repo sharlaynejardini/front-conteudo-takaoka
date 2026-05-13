@@ -47,6 +47,7 @@ function Layout() {
     { path: "/cronograma", label: "Cronograma", icon: "📅" },
     { path: "/trabalho", label: "Trabalhos", icon: "📚" },
     { path: "/cronograma-trabalho", label: "Cronograma Trab.", icon: "🗂️" },
+    { path: "/lancamentos", label: "Lancamentos", icon: "📋" },
     { path: "/horario", label: "Horário", icon: "🕒" },
   ];
 

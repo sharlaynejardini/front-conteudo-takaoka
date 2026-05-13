@@ -8,6 +8,7 @@ import ProfessorConteudo from "./ProfessorConteudo";
 import CronogramaTurma from "./CronogramaTurma";
 import ProfessorTrabalho from "./ProfessorTrabalho";
 import CronogramaTrabalho from "./CronogramaTrabalho";
+import ProfessorLancamentos from "./ProfessorLancamentos";
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
 import AuthCallback from "./AuthCallback";
@@ -50,6 +51,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           {/* TRABALHOS MENSAIS */}
           <Route path="trabalho" element={<ProfessorTrabalho />} />
           <Route path="cronograma-trabalho" element={<CronogramaTrabalho />} />
+          <Route path="lancamentos" element={<ProfessorLancamentos />} />
 
           {/* HORÁRIO ESCOLAR */}
           <Route path="horario" element={<HorarioEscolar />} />
