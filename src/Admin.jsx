@@ -20,6 +20,7 @@ function Admin() {
 
   const [aba, setAba] = useState("dashboard");
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
   const [busca, setBusca] = useState("");
 
   const [professores, setProfessores] = useState([]);
@@ -64,35 +65,42 @@ function Admin() {
 
   const buscarCalendario = async (bim) => {
     setLoadingCal(true);
-    const turmasF1 = turmas.filter(t => pertenceAo(t.nome, FUND1));
-    const turmasF2 = turmas.filter(t => pertenceAo(t.nome, FUND2));
 
-    const fetchTurma = async (turma) => {
-      try {
-        const res = await api.get("/cronograma", { params: { turma_id: turma.id, bimestre: bim } });
-        return res.data.map(item => ({ ...item, turmaNome: turma.nome }));
-      } catch { return []; }
-    };
+    try {
+      const turmasF1 = turmas.filter(t => pertenceAo(t.nome, FUND1));
+      const turmasF2 = turmas.filter(t => pertenceAo(t.nome, FUND2));
 
-    const agruparPorData = (itens) => {
-      const mapa = {};
-      itens.forEach(item => {
-        const data = item.data_avaliacao?.split("T")[0];
-        if (!data) return;
-        if (!mapa[data]) mapa[data] = [];
-        mapa[data].push(item);
-      });
-      return mapa;
-    };
+      const fetchTurma = async (turma) => {
+        try {
+          const res = await api.get("/cronograma", { params: { turma_id: turma.id, bimestre: bim } });
+          return res.data.map(item => ({ ...item, turmaNome: turma.nome }));
+        } catch { return []; }
+      };
 
-    const [r1, r2] = await Promise.all([
-      Promise.all(turmasF1.map(fetchTurma)),
-      Promise.all(turmasF2.map(fetchTurma))
-    ]);
+      const agruparPorData = (itens) => {
+        const mapa = {};
+        itens.forEach(item => {
+          const data = item.data_avaliacao?.split("T")[0];
+          if (!data) return;
+          if (!mapa[data]) mapa[data] = [];
+          mapa[data].push(item);
+        });
+        return mapa;
+      };
 
-    setCalendarioFund1(agruparPorData(r1.flat()));
-    setCalendarioFund2(agruparPorData(r2.flat()));
-    setLoadingCal(false);
+      const [r1, r2] = await Promise.all([
+        Promise.all(turmasF1.map(fetchTurma)),
+        Promise.all(turmasF2.map(fetchTurma))
+      ]);
+
+      setCalendarioFund1(agruparPorData(r1.flat()));
+      setCalendarioFund2(agruparPorData(r2.flat()));
+    } catch (error) {
+      console.error(error);
+      setErro("Erro ao carregar o calendÃ¡rio do admin.");
+    } finally {
+      setLoadingCal(false);
+    }
   };
 
   useEffect(() => {
@@ -101,23 +109,36 @@ function Admin() {
 
   async function carregarDados() {
     setLoading(true);
+    setErro("");
 
-    const prof = await api.get("/professores");
-    const tur = await api.get("/turmas");
-    const disc = await api.get("/disciplinas");
-    const atrib = await api.get("/atribuicoes");
-    const { data: logsData } = await supabase
-      .from("action_logs")
-      .select("*")
-      .order("created_at", { ascending: false });
+    try {
+      const [prof, tur, disc, atrib] = await Promise.all([
+        api.get("/professores"),
+        api.get("/turmas"),
+        api.get("/disciplinas"),
+        api.get("/atribuicoes")
+      ]);
 
-    setProfessores(prof.data || []);
-    setTurmas(tur.data || []);
-    setDisciplinas(disc.data || []);
-    setAtribuicoes(atrib.data || []);
-    setLogs(logsData || []);
+      const { data: logsData, error: logsError } = await supabase
+        .from("action_logs")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    setLoading(false);
+      if (logsError) {
+        console.error(logsError);
+      }
+
+      setProfessores(prof.data || []);
+      setTurmas(tur.data || []);
+      setDisciplinas(disc.data || []);
+      setAtribuicoes(atrib.data || []);
+      setLogs(logsData || []);
+    } catch (error) {
+      console.error(error);
+      setErro(error.response?.data?.detail || "Erro ao carregar dados do admin.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // ================= CRUD =================
@@ -218,6 +239,16 @@ function Admin() {
   };
 
   if (loading) return <div style={{ padding: 40 }}>Carregando...</div>;
+
+  if (erro) {
+    return (
+      <div style={{ padding: 40 }}>
+        <h2>Erro na tela do admin</h2>
+        <p>{erro}</p>
+        <button onClick={carregarDados}>Tentar novamente</button>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.page}>

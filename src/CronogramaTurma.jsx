@@ -6,6 +6,15 @@ import logoTakaoka from "./assets/logo_takaoka.png";
 
 function CronogramaTurma() {
 
+  const anoAtual = new Date().getFullYear();
+
+  const semanasProva = {
+    1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
+    2: { inicio: `${anoAtual}-05-18`, fim: `${anoAtual}-05-20` },
+    3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
+    4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
+  };
+
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
@@ -199,6 +208,17 @@ function CronogramaTurma() {
 
     if (!edicao.data_avaliacao || topicos.length === 0) {
       alert("Preencha a data e ao menos um conteÃºdo.");
+      return;
+    }
+
+    const intervaloBimestre = semanasProva[item.bimestre];
+
+    if (
+      intervaloBimestre &&
+      (edicao.data_avaliacao < intervaloBimestre.inicio ||
+        edicao.data_avaliacao > intervaloBimestre.fim)
+    ) {
+      alert("Selecione uma data dentro do bimestre.");
       return;
     }
 
@@ -489,6 +509,8 @@ function CronogramaTurma() {
                           type="date"
                           style={inputStyle}
                           value={edicao.data_avaliacao}
+                          min={semanasProva[item.bimestre]?.inicio}
+                          max={semanasProva[item.bimestre]?.fim}
                           onChange={(e) =>
                             setEdicao(prev => ({
                               ...prev,

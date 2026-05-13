@@ -8,6 +8,11 @@ import { Navigate } from "react-router-dom";
 
 function AdminRoute({ children }) {
 
+  const ADMIN_EMAILS = [
+    "sharlayne.fonseca@professor.barueri.br",
+    "wilber.garcia@professor.barueri.br"
+  ];
+
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -22,9 +27,17 @@ function AdminRoute({ children }) {
         return;
       }
 
-      const userId = sessionData.session.user.id;
+      const user = sessionData.session.user;
+      const userId = user.id;
+      const email = user.email?.toLowerCase();
 
       console.log("User ID:", userId);
+
+      if (ADMIN_EMAILS.includes(email)) {
+        setIsAdmin(true);
+        setLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase
         .from("profiles")
