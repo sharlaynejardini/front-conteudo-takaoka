@@ -1,8 +1,10 @@
 import axios from "axios";
 import { supabase } from "./supabaseClient";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+
 const api = axios.create({
-  baseURL: "https://novo-serveless-conteudo.vercel.app/"
+  baseURL: API_BASE_URL
 });
 
 // 🔥 cache simples do token

@@ -31,7 +31,7 @@ function TestAPI() {
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
       <h1>Teste de Rotas da API</h1>
-      <p>Base URL: <strong>https://novo-serveless-conteudo.vercel.app/</strong></p>
+      <p>Base URL: <strong>{import.meta.env.VITE_API_BASE_URL || "/api"}</strong></p>
       
       <div style={{ marginTop: "20px" }}>
         {testRoutes.map((route) => (
