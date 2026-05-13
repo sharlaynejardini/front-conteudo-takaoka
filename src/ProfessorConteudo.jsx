@@ -332,7 +332,7 @@ function ProfessorConteudo() {
     } catch (err) {
 
       console.error(err);
-      setMensagem("Erro ou sem permissão.");
+      setMensagem(err.response?.data?.detail || "Erro ao salvar conteúdo.");
       setTipoMensagem("error");
 
     }
