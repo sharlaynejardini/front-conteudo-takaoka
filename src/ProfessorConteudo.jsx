@@ -28,6 +28,7 @@ function ProfessorConteudo() {
   const [topicos, setTopicos] = useState([""]);
   const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
 
+  const [conteudoId, setConteudoId] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [tipoMensagem, setTipoMensagem] = useState("");
@@ -75,6 +76,7 @@ function ProfessorConteudo() {
 
   const limparFormulario = () => {
     setTopicos([""]);
+    setConteudoId(null);
     setModoEdicao(false);
   };
 
@@ -187,6 +189,7 @@ function ProfessorConteudo() {
         const salvo = response.data;
 
         setModoEdicao(true);
+        setConteudoId(salvo.id);
         setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
 
@@ -196,6 +199,7 @@ function ProfessorConteudo() {
       } catch {
 
         setModoEdicao(false);
+        setConteudoId(null);
         setTopicos([""]);
         setMensagem("");
 
@@ -301,7 +305,14 @@ function ProfessorConteudo() {
 
       for (const atribuicaoId of atribuicoesParaSalvar) {
 
+        const editandoConteudoAtual =
+          modoEdicao &&
+          conteudoId &&
+          atribuicoesParaSalvar.length === 1 &&
+          atribuicaoId === atribuicaoSelecionada;
+
         await api.post("/conteudos", {
+          ...(editandoConteudoAtual ? { id: conteudoId } : {}),
           atribuicao_id: atribuicaoId,
           bimestre,
           conteudo: JSON.stringify(topicos),
