@@ -73,6 +73,11 @@ function CronogramaTurma() {
     return `${dia}/${mes}/${ano}`;
   };
 
+  const formatarDisciplina = (nome) => {
+    if (nome === "Português - Produção de Texto") return "Português";
+    return nome;
+  };
+
   const gerarImagem = async () => {
 
     const ocultar = document.querySelectorAll(".no-print");
@@ -523,7 +528,7 @@ function CronogramaTurma() {
                       )}
                     </td>
                     <td style={tdStyle}>{item.atribuicao.professor.nome}</td>
-                    <td style={tdStyle}>{item.atribuicao.disciplina.nome}</td>
+                    <td style={tdStyle}>{formatarDisciplina(item.atribuicao.disciplina.nome)}</td>
 
                     <td style={tdStyle}>
                       {emEdicao ? (
