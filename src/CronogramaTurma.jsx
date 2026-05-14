@@ -74,6 +74,7 @@ function CronogramaTurma() {
   };
 
   const formatarDisciplina = (nome) => {
+    if (!nome) return "-";
     if (nome === "Português - Produção de Texto") return "Português";
     return nome;
   };
@@ -231,7 +232,7 @@ function CronogramaTurma() {
 
       const response = await api.post("/conteudos", {
         id: item.id,
-        atribuicao_id: item.atribuicao.id,
+        atribuicao_id: item.atribuicao?.id,
         bimestre: item.bimestre,
         conteudo: JSON.stringify(topicos),
         data_avaliacao: edicao.data_avaliacao
@@ -527,8 +528,8 @@ function CronogramaTurma() {
                         formatarData(item.data_avaliacao)
                       )}
                     </td>
-                    <td style={tdStyle}>{item.atribuicao.professor.nome}</td>
-                    <td style={tdStyle}>{formatarDisciplina(item.atribuicao.disciplina.nome)}</td>
+                    <td style={tdStyle}>{item.atribuicao?.professor?.nome || "-"}</td>
+                    <td style={tdStyle}>{formatarDisciplina(item.atribuicao?.disciplina?.nome)}</td>
 
                     <td style={tdStyle}>
                       {emEdicao ? (
