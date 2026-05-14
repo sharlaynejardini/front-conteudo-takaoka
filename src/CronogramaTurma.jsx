@@ -19,6 +19,7 @@ function CronogramaTurma() {
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
   const [cronograma, setCronograma] = useState([]);
+  const [mensagemErro, setMensagemErro] = useState("");
   const [editandoId, setEditandoId] = useState(null);
   const [edicao, setEdicao] = useState({
     data_avaliacao: "",
@@ -49,18 +50,33 @@ function CronogramaTurma() {
 
     if (!turmaSelecionada) return;
 
-    const response = await api.get("/cronograma", {
-      params: {
-        turma_id: turmaSelecionada,
-        bimestre
-      }
-    });
+    setMensagemErro("");
 
-    const ordenado = [...response.data].sort(
-      (a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
-    );
+    try {
 
-    setCronograma(ordenado);
+      const response = await api.get("/cronograma", {
+        params: {
+          turma_id: turmaSelecionada,
+          bimestre
+        }
+      });
+
+      const ordenado = [...response.data].sort(
+        (a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
+      );
+
+      setCronograma(ordenado);
+
+    } catch (error) {
+
+      console.error(error);
+      setCronograma([]);
+      setMensagemErro(
+        error.response?.data?.detail ||
+        "Erro ao gerar o cronograma. Verifique as atribuicoes e tente novamente."
+      );
+
+    }
 
   };
 
@@ -426,6 +442,20 @@ function CronogramaTurma() {
           <button style={buttonStyle} onClick={gerarPDF}>
             Baixar PDF
           </button>
+
+          {mensagemErro && (
+            <div style={{
+              margin: "18px auto 0",
+              padding: "12px 16px",
+              maxWidth: "620px",
+              borderRadius: "8px",
+              backgroundColor: "#fee2e2",
+              color: "#991b1b",
+              fontWeight: "600"
+            }}>
+              {mensagemErro}
+            </div>
+          )}
 
         </div>
 
