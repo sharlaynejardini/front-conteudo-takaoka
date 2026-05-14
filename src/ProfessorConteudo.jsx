@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
 import { supabase } from "./supabaseClient";
+import { getBimestreAtual } from "./utils/bimestreAtual";
 
 function ProfessorConteudo() {
 
   const anoAtual = new Date().getFullYear();
+  const bimestreAtual = getBimestreAtual();
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
@@ -22,11 +24,11 @@ function ProfessorConteudo() {
 
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
-  const [bimestre, setBimestre] = useState(1);
+  const [bimestre, setBimestre] = useState(bimestreAtual);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
   const [topicos, setTopicos] = useState([""]);
-  const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[1].inicio);
+  const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[bimestreAtual].inicio);
 
   const [conteudoId, setConteudoId] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);

@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
+import { getBimestreAtual } from "./utils/bimestreAtual";
 import { supabase } from "./supabaseClient"; // 🔥 NOVO
 
 function ProfessorTrabalho() {
+  const bimestreAtual = getBimestreAtual();
 
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
@@ -13,7 +15,7 @@ function ProfessorTrabalho() {
 
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
-  const [bimestre, setBimestre] = useState(1);
+  const [bimestre, setBimestre] = useState(bimestreAtual);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
   const [topicos, setTopicos] = useState([""]);

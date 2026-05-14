@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "./api";
 import { supabase } from "./supabaseClient";
+import { getBimestreAtual } from "./utils/bimestreAtual";
 
 async function buscarItem(endpoint, params) {
   try {
@@ -39,10 +40,12 @@ function formatarData(dataISO) {
 }
 
 function ProfessorLancamentos() {
+  const bimestreAtual = getBimestreAtual();
+
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
   const [professorSelecionado, setProfessorSelecionado] = useState("");
-  const [bimestre, setBimestre] = useState(1);
+  const [bimestre, setBimestre] = useState(bimestreAtual);
   const [lancamentos, setLancamentos] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState("");
@@ -113,7 +116,7 @@ function ProfessorLancamentos() {
       setLancamentos(resultados);
     } catch (error) {
       console.error(error);
-      setMensagem("Erro ao buscar lancamentos.");
+      setMensagem("Erro ao buscar lançamentos.");
     } finally {
       setCarregando(false);
     }
@@ -146,7 +149,7 @@ function ProfessorLancamentos() {
           setProfessorSelecionado(professor.id);
           await carregarAtribuicoes(professor.id);
         } else {
-          setMensagem("Professor nao encontrado para o email logado.");
+          setMensagem("Professor não encontrado para o e-mail logado.");
         }
       } catch (error) {
         console.error(error);
@@ -182,9 +185,9 @@ function ProfessorLancamentos() {
     <div style={styles.page}>
       <div style={styles.header}>
         <div>
-          <h2 style={styles.title}>Meus Lancamentos</h2>
+          <h2 style={styles.title}>Meus Lançamentos</h2>
           <p style={styles.subtitle}>
-            Consulte avaliacoes e trabalhos cadastrados por bimestre.
+            Consulte avaliações e trabalhos cadastrados por bimestre.
           </p>
         </div>
 
@@ -231,9 +234,9 @@ function ProfessorLancamentos() {
 
       <div style={styles.summaryGrid}>
         <ResumoCard label="Turmas/disciplinas" value={resumo.turmas} />
-        <ResumoCard label="Avaliacoes lancadas" value={resumo.avaliacoes} />
-        <ResumoCard label="Trabalhos lancados" value={resumo.trabalhos} />
-        <ResumoCard label="Pendencias" value={resumo.pendenciasAvaliacao + resumo.pendenciasTrabalho} />
+        <ResumoCard label="Avaliações lançadas" value={resumo.avaliacoes} />
+        <ResumoCard label="Trabalhos lançados" value={resumo.trabalhos} />
+        <ResumoCard label="Pendências" value={resumo.pendenciasAvaliacao + resumo.pendenciasTrabalho} />
       </div>
 
       <div style={styles.tableWrap}>
@@ -242,7 +245,7 @@ function ProfessorLancamentos() {
             <tr>
               <th style={styles.th}>Turma</th>
               <th style={styles.th}>Disciplina</th>
-              <th style={styles.th}>Avaliacao</th>
+              <th style={styles.th}>Avaliação</th>
               <th style={styles.th}>Trabalho</th>
             </tr>
           </thead>
@@ -250,7 +253,7 @@ function ProfessorLancamentos() {
           <tbody>
             {carregando && (
               <tr>
-                <td style={styles.empty} colSpan={4}>Carregando lancamentos...</td>
+                <td style={styles.empty} colSpan={4}>Carregando lançamentos...</td>
               </tr>
             )}
 
@@ -306,7 +309,7 @@ function LancamentoCell({ item, data, conteudos, detalhe, editPath }) {
     return (
       <div style={styles.pending}>
         <span style={styles.badgePendente}>Pendente</span>
-        <Link style={styles.link} to={editPath}>Lancar</Link>
+        <Link style={styles.link} to={editPath}>Lançar</Link>
       </div>
     );
   }
@@ -314,7 +317,7 @@ function LancamentoCell({ item, data, conteudos, detalhe, editPath }) {
   return (
     <div>
       <div style={styles.cellHeader}>
-        <span style={styles.badgeLancado}>Lancado</span>
+        <span style={styles.badgeLancado}>Lançado</span>
         <Link style={styles.link} to={editPath}>Editar</Link>
       </div>
 
