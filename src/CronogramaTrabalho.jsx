@@ -10,6 +10,13 @@ function CronogramaTrabalho() {
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
   const [cronograma, setCronograma] = useState([]);
+  const [mensagemErro, setMensagemErro] = useState("");
+  const [editandoId, setEditandoId] = useState(null);
+  const [edicao, setEdicao] = useState({
+    data_entrega: "",
+    conteudo: "",
+    instrucoes: ""
+  });
 
   const printRef = useRef();
 
@@ -33,18 +40,33 @@ function CronogramaTrabalho() {
 
     if (!turmaSelecionada) return;
 
-    const response = await api.get("/cronograma-trabalhos", {
-      params: {
-        turma_id: turmaSelecionada,
-        bimestre
-      }
-    });
+    setMensagemErro("");
 
-    const ordenado = [...response.data].sort(
-      (a, b) => new Date(a.data_entrega) - new Date(b.data_entrega)
-    );
+    try {
 
-    setCronograma(ordenado);
+      const response = await api.get("/cronograma-trabalhos", {
+        params: {
+          turma_id: turmaSelecionada,
+          bimestre
+        }
+      });
+
+      const ordenado = [...response.data].sort(
+        (a, b) => new Date(a.data_entrega) - new Date(b.data_entrega)
+      );
+
+      setCronograma(ordenado);
+
+    } catch (error) {
+
+      console.error(error);
+      setCronograma([]);
+      setMensagemErro(
+        error.response?.data?.detail ||
+        "Erro ao gerar o cronograma de trabalhos. Verifique as atribuicoes e tente novamente."
+      );
+
+    }
 
   };
 
@@ -122,24 +144,68 @@ function CronogramaTrabalho() {
 
   };
 
-  // =============================
-  // EDITAR TRABALHO
-  // =============================
-
   const editarTrabalho = (item) => {
 
-    const params = new URLSearchParams({
-      atribuicao: item.atribuicao.id,
-      bimestre: item.bimestre
+    setEditandoId(item.id);
+    setEdicao({
+      data_entrega: item.data_entrega?.split("T")[0] || "",
+      conteudo: transformarConteudoEmLista(item.conteudo).join("\n"),
+      instrucoes: item.instrucoes || ""
     });
-
-    window.location.href = `/?${params.toString()}`;
 
   };
 
-  // =============================
-  // EXCLUIR TRABALHO
-  // =============================
+  const cancelarEdicao = () => {
+
+    setEditandoId(null);
+    setEdicao({
+      data_entrega: "",
+      conteudo: "",
+      instrucoes: ""
+    });
+
+  };
+
+  const salvarEdicao = async (item) => {
+
+    const topicos = edicao.conteudo
+      .split("\n")
+      .map(topico => topico.trim())
+      .filter(Boolean);
+
+    if (!edicao.data_entrega || topicos.length === 0) {
+      alert("Preencha a data e ao menos um conteudo.");
+      return;
+    }
+
+    try {
+
+      const response = await api.post("/trabalhos", {
+        atribuicao_id: item.atribuicao?.id,
+        bimestre: item.bimestre,
+        conteudo: JSON.stringify(topicos),
+        instrucoes: edicao.instrucoes,
+        data_entrega: edicao.data_entrega
+      });
+
+      setCronograma(prev =>
+        prev
+          .map(trabalho =>
+            trabalho.id === item.id ? response.data : trabalho
+          )
+          .sort((a, b) => new Date(a.data_entrega) - new Date(b.data_entrega))
+      );
+
+      cancelarEdicao();
+
+    } catch (error) {
+
+      console.error(error);
+      alert(error.response?.data?.detail || "Erro ao editar trabalho.");
+
+    }
+
+  };
 
   const excluirTrabalho = async (id) => {
 
@@ -248,6 +314,23 @@ function CronogramaTrabalho() {
     verticalAlign: "top"
   };
 
+  const inputStyle = {
+    width: "100%",
+    padding: "8px",
+    borderRadius: "6px",
+    border: "1px solid #cbd5e1",
+    boxSizing: "border-box",
+    fontSize: "14px"
+  };
+
+  const actionButtonStyle = {
+    border: "none",
+    borderRadius: "6px",
+    padding: "7px 9px",
+    marginRight: "6px",
+    cursor: "pointer"
+  };
+
   return (
     <div style={pageStyle}>
       <div style={cardStyle}>
@@ -293,6 +376,20 @@ function CronogramaTrabalho() {
           <button style={buttonStyle} onClick={gerarPDF}>
             Baixar PDF
           </button>
+
+          {mensagemErro && (
+            <div style={{
+              margin: "18px auto 0",
+              padding: "12px 16px",
+              maxWidth: "620px",
+              borderRadius: "8px",
+              backgroundColor: "#fee2e2",
+              color: "#991b1b",
+              fontWeight: "600"
+            }}>
+              {mensagemErro}
+            </div>
+          )}
 
         </div>
 
@@ -340,60 +437,104 @@ function CronogramaTrabalho() {
                 const corLinha =
                   mapaCores[item.data_entrega] || "white";
 
+                const emEdicao = editandoId === item.id;
+
                 return (
                   <tr key={item.id} style={{ backgroundColor: corLinha }}>
                     <td style={tdStyle}>
-                      {formatarData(item.data_entrega)}
+                      {emEdicao ? (
+                        <input
+                          type="date"
+                          style={inputStyle}
+                          value={edicao.data_entrega}
+                          onChange={(e) =>
+                            setEdicao(prev => ({
+                              ...prev,
+                              data_entrega: e.target.value
+                            }))
+                          }
+                        />
+                      ) : (
+                        formatarData(item.data_entrega)
+                      )}
                     </td>
 
                     <td style={tdStyle}>
-                      {item.atribuicao?.professor?.nome}
+                      {item.atribuicao?.professor?.nome || "-"}
                     </td>
 
                     <td style={tdStyle}>
-                      {item.atribuicao?.disciplina?.nome}
+                      {item.atribuicao?.disciplina?.nome || "-"}
                     </td>
 
                     <td style={tdStyle}>
-                      {listaTopicos.map((topico, i) => (
+                      {emEdicao ? (
+                        <textarea
+                          style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
+                          value={edicao.conteudo}
+                          onChange={(e) =>
+                            setEdicao(prev => ({
+                              ...prev,
+                              conteudo: e.target.value
+                            }))
+                          }
+                        />
+                      ) : listaTopicos.map((topico, i) => (
                         <div key={i}>• {topico}</div>
                       ))}
                     </td>
 
                     <td style={tdStyle}>
-                      {item.instrucoes}
+                      {emEdicao ? (
+                        <textarea
+                          style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
+                          value={edicao.instrucoes}
+                          onChange={(e) =>
+                            setEdicao(prev => ({
+                              ...prev,
+                              instrucoes: e.target.value
+                            }))
+                          }
+                        />
+                      ) : (
+                        item.instrucoes
+                      )}
                     </td>
 
                     <td style={tdStyle} className="no-print">
 
-                      <button
-                        onClick={() => editarTrabalho(item)}
-                        style={{
-                          backgroundColor: "#2563eb",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          padding: "6px 10px",
-                          marginRight: "5px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        ✏️
-                      </button>
+                      {emEdicao ? (
+                        <>
+                          <button
+                            style={{ ...actionButtonStyle, backgroundColor: "#16a34a", color: "white" }}
+                            onClick={() => salvarEdicao(item)}
+                          >
+                            Salvar
+                          </button>
+                          <button
+                            style={{ ...actionButtonStyle, backgroundColor: "#e2e8f0", color: "#334155" }}
+                            onClick={cancelarEdicao}
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => editarTrabalho(item)}
+                            style={{ ...actionButtonStyle, backgroundColor: "#dbeafe", color: "#1e40af" }}
+                          >
+                            Editar
+                          </button>
 
-                      <button
-                        onClick={() => excluirTrabalho(item.id)}
-                        style={{
-                          backgroundColor: "#dc2626",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          padding: "6px 10px",
-                          cursor: "pointer"
-                        }}
-                      >
-                        🗑
-                      </button>
+                          <button
+                            onClick={() => excluirTrabalho(item.id)}
+                            style={{ ...actionButtonStyle, backgroundColor: "#fee2e2", color: "#991b1b" }}
+                          >
+                            Excluir
+                          </button>
+                        </>
+                      )}
 
                     </td>
 
