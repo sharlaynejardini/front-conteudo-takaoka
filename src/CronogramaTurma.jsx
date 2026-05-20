@@ -15,9 +15,15 @@ function CronogramaTurma() {
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
+  const semanaSimuladoFund2 = {
+    inicio: `${anoAtual}-05-18`,
+    fim: `${anoAtual}-05-22`
+  };
+
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [bimestre, setBimestre] = useState(1);
+  const [tipoAvaliacao, setTipoAvaliacao] = useState("regular");
   const [cronograma, setCronograma] = useState([]);
   const [mensagemErro, setMensagemErro] = useState("");
   const [editandoId, setEditandoId] = useState(null);
@@ -46,6 +52,24 @@ function CronogramaTurma() {
 
   }, []);
 
+  const turmaNome =
+    turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
+
+  const turmaEhFundamental2 = (nome = "") => /^[6-9]\s*[º°o]?/.test(nome.trim());
+  const podeEscolherProvaFund2 = bimestre === 2 && turmaEhFundamental2(turmaNome);
+
+  const getIntervaloAvaliacao = (item) =>
+    item?.tipo_avaliacao === "simulado" ? semanaSimuladoFund2 : semanasProva[item.bimestre];
+
+  const getNomeAvaliacao = (tipo = tipoAvaliacao) =>
+    tipo === "simulado" ? "Simulado anterior" : "Prova regular";
+
+  useEffect(() => {
+    if (!podeEscolherProvaFund2 && tipoAvaliacao === "simulado") {
+      setTipoAvaliacao("regular");
+    }
+  }, [podeEscolherProvaFund2, tipoAvaliacao]);
+
   const buscarCronograma = async () => {
 
     if (!turmaSelecionada) return;
@@ -57,7 +81,8 @@ function CronogramaTurma() {
       const response = await api.get("/cronograma", {
         params: {
           turma_id: turmaSelecionada,
-          bimestre
+          bimestre,
+          tipo_avaliacao: tipoAvaliacao
         }
       });
 
@@ -121,15 +146,12 @@ function CronogramaTurma() {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
 
-    const turmaNome =
-      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
-
     ctx.fillStyle = "#2c4a8a";
     ctx.font = "bold 28px Arial";
     ctx.textAlign = "center";
 
     ctx.fillText(
-      `${turmaNome} - ${bimestre}º Bimestre`,
+      `${turmaNome} - ${bimestre}º Bimestre - ${getNomeAvaliacao()}`,
       newCanvas.width / 2,
       40
     );
@@ -138,7 +160,7 @@ function CronogramaTurma() {
 
     const link = document.createElement("a");
 
-    link.download = `${turmaNome}_${bimestre}Bimestre.png`;
+    link.download = `${turmaNome}_${bimestre}Bimestre_${tipoAvaliacao}.png`;
 
     link.href = newCanvas.toDataURL("image/png");
 
@@ -171,10 +193,7 @@ function CronogramaTurma() {
 
     pdf.addImage(imgData, "PNG", margin, 10, usableWidth, imgHeight);
 
-    const turmaNome =
-      turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
-
-    pdf.save(`${turmaNome}_${bimestre}Bimestre.pdf`);
+    pdf.save(`${turmaNome}_${bimestre}Bimestre_${tipoAvaliacao}.pdf`);
   };
 
   const excluirAvaliacao = async (id) => {
@@ -233,7 +252,7 @@ function CronogramaTurma() {
       return;
     }
 
-    const intervaloBimestre = semanasProva[item.bimestre];
+    const intervaloBimestre = getIntervaloAvaliacao(item);
 
     if (
       intervaloBimestre &&
@@ -250,6 +269,7 @@ function CronogramaTurma() {
         id: item.id,
         atribuicao_id: item.atribuicao?.id,
         bimestre: item.bimestre,
+        tipo_avaliacao: item.tipo_avaliacao || "regular",
         conteudo: JSON.stringify(topicos),
         data_avaliacao: edicao.data_avaliacao
       });
@@ -393,9 +413,6 @@ function CronogramaTurma() {
     cursor: "pointer"
   };
 
-  const turmaNome =
-    turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
-
   return (
 
     <div style={pageStyle}>
@@ -430,6 +447,17 @@ function CronogramaTurma() {
             <option value={4}>4º Bimestre</option>
 
           </select>
+
+          {podeEscolherProvaFund2 && (
+            <select
+              style={selectStyle}
+              value={tipoAvaliacao}
+              onChange={(e) => setTipoAvaliacao(e.target.value)}
+            >
+              <option value="regular">Prova regular - 08 a 12/06</option>
+              <option value="simulado">Simulado anterior</option>
+            </select>
+          )}
 
           <button style={buttonStyle} onClick={buscarCronograma}>
             Buscar
@@ -496,6 +524,16 @@ function CronogramaTurma() {
               {bimestre}º Bimestre
             </div>
 
+            {podeEscolherProvaFund2 && (
+              <div style={{
+                fontSize: "13px",
+                color: "#555",
+                marginTop: "4px"
+              }}>
+                {getNomeAvaliacao()}
+              </div>
+            )}
+
             <div style={{
               borderBottom: "1px solid #cfd8e3",
               marginTop: "15px"
@@ -545,8 +583,8 @@ function CronogramaTurma() {
                           type="date"
                           style={inputStyle}
                           value={edicao.data_avaliacao}
-                          min={semanasProva[item.bimestre]?.inicio}
-                          max={semanasProva[item.bimestre]?.fim}
+                          min={getIntervaloAvaliacao(item)?.inicio}
+                          max={getIntervaloAvaliacao(item)?.fim}
                           onChange={(e) =>
                             setEdicao(prev => ({
                               ...prev,
