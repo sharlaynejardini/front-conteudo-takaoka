@@ -16,7 +16,7 @@ function CronogramaTurma() {
   };
 
   const semanaSimuladoFund2 = {
-    inicio: `${anoAtual}-05-18`,
+    inicio: `${anoAtual}-05-20`,
     fim: `${anoAtual}-05-22`
   };
 
@@ -62,7 +62,7 @@ function CronogramaTurma() {
     item?.tipo_avaliacao === "simulado" ? semanaSimuladoFund2 : semanasProva[item.bimestre];
 
   const getNomeAvaliacao = (tipo = tipoAvaliacao) =>
-    tipo === "simulado" ? "Simulado anterior" : "Prova regular";
+    tipo === "simulado" ? "Simulado" : "Prova bimestral";
 
   useEffect(() => {
     if (!podeEscolherProvaFund2 && tipoAvaliacao === "simulado") {
@@ -454,8 +454,8 @@ function CronogramaTurma() {
               value={tipoAvaliacao}
               onChange={(e) => setTipoAvaliacao(e.target.value)}
             >
-              <option value="regular">Prova regular - 08 a 12/06</option>
-              <option value="simulado">Simulado anterior</option>
+              <option value="regular">Prova bimestral - 08 a 12/06</option>
+              <option value="simulado">Simulado - 20 a 22/05</option>
             </select>
           )}
 

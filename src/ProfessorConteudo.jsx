@@ -17,7 +17,7 @@ function ProfessorConteudo() {
   };
 
   const semanaSimuladoFund2 = {
-    inicio: `${anoAtual}-05-18`,
+    inicio: `${anoAtual}-05-20`,
     fim: `${anoAtual}-05-22`
   };
 
@@ -367,7 +367,7 @@ function ProfessorConteudo() {
         turma: atribuicaoAtual?.turma?.nome,
         disciplina: atribuicaoAtual?.disciplina?.nome,
         bimestre,
-        detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova regular"} | Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
+        detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova bimestral"} | Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
       });
 
       setMensagem("Conteúdo salvo com sucesso!");
@@ -468,8 +468,8 @@ function ProfessorConteudo() {
           onChange={(e) => setTipoAvaliacao(e.target.value)}
           disabled={!podeCadastrarSimuladoFund2}
         >
-          <option value="regular">Prova regular - 08 a 12/06</option>
-          <option value="simulado">Simulado anterior</option>
+          <option value="regular">Prova bimestral - 08 a 12/06</option>
+          <option value="simulado">Simulado - 20 a 22/05</option>
         </select>
       )}
 
