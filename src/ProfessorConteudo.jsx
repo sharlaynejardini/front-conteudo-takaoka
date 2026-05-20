@@ -11,14 +11,14 @@ function ProfessorConteudo() {
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
-    2: { inicio: `${anoAtual}-05-18`, fim: `${anoAtual}-05-22` },
+    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-12` },
     3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
-  const semanaSegundaProva = {
-    inicio: `${anoAtual}-06-08`,
-    fim: `${anoAtual}-06-12`
+  const semanaSimuladoFund2 = {
+    inicio: `${anoAtual}-05-18`,
+    fim: `${anoAtual}-05-22`
   };
 
   const [professores, setProfessores] = useState([]);
@@ -95,13 +95,13 @@ function ProfessorConteudo() {
       ? atribuicoes.filter(a => atribuicoesSelecionadas.includes(a.id))
       : atribuicoes.filter(a => a.id === atribuicaoSelecionada);
 
-  const podeCadastrarSegundaProva =
+  const podeCadastrarSimuladoFund2 =
     bimestre === 2 &&
     atribuicoesAtivas.length > 0 &&
     atribuicoesAtivas.every(a => turmaEhFundamental2(a.turma?.nome));
 
   const periodoAvaliacao =
-    tipoAvaliacao === "segunda_prova" ? semanaSegundaProva : semanasProva[bimestre];
+    tipoAvaliacao === "simulado" ? semanaSimuladoFund2 : semanasProva[bimestre];
 
   useEffect(() => {
     async function carregar() {
@@ -195,10 +195,10 @@ function ProfessorConteudo() {
   }, [bimestre, tipoAvaliacao]);
 
   useEffect(() => {
-    if (!podeCadastrarSegundaProva && tipoAvaliacao === "segunda_prova") {
+    if (!podeCadastrarSimuladoFund2 && tipoAvaliacao === "simulado") {
       setTipoAvaliacao("regular");
     }
-  }, [podeCadastrarSegundaProva, tipoAvaliacao]);
+  }, [podeCadastrarSimuladoFund2, tipoAvaliacao]);
 
   useEffect(() => {
 
@@ -332,8 +332,8 @@ function ProfessorConteudo() {
         ? atribuicoesSelecionadas
         : [atribuicaoSelecionada];
 
-    if (tipoAvaliacao === "segunda_prova" && !podeCadastrarSegundaProva) {
-      setMensagem("A 2ª prova está liberada apenas para turmas do 6º ao 9º ano no 2º bimestre.");
+    if (tipoAvaliacao === "simulado" && !podeCadastrarSimuladoFund2) {
+      setMensagem("O simulado está liberado apenas para turmas do 6º ao 9º ano no 2º bimestre.");
       setTipoMensagem("error");
       return;
     }
@@ -367,7 +367,7 @@ function ProfessorConteudo() {
         turma: atribuicaoAtual?.turma?.nome,
         disciplina: atribuicaoAtual?.disciplina?.nome,
         bimestre,
-        detalhes: `${tipoAvaliacao === "segunda_prova" ? "2ª prova" : "Prova regular"} | Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
+        detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova regular"} | Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
       });
 
       setMensagem("Conteúdo salvo com sucesso!");
@@ -466,10 +466,10 @@ function ProfessorConteudo() {
           style={inputStyle}
           value={tipoAvaliacao}
           onChange={(e) => setTipoAvaliacao(e.target.value)}
-          disabled={!podeCadastrarSegundaProva}
+          disabled={!podeCadastrarSimuladoFund2}
         >
-          <option value="regular">Prova regular</option>
-          <option value="segunda_prova">2ª prova - 08 a 12/06</option>
+          <option value="regular">Prova regular - 08 a 12/06</option>
+          <option value="simulado">Simulado anterior</option>
         </select>
       )}
 
