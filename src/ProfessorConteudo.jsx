@@ -11,9 +11,14 @@ function ProfessorConteudo() {
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
-    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-12` },
+    2: { inicio: `${anoAtual}-05-18`, fim: `${anoAtual}-05-22` },
     3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
+  };
+
+  const semanaSegundaProva = {
+    inicio: `${anoAtual}-06-08`,
+    fim: `${anoAtual}-06-12`
   };
 
   const [professores, setProfessores] = useState([]);
@@ -25,6 +30,7 @@ function ProfessorConteudo() {
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
   const [bimestre, setBimestre] = useState(bimestreAtual);
+  const [tipoAvaliacao, setTipoAvaliacao] = useState("regular");
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
   const [topicos, setTopicos] = useState([""]);
@@ -81,6 +87,21 @@ function ProfessorConteudo() {
     setConteudoId(null);
     setModoEdicao(false);
   };
+
+  const turmaEhFundamental2 = (nome = "") => /^[6-9]\s*[º°o]?/.test(nome.trim());
+
+  const atribuicoesAtivas =
+    atribuicoesSelecionadas.length > 0
+      ? atribuicoes.filter(a => atribuicoesSelecionadas.includes(a.id))
+      : atribuicoes.filter(a => a.id === atribuicaoSelecionada);
+
+  const podeCadastrarSegundaProva =
+    bimestre === 2 &&
+    atribuicoesAtivas.length > 0 &&
+    atribuicoesAtivas.every(a => turmaEhFundamental2(a.turma?.nome));
+
+  const periodoAvaliacao =
+    tipoAvaliacao === "segunda_prova" ? semanaSegundaProva : semanasProva[bimestre];
 
   useEffect(() => {
     async function carregar() {
@@ -169,9 +190,15 @@ function ProfessorConteudo() {
 
   useEffect(() => {
     if (!modoEdicao) {
-      setDataAvaliacao(semanasProva[bimestre].inicio);
+      setDataAvaliacao(periodoAvaliacao.inicio);
     }
-  }, [bimestre]);
+  }, [bimestre, tipoAvaliacao]);
+
+  useEffect(() => {
+    if (!podeCadastrarSegundaProva && tipoAvaliacao === "segunda_prova") {
+      setTipoAvaliacao("regular");
+    }
+  }, [podeCadastrarSegundaProva, tipoAvaliacao]);
 
   useEffect(() => {
 
@@ -184,7 +211,8 @@ function ProfessorConteudo() {
         const response = await api.get("/conteudos", {
           params: {
             atribuicao_id: atribuicaoSelecionada,
-            bimestre
+            bimestre,
+            tipo_avaliacao: tipoAvaliacao
           }
         });
 
@@ -211,7 +239,7 @@ function ProfessorConteudo() {
 
     buscarConteudo();
 
-  }, [atribuicaoSelecionada, bimestre]);
+  }, [atribuicaoSelecionada, bimestre, tipoAvaliacao]);
 
   useEffect(() => {
 
@@ -266,7 +294,8 @@ function ProfessorConteudo() {
       const response = await api.get("/conteudos", {
         params: {
           atribuicao_id: atribuicaoCopiar,
-          bimestre
+          bimestre,
+          tipo_avaliacao: tipoAvaliacao
         }
       });
 
@@ -303,6 +332,12 @@ function ProfessorConteudo() {
         ? atribuicoesSelecionadas
         : [atribuicaoSelecionada];
 
+    if (tipoAvaliacao === "segunda_prova" && !podeCadastrarSegundaProva) {
+      setMensagem("A 2ª prova está liberada apenas para turmas do 6º ao 9º ano no 2º bimestre.");
+      setTipoMensagem("error");
+      return;
+    }
+
     try {
 
       for (const atribuicaoId of atribuicoesParaSalvar) {
@@ -317,6 +352,7 @@ function ProfessorConteudo() {
           ...(editandoConteudoAtual ? { id: conteudoId } : {}),
           atribuicao_id: atribuicaoId,
           bimestre,
+          tipo_avaliacao: tipoAvaliacao,
           conteudo: JSON.stringify(topicos),
           data_avaliacao: dataAvaliacao
         });
@@ -331,7 +367,7 @@ function ProfessorConteudo() {
         turma: atribuicaoAtual?.turma?.nome,
         disciplina: atribuicaoAtual?.disciplina?.nome,
         bimestre,
-        detalhes: `Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
+        detalhes: `${tipoAvaliacao === "segunda_prova" ? "2ª prova" : "Prova regular"} | Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
       });
 
       setMensagem("Conteúdo salvo com sucesso!");
@@ -340,7 +376,7 @@ function ProfessorConteudo() {
       limparFormulario();
       setAtribuicaoSelecionada("");
       setAtribuicoesSelecionadas([]);
-      setDataAvaliacao(semanasProva[bimestre].inicio);
+      setDataAvaliacao(periodoAvaliacao.inicio);
 
     } catch (err) {
 
@@ -425,12 +461,24 @@ function ProfessorConteudo() {
         <option value={4}>4º Bimestre</option>
       </select>
 
+      {bimestre === 2 && (
+        <select
+          style={inputStyle}
+          value={tipoAvaliacao}
+          onChange={(e) => setTipoAvaliacao(e.target.value)}
+          disabled={!podeCadastrarSegundaProva}
+        >
+          <option value="regular">Prova regular</option>
+          <option value="segunda_prova">2ª prova - 08 a 12/06</option>
+        </select>
+      )}
+
       <input
         type="date"
         style={inputStyle}
         value={dataAvaliacao}
-        min={semanasProva[bimestre].inicio}
-        max={semanasProva[bimestre].fim}
+        min={periodoAvaliacao.inicio}
+        max={periodoAvaliacao.fim}
         onChange={(e) => setDataAvaliacao(e.target.value)}
       />
 
