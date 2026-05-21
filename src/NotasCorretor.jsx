@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import corretorApi from "./corretorApi";
 import { getBimestreAtual } from "./utils/bimestreAtual";
 
+const TAKAOKA_ESCOLA_ID = "8d869f43-cf96-4497-9257-0fb0450b4637";
+const TAKAOKA_ESCOLA_NOME = "EMEF YOJIRO TAKAOKA";
+
 function listarResultados(payload) {
   if (!payload) return [];
   if (Array.isArray(payload)) return payload;
@@ -23,11 +26,6 @@ function getAcertos(resultado) {
 
 function getNotaGlobal(resultado) {
   return resultado?.nota_global ?? resultado?.nota ?? null;
-}
-
-function getNotaDia(resultado, dia) {
-  const resultadosDias = resultado?.resultadosDias || resultado?.resultados_dias || {};
-  return resultadosDias?.[dia]?.nota ?? resultadosDias?.[String(dia)]?.nota ?? null;
 }
 
 function agruparDisciplinas(respostas = []) {
@@ -55,8 +53,6 @@ function normalizarResultados(payload) {
     porAluno[String(alunoId)] = {
       acertos: getAcertos(resultado),
       nota: getNotaGlobal(resultado),
-      notaDia1: getNotaDia(resultado, 1),
-      notaDia2: getNotaDia(resultado, 2),
       disciplinas: agruparDisciplinas(resultado.respostas_salvas || []),
       totalQuestoesGlobal: resultado.total_questoes_global ?? resultado.total_questoes ?? null
     };
@@ -72,11 +68,10 @@ function formatarNumero(valor) {
 }
 
 function NotasCorretor() {
-  const [escolas, setEscolas] = useState([]);
   const [turmas, setTurmas] = useState([]);
   const [alunos, setAlunos] = useState([]);
   const [resultados, setResultados] = useState({});
-  const [escolaId, setEscolaId] = useState("");
+  const [escolaId] = useState(TAKAOKA_ESCOLA_ID);
   const [turmaId, setTurmaId] = useState("");
   const [bimestre, setBimestre] = useState(getBimestreAtual());
   const [aba, setAba] = useState("resultado");
@@ -84,20 +79,6 @@ function NotasCorretor() {
   const [status, setStatus] = useState("todos");
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState("");
-
-  useEffect(() => {
-    async function carregarEscolas() {
-      try {
-        const response = await corretorApi.get("/escolas");
-        setEscolas(response.data || []);
-      } catch (error) {
-        console.error(error);
-        setMensagem("Erro ao carregar escolas do corretor.");
-      }
-    }
-
-    carregarEscolas();
-  }, []);
 
   const carregarTurmas = useCallback(async (id) => {
     setTurmaId("");
@@ -116,6 +97,10 @@ function NotasCorretor() {
       setMensagem("Erro ao carregar turmas do corretor.");
     }
   }, []);
+
+  useEffect(() => {
+    carregarTurmas(TAKAOKA_ESCOLA_ID);
+  }, [carregarTurmas]);
 
   const carregarDadosTurma = useCallback(async () => {
     if (!escolaId || !turmaId) return;
@@ -223,7 +208,7 @@ function NotasCorretor() {
         <div>
           <h2 style={styles.title}>Notas do Corretor</h2>
           <p style={styles.subtitle}>
-            Resultado final e analise de dados vindos do corretor de gabarito.
+            Resultado final e análise de dados vindos do corretor de gabarito.
           </p>
         </div>
 
@@ -240,19 +225,10 @@ function NotasCorretor() {
       {mensagem && <div style={styles.alert}>{mensagem}</div>}
 
       <div style={styles.filters}>
-        <select
-          style={styles.select}
-          value={escolaId}
-          onChange={(event) => {
-            setEscolaId(event.target.value);
-            carregarTurmas(event.target.value);
-          }}
-        >
-          <option value="">Selecione a escola</option>
-          {escolas.map((escola) => (
-            <option key={escola.id} value={escola.id}>{escola.nome}</option>
-          ))}
-        </select>
+        <div style={styles.readOnlyField}>
+          <span style={styles.readOnlyLabel}>Escola</span>
+          <strong>{TAKAOKA_ESCOLA_NOME}</strong>
+        </div>
 
         <select
           style={styles.select}
@@ -271,10 +247,10 @@ function NotasCorretor() {
           value={bimestre}
           onChange={(event) => setBimestre(Number(event.target.value))}
         >
-          <option value={1}>1o Bimestre</option>
-          <option value={2}>2o Bimestre</option>
-          <option value={3}>3o Bimestre</option>
-          <option value={4}>4o Bimestre</option>
+          <option value={1}>1º Bimestre</option>
+          <option value={2}>2º Bimestre</option>
+          <option value={3}>3º Bimestre</option>
+          <option value={4}>4º Bimestre</option>
         </select>
 
         <button
@@ -297,7 +273,7 @@ function NotasCorretor() {
           style={{ ...styles.tab, ...(aba === "analise" ? styles.activeTab : {}) }}
           onClick={() => setAba("analise")}
         >
-          Analise de dados
+          Análise de dados
         </button>
       </div>
 
@@ -305,7 +281,7 @@ function NotasCorretor() {
         <ResumoCard label="Alunos" value={resumo.total} />
         <ResumoCard label="Corrigidos" value={resumo.corrigidos} />
         <ResumoCard label="Pendentes" value={resumo.pendentes} />
-        <ResumoCard label="Media global" value={formatarNumero(resumo.media)} />
+        <ResumoCard label="Média global" value={formatarNumero(resumo.media)} />
       </div>
 
       {aba === "resultado" && (
@@ -334,28 +310,26 @@ function NotasCorretor() {
             <table style={styles.table}>
               <thead>
                 <tr>
-                  <th style={styles.th}>No</th>
+                  <th style={styles.th}>Nº</th>
                   <th style={styles.th}>Aluno</th>
                   {disciplinas.map((disciplina) => (
                     <th key={disciplina} style={styles.th}>{disciplina}</th>
                   ))}
-                  <th style={styles.th}>Dia 1</th>
-                  <th style={styles.th}>Dia 2</th>
-                  <th style={styles.th}>Global</th>
+                  <th style={styles.th}>Nota global</th>
                   <th style={styles.th}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {carregando && (
                   <tr>
-                    <td style={styles.empty} colSpan={disciplinas.length + 6}>Carregando notas...</td>
+                    <td style={styles.empty} colSpan={disciplinas.length + 4}>Carregando notas...</td>
                   </tr>
                 )}
 
                 {!carregando && linhas.length === 0 && (
                   <tr>
-                    <td style={styles.empty} colSpan={disciplinas.length + 6}>
-                      Selecione escola e turma para ver o resultado final.
+                    <td style={styles.empty} colSpan={disciplinas.length + 4}>
+                      Selecione uma turma para ver o resultado final.
                     </td>
                   </tr>
                 )}
@@ -369,8 +343,6 @@ function NotasCorretor() {
                         {formatarNumero(resultado?.disciplinas?.[disciplina]?.nota)}
                       </td>
                     ))}
-                    <td style={styles.td}>{formatarNumero(resultado?.notaDia1)}</td>
-                    <td style={styles.td}>{formatarNumero(resultado?.notaDia2)}</td>
                     <td style={styles.tdStrong}>{formatarNumero(resultado?.nota)}</td>
                     <td style={styles.td}>
                       <span style={corrigido ? styles.badgeOk : styles.badgePending}>
@@ -486,6 +458,22 @@ const styles = {
     borderRadius: "8px",
     border: "1px solid #cbd5e1",
     backgroundColor: "white"
+  },
+  readOnlyField: {
+    border: "1px solid #cbd5e1",
+    borderRadius: "8px",
+    backgroundColor: "#f8fafc",
+    padding: "8px 10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "3px",
+    justifyContent: "center",
+    minHeight: "40px"
+  },
+  readOnlyLabel: {
+    color: "#64748b",
+    fontSize: "12px",
+    fontWeight: 700
   },
   input: {
     width: "100%",
