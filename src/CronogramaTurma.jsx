@@ -138,7 +138,7 @@ function CronogramaTurma() {
           id: "__obmep_2026__",
           isEvento: true,
           data_avaliacao: dataObmep2026,
-          conteudo: ["OBMEP"],
+          conteudo: ["Olimpíada Brasileira de Matemática das Escolas Públicas - OBMEP"],
           atribuicao: {
             professor: { nome: "OBMEP" },
             disciplina: { nome: "OBMEP" }
@@ -657,7 +657,7 @@ function CronogramaTurma() {
                     <td style={tdStyle}>{formatarDisciplina(item.atribuicao?.disciplina?.nome)}</td>
 
                     <td style={tdStyle}>
-                      {item.isEvento ? null : emEdicao ? (
+                      {emEdicao ? (
                         <textarea
                           style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
                           value={edicao.conteudo}
@@ -669,12 +669,14 @@ function CronogramaTurma() {
                           }
                         />
                       ) : listaTopicos.map((topico, i) => (
-                        <div key={i}>• {topico}</div>
+                        <div key={i}>
+                          • {item.isEvento ? <strong>{topico}</strong> : topico}
+                        </div>
                       ))}
                     </td>
 
                     <td style={tdStyle} className="no-print">
-                      {emEdicao ? (
+                      {item.isEvento ? null : emEdicao ? (
                         <>
                           <button
                             style={{ ...actionButtonStyle, backgroundColor: "#16a34a", color: "white" }}
