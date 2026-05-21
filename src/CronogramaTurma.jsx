@@ -270,7 +270,7 @@ function CronogramaTurma() {
         atribuicao_id: item.atribuicao?.id,
         bimestre: item.bimestre,
         tipo_avaliacao: item.tipo_avaliacao || "regular",
-        conteudo: JSON.stringify(topicos),
+        conteudo: topicos,
         data_avaliacao: edicao.data_avaliacao
       });
 

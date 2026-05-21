@@ -338,6 +338,16 @@ function ProfessorConteudo() {
       return;
     }
 
+    const topicosPreenchidos = topicos
+      .map(topico => topico.trim())
+      .filter(Boolean);
+
+    if (topicosPreenchidos.length === 0) {
+      setMensagem("Preencha ao menos um conteÃºdo.");
+      setTipoMensagem("error");
+      return;
+    }
+
     try {
 
       for (const atribuicaoId of atribuicoesParaSalvar) {
@@ -353,7 +363,7 @@ function ProfessorConteudo() {
           atribuicao_id: atribuicaoId,
           bimestre,
           tipo_avaliacao: tipoAvaliacao,
-          conteudo: JSON.stringify(topicos),
+          conteudo: topicosPreenchidos,
           data_avaliacao: dataAvaliacao
         });
 
@@ -361,14 +371,18 @@ function ProfessorConteudo() {
 
       const atribuicaoAtual = atribuicoes.find(a => a.id === atribuicaoSelecionada);
 
-      await logAction({
-        action: modoEdicao ? "UPDATE" : "CREATE",
-        entidade: "Avaliação",
-        turma: atribuicaoAtual?.turma?.nome,
-        disciplina: atribuicaoAtual?.disciplina?.nome,
-        bimestre,
-        detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova bimestral"} | Conteúdo: ${topicos.join(", ")} | Data: ${dataAvaliacao}`
-      });
+      try {
+        await logAction({
+          action: modoEdicao ? "UPDATE" : "CREATE",
+          entidade: "Avaliação",
+          turma: atribuicaoAtual?.turma?.nome,
+          disciplina: atribuicaoAtual?.disciplina?.nome,
+          bimestre,
+          detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova bimestral"} | Conteúdo: ${topicosPreenchidos.join(", ")} | Data: ${dataAvaliacao}`
+        });
+      } catch (logError) {
+        console.warn("Conteudo salvo, mas nao foi possivel registrar o log.", logError);
+      }
 
       setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
