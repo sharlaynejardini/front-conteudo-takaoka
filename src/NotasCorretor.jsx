@@ -4,6 +4,36 @@ import { getBimestreAtual } from "./utils/bimestreAtual";
 
 const TAKAOKA_ESCOLA_ID = "8d869f43-cf96-4497-9257-0fb0450b4637";
 const TAKAOKA_ESCOLA_NOME = "EMEF YOJIRO TAKAOKA";
+const CORES_DISCIPLINA = {
+  LP: "#4285f4",
+  "Lingua Portuguesa": "#4285f4",
+  "Língua Portuguesa": "#4285f4",
+  Portugues: "#4285f4",
+  Português: "#4285f4",
+  Historia: "#fbbc04",
+  História: "#fbbc04",
+  Geografia: "#34a853",
+  "Educação Física": "#ff7043",
+  Matematica: "#a142f4",
+  Matemática: "#a142f4",
+  Ciencias: "#00acc1",
+  Ciências: "#00acc1",
+  Artes: "#ec407a",
+  Ingles: "#7cb342",
+  Inglês: "#7cb342"
+};
+const CORES_FALLBACK = [
+  "#4285f4",
+  "#fbbc04",
+  "#34a853",
+  "#ff7043",
+  "#a142f4",
+  "#00acc1",
+  "#ec407a",
+  "#7cb342",
+  "#5c6bc0",
+  "#8d6e63"
+];
 
 function listarResultados(payload) {
   if (!payload) return [];
@@ -67,10 +97,89 @@ function formatarNumero(valor) {
   return Number.isFinite(numero) ? numero.toFixed(1).replace(".", ",") : valor;
 }
 
+function normalizarTexto(texto = "") {
+  return String(texto)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getCorDisciplina(disciplina = "") {
+  if (CORES_DISCIPLINA[disciplina]) return CORES_DISCIPLINA[disciplina];
+
+  const normalizada = normalizarTexto(disciplina);
+  const chave = Object.keys(CORES_DISCIPLINA).find(
+    (nome) => normalizarTexto(nome) === normalizada
+  );
+
+  if (chave) return CORES_DISCIPLINA[chave];
+
+  const indice = Array.from(normalizada).reduce(
+    (total, letra) => total + letra.charCodeAt(0),
+    0
+  );
+
+  return CORES_FALLBACK[indice % CORES_FALLBACK.length];
+}
+
+function getAnoTurma(nome = "") {
+  const numero = String(nome).replace(/\D/g, "");
+  return numero ? Number(numero) : null;
+}
+
+function isNotaBaixa(valor) {
+  const numero = Number(valor);
+  return Number.isFinite(numero) && numero < 5;
+}
+
+function calcularAnaliseTurma(turma, alunosTurma, resultadosTurma) {
+  const disciplinas = {};
+  let somaGeral = 0;
+  let alunosComNotaGeral = 0;
+
+  alunosTurma.forEach((aluno) => {
+    const resultado = resultadosTurma[String(aluno.id)];
+    if (!resultado) return;
+
+    const notaGeral = Number(resultado.nota);
+    if (Number.isFinite(notaGeral)) {
+      somaGeral += notaGeral;
+      alunosComNotaGeral += 1;
+    }
+
+    Object.entries(resultado.disciplinas || {}).forEach(([disciplina, dados]) => {
+      const nota = Number(dados?.nota);
+      if (!Number.isFinite(nota)) return;
+
+      if (!disciplinas[disciplina]) {
+        disciplinas[disciplina] = { soma: 0, quantidade: 0 };
+      }
+
+      disciplinas[disciplina].soma += nota;
+      disciplinas[disciplina].quantidade += 1;
+    });
+  });
+
+  return {
+    turma,
+    totalAlunos: alunosTurma.length,
+    alunosComNotaGeral,
+    mediaGeral: alunosComNotaGeral ? somaGeral / alunosComNotaGeral : null,
+    mediasDisciplinas: Object.entries(disciplinas)
+      .map(([disciplina, dados]) => ({
+        disciplina,
+        media: dados.quantidade ? dados.soma / dados.quantidade : null,
+        quantidade: dados.quantidade
+      }))
+      .sort((a, b) => a.disciplina.localeCompare(b.disciplina, "pt-BR"))
+  };
+}
+
 function NotasCorretor() {
   const [turmas, setTurmas] = useState([]);
   const [alunos, setAlunos] = useState([]);
   const [resultados, setResultados] = useState({});
+  const [analiseTurmas, setAnaliseTurmas] = useState([]);
   const [escolaId] = useState(TAKAOKA_ESCOLA_ID);
   const [turmaId, setTurmaId] = useState("");
   const [bimestre, setBimestre] = useState(getBimestreAtual());
@@ -78,6 +187,7 @@ function NotasCorretor() {
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("todos");
   const [carregando, setCarregando] = useState(false);
+  const [carregandoAnalise, setCarregandoAnalise] = useState(false);
   const [mensagem, setMensagem] = useState("");
 
   const carregarTurmas = useCallback(async (id) => {
@@ -133,6 +243,51 @@ function NotasCorretor() {
     carregarDadosTurma();
   }, [carregarDadosTurma]);
 
+  const carregarAnaliseEscola = useCallback(async () => {
+    if (!escolaId || turmas.length === 0) {
+      setAnaliseTurmas([]);
+      return;
+    }
+
+    setCarregandoAnalise(true);
+
+    try {
+      const dados = await Promise.all(
+        turmas.map(async (turma) => {
+          const [alunosResponse, resultadosResponse] = await Promise.all([
+            corretorApi.get(`/alunos/${turma.id}`),
+            corretorApi.get("/resultados-alunos", {
+              params: { turma_id: turma.id, escola_id: escolaId, bimestre }
+            }).catch((error) => {
+              if (error.response?.status === 404) return { data: [] };
+              throw error;
+            })
+          ]);
+
+          return calcularAnaliseTurma(
+            turma,
+            alunosResponse.data || [],
+            normalizarResultados(resultadosResponse.data)
+          );
+        })
+      );
+
+      setAnaliseTurmas(
+        dados.sort((a, b) => a.turma.nome.localeCompare(b.turma.nome, "pt-BR"))
+      );
+    } catch (error) {
+      console.error(error);
+      setAnaliseTurmas([]);
+      setMensagem("Erro ao carregar os gráficos do corretor.");
+    } finally {
+      setCarregandoAnalise(false);
+    }
+  }, [bimestre, escolaId, turmas]);
+
+  useEffect(() => {
+    carregarAnaliseEscola();
+  }, [carregarAnaliseEscola]);
+
   const disciplinas = useMemo(() => {
     const nomes = new Set();
     Object.values(resultados).forEach((resultado) => {
@@ -187,20 +342,41 @@ function NotasCorretor() {
     };
   }, [alunos, resultados]);
 
-  const analiseDisciplinas = useMemo(() => {
-    return disciplinas.map((disciplina) => {
-      const notas = alunos
-        .map((aluno) => resultados[String(aluno.id)]?.disciplinas?.[disciplina]?.nota)
-        .map(Number)
-        .filter(Number.isFinite);
+  const resumoAnalise = useMemo(() => {
+    const turmasComMedia = analiseTurmas.filter((turma) =>
+      Number.isFinite(turma.mediaGeral)
+    );
+    const totalAlunos = analiseTurmas.reduce((total, turma) => total + turma.totalAlunos, 0);
+    const alunosComNota = analiseTurmas.reduce(
+      (total, turma) => total + turma.alunosComNotaGeral,
+      0
+    );
+    const mediaGeral = turmasComMedia.length
+      ? turmasComMedia.reduce((total, turma) => total + turma.mediaGeral, 0) /
+        turmasComMedia.length
+      : null;
 
-      return {
-        disciplina,
-        media: notas.length ? notas.reduce((total, nota) => total + nota, 0) / notas.length : null,
-        avaliados: notas.length
-      };
-    });
-  }, [alunos, disciplinas, resultados]);
+    return { totalAlunos, alunosComNota, mediaGeral };
+  }, [analiseTurmas]);
+
+  const disciplinasAnalise = useMemo(() => {
+    return [
+      ...new Set(
+        analiseTurmas.flatMap((turma) =>
+          turma.mediasDisciplinas.map((disciplina) => disciplina.disciplina)
+        )
+      )
+    ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [analiseTurmas]);
+
+  const analisePorAno = useMemo(() => {
+    return analiseTurmas.reduce((mapa, turma) => {
+      const ano = getAnoTurma(turma.turma.nome) || "Sem ano";
+      if (!mapa[ano]) mapa[ano] = [];
+      mapa[ano].push(turma);
+      return mapa;
+    }, {});
+  }, [analiseTurmas]);
 
   return (
     <div style={styles.page}>
@@ -340,10 +516,12 @@ function NotasCorretor() {
                     <td style={styles.tdStrong}>{aluno.nome}</td>
                     {disciplinas.map((disciplina) => (
                       <td key={disciplina} style={styles.td}>
-                        {formatarNumero(resultado?.disciplinas?.[disciplina]?.nota)}
+                        <NotaValor valor={resultado?.disciplinas?.[disciplina]?.nota} />
                       </td>
                     ))}
-                    <td style={styles.tdStrong}>{formatarNumero(resultado?.nota)}</td>
+                    <td style={styles.tdStrong}>
+                      <NotaValor valor={resultado?.nota} destaque />
+                    </td>
                     <td style={styles.td}>
                       <span style={corrigido ? styles.badgeOk : styles.badgePending}>
                         {corrigido ? "Corrigido" : "Pendente"}
@@ -359,33 +537,153 @@ function NotasCorretor() {
 
       {aba === "analise" && (
         <div style={styles.analysis}>
-          {analiseDisciplinas.length === 0 ? (
-            <div style={styles.emptyBox}>Nenhuma disciplina encontrada nos resultados da turma.</div>
+          {carregandoAnalise ? (
+            <div style={styles.emptyBox}>Carregando gráficos da escola...</div>
+          ) : analiseTurmas.length === 0 ? (
+            <div style={styles.emptyBox}>Ainda não há turmas com dados para esta escola.</div>
           ) : (
             <>
-              <div style={styles.analysisGrid}>
-                {analiseDisciplinas.map((item) => (
-                  <div key={item.disciplina} style={styles.analysisCard}>
-                    <strong>{item.disciplina}</strong>
-                    <span>{formatarNumero(item.media)}</span>
-                    <small>{item.avaliados} aluno(s) com nota</small>
+              <div style={styles.summaryGrid}>
+                <ResumoCard label="Escola" value={TAKAOKA_ESCOLA_NOME} />
+                <ResumoCard label="Média geral" value={formatarNumero(resumoAnalise.mediaGeral)} />
+                <ResumoCard
+                  label="Alunos com nota"
+                  value={`${resumoAnalise.alunosComNota}/${resumoAnalise.totalAlunos}`}
+                />
+              </div>
+
+              <div style={styles.classChartsGrid}>
+                {analiseTurmas.map((turma) => (
+                  <div key={turma.turma.id} style={styles.classChart}>
+                    <h3 style={styles.chartTitle}>{turma.turma.nome}</h3>
+                    {turma.mediasDisciplinas.length === 0 ? (
+                      <p style={styles.emptySmall}>Sem notas por disciplina.</p>
+                    ) : (
+                      <div style={styles.subjectColumns}>
+                        {turma.mediasDisciplinas.map((item) => (
+                          <div key={item.disciplina} style={styles.subjectColumn}>
+                            <div style={styles.columnTrack}>
+                              <span
+                                style={{
+                                  ...styles.subjectFill,
+                                  backgroundColor: isNotaBaixa(item.media)
+                                    ? "#dc2626"
+                                    : getCorDisciplina(item.disciplina),
+                                  height: `${Math.max(4, (Number(item.media || 0) / 10) * 100)}%`
+                                }}
+                              >
+                                {formatarNumero(item.media)}
+                              </span>
+                            </div>
+                            <small style={styles.columnLabel}>{item.disciplina}</small>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
 
-              <div style={styles.chartBlock}>
-                {analiseDisciplinas.map((item) => {
-                  const largura = Math.max(0, Math.min(Number(item.media || 0) * 10, 100));
-                  return (
-                    <div key={item.disciplina} style={styles.barRow}>
-                      <strong>{item.disciplina}</strong>
-                      <div style={styles.barTrack}>
-                        <span style={{ ...styles.barFill, width: `${largura}%` }} />
+              <div style={styles.chartSection}>
+                <div style={styles.sectionHeader}>
+                  <h3 style={styles.sectionTitle}>Média global por sala</h3>
+                  <span>{analiseTurmas.length} turma(s)</span>
+                </div>
+
+                <div style={styles.globalColumns}>
+                  {analiseTurmas.map((turma) => (
+                    <div key={turma.turma.id} style={styles.globalColumn}>
+                      <div style={styles.globalTrack}>
+                        <span
+                          style={{
+                            ...styles.globalFill,
+                            backgroundColor: isNotaBaixa(turma.mediaGeral) ? "#dc2626" : "#16a34a",
+                            height: `${Math.max(4, (Number(turma.mediaGeral || 0) / 10) * 100)}%`
+                          }}
+                        >
+                          {formatarNumero(turma.mediaGeral)}
+                        </span>
                       </div>
-                      <em>{formatarNumero(item.media)}</em>
+                      <small style={styles.columnLabel}>{turma.turma.nome}</small>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
+              </div>
+
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Turma</th>
+                      <th style={styles.th}>Média geral</th>
+                      {disciplinasAnalise.map((disciplina) => (
+                        <th key={disciplina} style={styles.th}>{disciplina}</th>
+                      ))}
+                      <th style={styles.th}>Alunos considerados</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {analiseTurmas.map((turma) => (
+                      <tr key={turma.turma.id}>
+                        <td style={styles.tdStrong}>{turma.turma.nome}</td>
+                        <td style={styles.tdStrong}>
+                          <NotaValor valor={turma.mediaGeral} destaque />
+                        </td>
+                        {disciplinasAnalise.map((disciplina) => (
+                          <td key={disciplina} style={styles.td}>
+                            <NotaValor
+                              valor={
+                                turma.mediasDisciplinas.find(
+                                  (item) => item.disciplina === disciplina
+                                )?.media
+                              }
+                            />
+                          </td>
+                        ))}
+                        <td style={styles.td}>
+                          {turma.alunosComNotaGeral}/{turma.totalAlunos}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={styles.chartSection}>
+                <div style={styles.sectionHeader}>
+                  <h3 style={styles.sectionTitle}>Comparação entre turmas do mesmo ano</h3>
+                  <span>Agrupado por ano</span>
+                </div>
+
+                <div style={styles.yearGrid}>
+                  {Object.entries(analisePorAno).map(([ano, turmasAno]) => (
+                    <div key={ano} style={styles.yearChart}>
+                      <h3 style={styles.chartTitle}>
+                        {ano === "Sem ano" ? "Sem ano identificado" : `${ano}º ano`}
+                      </h3>
+                      <div style={styles.globalColumns}>
+                        {turmasAno.map((turma) => (
+                          <div key={turma.turma.id} style={styles.globalColumn}>
+                            <div style={styles.globalTrack}>
+                              <span
+                                style={{
+                                  ...styles.globalFill,
+                                  backgroundColor: isNotaBaixa(turma.mediaGeral)
+                                    ? "#dc2626"
+                                    : "#16a34a",
+                                  height: `${Math.max(4, (Number(turma.mediaGeral || 0) / 10) * 100)}%`
+                                }}
+                              >
+                                {formatarNumero(turma.mediaGeral)}
+                              </span>
+                            </div>
+                            <small style={styles.columnLabel}>{turma.turma.nome}</small>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -402,6 +700,16 @@ function ResumoCard({ label, value }) {
       <div style={styles.summaryLabel}>{label}</div>
     </div>
   );
+}
+
+function NotaValor({ valor, destaque = false }) {
+  const baixa = isNotaBaixa(valor);
+  const style = {
+    ...(destaque ? styles.noteStrong : styles.note),
+    ...(baixa ? styles.noteLow : {})
+  };
+
+  return <span style={style}>{formatarNumero(valor)}</span>;
 }
 
 const styles = {
@@ -603,23 +911,135 @@ const styles = {
     display: "grid",
     gap: "16px"
   },
-  analysisGrid: {
+  classChartsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "12px"
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "14px"
   },
-  analysisCard: {
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
-    padding: "14px",
-    backgroundColor: "white"
-  },
-  chartBlock: {
+  classChart: {
     border: "1px solid #e2e8f0",
     borderRadius: "8px",
     padding: "16px",
+    backgroundColor: "white",
+    minHeight: "230px"
+  },
+  chartTitle: {
+    color: "#0f172a",
+    fontSize: "16px",
+    margin: "0 0 12px"
+  },
+  subjectColumns: {
     display: "grid",
-    gap: "12px"
+    gridTemplateColumns: "repeat(auto-fit, minmax(64px, 1fr))",
+    alignItems: "end",
+    gap: "10px",
+    minHeight: "170px"
+  },
+  subjectColumn: {
+    display: "grid",
+    gridTemplateRows: "120px auto",
+    gap: "8px",
+    justifyItems: "center",
+    minWidth: 0
+  },
+  columnTrack: {
+    width: "42px",
+    height: "120px",
+    backgroundColor: "#e6edf5",
+    borderRadius: "8px 8px 4px 4px",
+    display: "flex",
+    alignItems: "end",
+    overflow: "hidden"
+  },
+  subjectFill: {
+    width: "100%",
+    borderRadius: "inherit",
+    color: "white",
+    fontSize: "11px",
+    fontWeight: 800,
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    paddingTop: "4px"
+  },
+  columnLabel: {
+    color: "#64748b",
+    textAlign: "center",
+    fontSize: "12px",
+    fontWeight: 700,
+    lineHeight: 1.2,
+    overflowWrap: "anywhere"
+  },
+  chartSection: {
+    border: "1px solid #e2e8f0",
+    borderRadius: "8px",
+    padding: "16px",
+    backgroundColor: "white",
+    display: "grid",
+    gap: "14px"
+  },
+  sectionHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: "12px",
+    alignItems: "center",
+    color: "#64748b",
+    fontSize: "14px",
+    fontWeight: 700
+  },
+  sectionTitle: {
+    color: "#0f172a",
+    fontSize: "18px",
+    margin: 0
+  },
+  globalColumns: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(78px, 1fr))",
+    alignItems: "end",
+    gap: "12px",
+    minHeight: "210px"
+  },
+  globalColumn: {
+    display: "grid",
+    gridTemplateRows: "150px auto",
+    gap: "8px",
+    justifyItems: "center",
+    minWidth: 0
+  },
+  globalTrack: {
+    width: "44px",
+    height: "150px",
+    backgroundColor: "#e6edf5",
+    borderRadius: "8px 8px 4px 4px",
+    display: "flex",
+    alignItems: "end",
+    overflow: "hidden"
+  },
+  globalFill: {
+    width: "100%",
+    borderRadius: "inherit",
+    color: "white",
+    fontSize: "11px",
+    fontWeight: 800,
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    paddingTop: "4px"
+  },
+  yearGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: "14px"
+  },
+  yearChart: {
+    border: "1px solid #e2e8f0",
+    borderRadius: "8px",
+    padding: "14px",
+    backgroundColor: "#f8fafc"
+  },
+  emptySmall: {
+    color: "#64748b",
+    fontSize: "14px"
   },
   barRow: {
     display: "grid",
@@ -639,6 +1059,28 @@ const styles = {
     height: "100%",
     backgroundColor: "#2563eb",
     borderRadius: "999px"
+  },
+  note: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: "34px",
+    borderRadius: "6px",
+    padding: "3px 7px",
+    fontWeight: 700
+  },
+  noteStrong: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: "38px",
+    borderRadius: "6px",
+    padding: "4px 8px",
+    fontWeight: 800
+  },
+  noteLow: {
+    backgroundColor: "#fee2e2",
+    color: "#b91c1c"
   }
 };
 
