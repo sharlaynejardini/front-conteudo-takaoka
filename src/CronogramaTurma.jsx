@@ -10,7 +10,7 @@ function CronogramaTurma() {
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
-    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-12` },
+    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-16` },
     3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
@@ -19,6 +19,10 @@ function CronogramaTurma() {
     inicio: `${anoAtual}-05-20`,
     fim: `${anoAtual}-05-22`
   };
+
+  const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
+  const dataObmep2026 = `${anoAtual}-06-09`;
+  const dataRemanejadaObmep2026 = `${anoAtual}-06-16`;
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
@@ -56,7 +60,14 @@ function CronogramaTurma() {
     turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
   const turmaEhFundamental2 = (nome = "") => /^[6-9]\s*[º°o]?/.test(nome.trim());
+  const normalizarTurma = (nome = "") =>
+    nome.toUpperCase().replace(/\s/g, "").replace(/[ÂºÂ°º°]/g, "").replace("ANO", "");
+  const turmaTemObmep2026 = (nome = "") => turmasObmep2026.has(normalizarTurma(nome));
   const podeEscolherProvaFund2 = bimestre === 2 && turmaEhFundamental2(turmaNome);
+  const mostrarObmepNoCronograma =
+    bimestre === 2 &&
+    tipoAvaliacao === "regular" &&
+    turmaTemObmep2026(turmaNome);
 
   const getIntervaloAvaliacao = (item) =>
     item?.tipo_avaliacao === "simulado" ? semanaSimuladoFund2 : semanasProva[item.bimestre];
@@ -119,6 +130,22 @@ function CronogramaTurma() {
     if (nome === "Português - Produção de Texto") return "Português";
     return nome;
   };
+
+  const cronogramaComEventos = mostrarObmepNoCronograma
+    ? [
+        ...cronograma,
+        {
+          id: "__obmep_2026__",
+          isEvento: true,
+          data_avaliacao: dataObmep2026,
+          conteudo: ["OBMEP"],
+          atribuicao: {
+            professor: { nome: "OBMEP" },
+            disciplina: { nome: "OBMEP" }
+          }
+        }
+      ].sort((a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao))
+    : cronograma;
 
   const gerarImagem = async () => {
 
@@ -263,6 +290,20 @@ function CronogramaTurma() {
       return;
     }
 
+    if (
+      item.tipo_avaliacao !== "simulado" &&
+      bimestre === 2 &&
+      edicao.data_avaliacao === dataObmep2026 &&
+      turmaTemObmep2026(turmaNome)
+    ) {
+      alert("09/06/2026 sera OBMEP. Use 16/06/2026 para essa turma.");
+      setEdicao(prev => ({
+        ...prev,
+        data_avaliacao: dataRemanejadaObmep2026
+      }));
+      return;
+    }
+
     try {
 
       const response = await api.post("/conteudos", {
@@ -334,7 +375,7 @@ function CronogramaTurma() {
   let indiceCor = 0;
 
   const datasOrdenadas = [
-    ...new Set(cronograma.map(item => item.data_avaliacao))
+    ...new Set(cronogramaComEventos.map(item => item.data_avaliacao))
   ].sort((a, b) => new Date(a) - new Date(b));
 
   datasOrdenadas.forEach(data => {
@@ -454,7 +495,7 @@ function CronogramaTurma() {
               value={tipoAvaliacao}
               onChange={(e) => setTipoAvaliacao(e.target.value)}
             >
-              <option value="regular">Prova bimestral - 08 a 12/06</option>
+              <option value="regular">Prova bimestral - 08, 10 a 12/06 ou 16/06</option>
               <option value="simulado">Simulado - 20 a 22/05</option>
             </select>
           )}
@@ -563,7 +604,7 @@ function CronogramaTurma() {
 
             <tbody>
 
-              {cronograma.map((item) => {
+              {cronogramaComEventos.map((item) => {
 
                 const listaTopicos =
                   transformarConteudoEmLista(item.conteudo);
@@ -585,12 +626,28 @@ function CronogramaTurma() {
                           value={edicao.data_avaliacao}
                           min={getIntervaloAvaliacao(item)?.inicio}
                           max={getIntervaloAvaliacao(item)?.fim}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const novaData = e.target.value;
+
+                            if (
+                              item.tipo_avaliacao !== "simulado" &&
+                              bimestre === 2 &&
+                              novaData === dataObmep2026 &&
+                              turmaTemObmep2026(turmaNome)
+                            ) {
+                              setEdicao(prev => ({
+                                ...prev,
+                                data_avaliacao: dataRemanejadaObmep2026
+                              }));
+                              setMensagemErro("09/06/2026 sera OBMEP. Use 16/06/2026 para essa turma.");
+                              return;
+                            }
+
                             setEdicao(prev => ({
                               ...prev,
-                              data_avaliacao: e.target.value
-                            }))
-                          }
+                              data_avaliacao: novaData
+                            }));
+                          }}
                         />
                       ) : (
                         formatarData(item.data_avaliacao)
@@ -600,7 +657,7 @@ function CronogramaTurma() {
                     <td style={tdStyle}>{formatarDisciplina(item.atribuicao?.disciplina?.nome)}</td>
 
                     <td style={tdStyle}>
-                      {emEdicao ? (
+                      {item.isEvento ? null : emEdicao ? (
                         <textarea
                           style={{ ...inputStyle, minHeight: "90px", resize: "vertical" }}
                           value={edicao.conteudo}

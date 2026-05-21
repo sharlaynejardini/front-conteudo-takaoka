@@ -11,7 +11,7 @@ function ProfessorConteudo() {
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
-    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-12` },
+    2: { inicio: `${anoAtual}-06-08`, fim: `${anoAtual}-06-16` },
     3: { inicio: `${anoAtual}-09-14`, fim: `${anoAtual}-09-18` },
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
@@ -20,6 +20,10 @@ function ProfessorConteudo() {
     inicio: `${anoAtual}-05-20`,
     fim: `${anoAtual}-05-22`
   };
+
+  const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
+  const dataObmep2026 = `${anoAtual}-06-09`;
+  const dataRemanejadaObmep2026 = `${anoAtual}-06-16`;
 
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
@@ -90,6 +94,10 @@ function ProfessorConteudo() {
 
   const turmaEhFundamental2 = (nome = "") => /^[6-9]\s*[º°o]?/.test(nome.trim());
 
+  const normalizarTurma = (nome = "") =>
+    nome.toUpperCase().replace(/\s/g, "").replace(/[ÂºÂ°º°]/g, "").replace("ANO", "");
+  const turmaTemObmep2026 = (nome = "") => turmasObmep2026.has(normalizarTurma(nome));
+
   const atribuicoesAtivas =
     atribuicoesSelecionadas.length > 0
       ? atribuicoes.filter(a => atribuicoesSelecionadas.includes(a.id))
@@ -99,6 +107,12 @@ function ProfessorConteudo() {
     bimestre === 2 &&
     atribuicoesAtivas.length > 0 &&
     atribuicoesAtivas.every(a => turmaEhFundamental2(a.turma?.nome));
+
+  const dataBloqueadaPorObmep =
+    tipoAvaliacao === "regular" &&
+    bimestre === 2 &&
+    dataAvaliacao === dataObmep2026 &&
+    atribuicoesAtivas.some(a => turmaTemObmep2026(a.turma?.nome));
 
   const periodoAvaliacao =
     tipoAvaliacao === "simulado" ? semanaSimuladoFund2 : semanasProva[bimestre];
@@ -338,6 +352,13 @@ function ProfessorConteudo() {
       return;
     }
 
+    if (dataBloqueadaPorObmep) {
+      setMensagem("09/06/2026 sera OBMEP para essas turmas. A prova foi remanejada para 16/06/2026.");
+      setTipoMensagem("error");
+      setDataAvaliacao(dataRemanejadaObmep2026);
+      return;
+    }
+
     const topicosPreenchidos = topicos
       .map(topico => topico.trim())
       .filter(Boolean);
@@ -490,7 +511,7 @@ function ProfessorConteudo() {
           onChange={(e) => setTipoAvaliacao(e.target.value)}
           disabled={!podeCadastrarSimuladoFund2}
         >
-          <option value="regular">Prova bimestral - 08 a 12/06</option>
+          <option value="regular">Prova bimestral - 08, 10 a 12/06 ou 16/06</option>
           <option value="simulado">Simulado - 20 a 22/05</option>
         </select>
       )}
@@ -501,7 +522,23 @@ function ProfessorConteudo() {
         value={dataAvaliacao}
         min={periodoAvaliacao.inicio}
         max={periodoAvaliacao.fim}
-        onChange={(e) => setDataAvaliacao(e.target.value)}
+        onChange={(e) => {
+          const novaData = e.target.value;
+
+          if (
+            tipoAvaliacao === "regular" &&
+            bimestre === 2 &&
+            novaData === dataObmep2026 &&
+            atribuicoesAtivas.some(a => turmaTemObmep2026(a.turma?.nome))
+          ) {
+            setDataAvaliacao(dataRemanejadaObmep2026);
+            setMensagem("09/06/2026 sera OBMEP para essas turmas. Use 16/06/2026.");
+            setTipoMensagem("warning");
+            return;
+          }
+
+          setDataAvaliacao(novaData);
+        }}
       />
 
       <h4>Conteúdos:</h4>
