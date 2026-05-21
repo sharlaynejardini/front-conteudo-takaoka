@@ -348,9 +348,12 @@ function ProfessorConteudo() {
       return;
     }
 
+    let atribuicaoFalhou = null;
+
     try {
 
       for (const atribuicaoId of atribuicoesParaSalvar) {
+        atribuicaoFalhou = atribuicoes.find(a => a.id === atribuicaoId);
 
         const editandoConteudoAtual =
           modoEdicao &&
@@ -395,7 +398,12 @@ function ProfessorConteudo() {
     } catch (err) {
 
       console.error(err);
-      setMensagem(err.response?.data?.detail || "Erro ao salvar conteúdo.");
+      const detalheErro = err.response?.data?.detail || err.message || "Erro ao salvar conteudo.";
+      const contextoErro = atribuicaoFalhou
+        ? `${atribuicaoFalhou.turma?.nome} - ${atribuicaoFalhou.disciplina?.nome}: `
+        : "";
+
+      setMensagem(`${contextoErro}${detalheErro}`);
       setTipoMensagem("error");
 
     }
