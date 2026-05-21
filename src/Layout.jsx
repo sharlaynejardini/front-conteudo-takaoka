@@ -49,6 +49,7 @@ function Layout() {
     { path: "/cronograma-trabalho", label: "Cronograma Trab.", icon: "🗂️" },
     { path: "/lancamentos", label: "Lançamentos", icon: "📋" },
     { path: "/horario", label: "Horário", icon: "🕒" },
+    { path: "/notas-corretor", label: "Notas Corretor", icon: "📊" },
   ];
 
   if (isAdmin) {

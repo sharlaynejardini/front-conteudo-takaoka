@@ -8,6 +8,10 @@
       "destination": "https://novo-serveless-conteudo.vercel.app/:path*"
     },
     {
+      "source": "/corretor-api/:path*",
+      "destination": "https://corretor-back.vercel.app/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

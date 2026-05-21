@@ -11,6 +11,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
+      "/corretor-api": {
+        target: "https://corretor-back.vercel.app",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/corretor-api/, ""),
+      },
     },
   },
 })
