@@ -559,25 +559,34 @@ function NotasCorretor() {
                     {turma.mediasDisciplinas.length === 0 ? (
                       <p style={styles.emptySmall}>Sem notas por disciplina.</p>
                     ) : (
-                      <div style={styles.subjectColumns}>
-                        {turma.mediasDisciplinas.map((item) => (
-                          <div key={item.disciplina} style={styles.subjectColumn}>
-                            <div style={styles.columnTrack}>
-                              <span
-                                style={{
-                                  ...styles.subjectFill,
-                                  backgroundColor: isNotaBaixa(item.media)
-                                    ? "#dc2626"
-                                    : getCorDisciplina(item.disciplina),
-                                  height: `${Math.max(4, (Number(item.media || 0) / 10) * 100)}%`
-                                }}
-                              >
+                      <div style={styles.subjectBars}>
+                        {turma.mediasDisciplinas.map((item) => {
+                          const media = Number(item.media || 0);
+                          const cor = isNotaBaixa(item.media)
+                            ? "#dc2626"
+                            : getCorDisciplina(item.disciplina);
+
+                          return (
+                            <div key={item.disciplina} style={styles.subjectBarRow}>
+                              <div style={styles.subjectBarMeta}>
+                                <span style={{ ...styles.subjectDot, backgroundColor: cor }} />
+                                <span style={styles.subjectName}>{item.disciplina}</span>
+                              </div>
+                              <div style={styles.subjectBarTrack}>
+                                <span
+                                  style={{
+                                    ...styles.subjectBarFill,
+                                    backgroundColor: cor,
+                                    width: `${Math.max(4, Math.min(100, (media / 10) * 100))}%`
+                                  }}
+                                />
+                              </div>
+                              <strong style={{ ...styles.subjectScore, color: cor }}>
                                 {formatarNumero(item.media)}
-                              </span>
+                              </strong>
                             </div>
-                            <small style={styles.columnLabel}>{item.disciplina}</small>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -914,19 +923,69 @@ const styles = {
   classChartsGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-    gap: "14px"
+    gap: "16px"
   },
   classChart: {
     border: "1px solid #e2e8f0",
     borderRadius: "8px",
-    padding: "16px",
+    padding: "18px",
     backgroundColor: "white",
-    minHeight: "230px"
+    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.05)"
   },
   chartTitle: {
     color: "#0f172a",
-    fontSize: "16px",
-    margin: "0 0 12px"
+    fontSize: "18px",
+    margin: "0 0 14px",
+    letterSpacing: 0
+  },
+  subjectBars: {
+    display: "grid",
+    gap: "12px"
+  },
+  subjectBarRow: {
+    display: "grid",
+    gridTemplateColumns: "minmax(90px, 0.9fr) minmax(80px, 1.4fr) 40px",
+    alignItems: "center",
+    gap: "10px"
+  },
+  subjectBarMeta: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    minWidth: 0
+  },
+  subjectDot: {
+    width: "9px",
+    height: "9px",
+    borderRadius: "999px",
+    flex: "0 0 auto"
+  },
+  subjectName: {
+    color: "#334155",
+    fontSize: "13px",
+    fontWeight: 800,
+    lineHeight: 1.2,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
+  },
+  subjectBarTrack: {
+    height: "12px",
+    backgroundColor: "#eef2f7",
+    borderRadius: "999px",
+    overflow: "hidden",
+    boxShadow: "inset 0 0 0 1px rgba(148, 163, 184, 0.18)"
+  },
+  subjectBarFill: {
+    display: "block",
+    height: "100%",
+    borderRadius: "999px"
+  },
+  subjectScore: {
+    justifySelf: "end",
+    fontSize: "13px",
+    fontWeight: 900,
+    fontVariantNumeric: "tabular-nums"
   },
   subjectColumns: {
     display: "grid",
