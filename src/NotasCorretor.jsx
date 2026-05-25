@@ -428,6 +428,14 @@ function NotasCorretor() {
     }, {});
   }, [analiseTurmas]);
 
+  const seriesAnalise = useMemo(() => {
+    return Object.entries(analisePorAno).sort(([anoA], [anoB]) => {
+      if (anoA === "Sem ano") return 1;
+      if (anoB === "Sem ano") return -1;
+      return Number(anoA) - Number(anoB);
+    });
+  }, [analisePorAno]);
+
   return (
     <div style={styles.page}>
       <div style={styles.header}>
@@ -602,42 +610,51 @@ function NotasCorretor() {
                 />
               </div>
 
-              <div style={styles.classChartsGrid}>
-                {analiseTurmas.map((turma) => (
-                  <div key={turma.turma.id} style={styles.classChart}>
-                    <h3 style={styles.chartTitle}>{turma.turma.nome}</h3>
-                    {turma.mediasDisciplinas.length === 0 ? (
-                      <p style={styles.emptySmall}>Sem notas por disciplina.</p>
-                    ) : (
-                      <div style={styles.subjectColumns}>
-                        {turma.mediasDisciplinas.map((item) => {
-                          const media = Number(item.media || 0);
-                          const cor = isNotaBaixa(item.media)
-                            ? "#dc2626"
-                            : getCorDisciplina(item.disciplina);
+              <div style={styles.seriesCharts}>
+                {seriesAnalise.map(([ano, turmasAno]) => (
+                  <div key={ano} style={styles.seriesRow}>
+                    <h3 style={styles.seriesTitle}>
+                      {ano === "Sem ano" ? "Sem ano identificado" : `${ano}º ano`}
+                    </h3>
+                    <div style={styles.classChartsGrid}>
+                      {turmasAno.map((turma) => (
+                        <div key={turma.turma.id} style={styles.classChart}>
+                          <h3 style={styles.chartTitle}>{turma.turma.nome}</h3>
+                          {turma.mediasDisciplinas.length === 0 ? (
+                            <p style={styles.emptySmall}>Sem notas por disciplina.</p>
+                          ) : (
+                            <div style={styles.subjectColumns}>
+                              {turma.mediasDisciplinas.map((item) => {
+                                const media = Number(item.media || 0);
+                                const cor = isNotaBaixa(item.media)
+                                  ? "#dc2626"
+                                  : getCorDisciplina(item.disciplina);
 
-                          return (
-                            <div key={item.disciplina} style={styles.subjectColumn}>
-                              <strong style={{ ...styles.subjectScore, color: cor }}>
-                                {formatarNumero(item.media)}
-                              </strong>
-                              <div style={styles.columnTrack}>
-                                <span
-                                  style={{
-                                    ...styles.subjectFill,
-                                    backgroundColor: cor,
-                                    height: `${Math.max(4, Math.min(100, (media / 10) * 100))}%`
-                                  }}
-                                />
-                              </div>
-                              <small title={getNomeDisciplina(item.disciplina)} style={styles.columnLabel}>
-                                {getNomeDisciplina(item.disciplina)}
-                              </small>
+                                return (
+                                  <div key={item.disciplina} style={styles.subjectColumn}>
+                                    <strong style={{ ...styles.subjectScore, color: cor }}>
+                                      {formatarNumero(item.media)}
+                                    </strong>
+                                    <div style={styles.columnTrack}>
+                                      <span
+                                        style={{
+                                          ...styles.subjectFill,
+                                          backgroundColor: cor,
+                                          height: `${Math.max(4, Math.min(100, (media / 10) * 100))}%`
+                                        }}
+                                      />
+                                    </div>
+                                    <small title={getNomeDisciplina(item.disciplina)} style={styles.columnLabel}>
+                                      {getNomeDisciplina(item.disciplina)}
+                                    </small>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -714,7 +731,7 @@ function NotasCorretor() {
                 </div>
 
                 <div style={styles.yearGrid}>
-                  {Object.entries(analisePorAno).map(([ano, turmasAno]) => (
+                  {seriesAnalise.map(([ano, turmasAno]) => (
                     <div key={ano} style={styles.yearChart}>
                       <h3 style={styles.chartTitle}>
                         {ano === "Sem ano" ? "Sem ano identificado" : `${ano}º ano`}
@@ -969,9 +986,23 @@ const styles = {
     display: "grid",
     gap: "16px"
   },
+  seriesCharts: {
+    display: "grid",
+    gap: "18px"
+  },
+  seriesRow: {
+    display: "grid",
+    gap: "10px"
+  },
+  seriesTitle: {
+    color: "#0f172a",
+    fontSize: "18px",
+    margin: 0,
+    letterSpacing: 0
+  },
   classChartsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(260px, 336px))",
     gap: "16px"
   },
   classChart: {
