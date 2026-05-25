@@ -47,7 +47,7 @@ const ORDEM_DISCIPLINAS = [
   },
   { nome: "Matem\u00e1tica", aliases: ["matematica", "matem\u00e1tica"] },
   { nome: "Ci\u00eancias", aliases: ["ciencias", "ci\u00eancias"] },
-  { nome: "Artes", aliases: ["artes"] },
+  { nome: "Artes", aliases: ["arte", "artes"] },
   { nome: "Ingles", aliases: ["ingles", "ingl\u00eas"] }
 ];
 
@@ -609,7 +609,7 @@ function NotasCorretor() {
                     {turma.mediasDisciplinas.length === 0 ? (
                       <p style={styles.emptySmall}>Sem notas por disciplina.</p>
                     ) : (
-                      <div style={styles.subjectBars}>
+                      <div style={styles.subjectColumns}>
                         {turma.mediasDisciplinas.map((item) => {
                           const media = Number(item.media || 0);
                           const cor = isNotaBaixa(item.media)
@@ -617,23 +617,22 @@ function NotasCorretor() {
                             : getCorDisciplina(item.disciplina);
 
                           return (
-                            <div key={item.disciplina} style={styles.subjectBarRow}>
-                              <div style={styles.subjectBarMeta}>
-                                <span style={{ ...styles.subjectDot, backgroundColor: cor }} />
-                                <span style={styles.subjectName}>{item.disciplina}</span>
-                              </div>
-                              <div style={styles.subjectBarTrack}>
-                                <span
-                                  style={{
-                                    ...styles.subjectBarFill,
-                                    backgroundColor: cor,
-                                    width: `${Math.max(4, Math.min(100, (media / 10) * 100))}%`
-                                  }}
-                                />
-                              </div>
+                            <div key={item.disciplina} style={styles.subjectColumn}>
                               <strong style={{ ...styles.subjectScore, color: cor }}>
                                 {formatarNumero(item.media)}
                               </strong>
+                              <div style={styles.columnTrack}>
+                                <span
+                                  style={{
+                                    ...styles.subjectFill,
+                                    backgroundColor: cor,
+                                    height: `${Math.max(4, Math.min(100, (media / 10) * 100))}%`
+                                  }}
+                                />
+                              </div>
+                              <small title={getNomeDisciplina(item.disciplina)} style={styles.columnLabel}>
+                                {getNomeDisciplina(item.disciplina)}
+                              </small>
                             </div>
                           );
                         })}
@@ -720,13 +719,13 @@ function NotasCorretor() {
                       <h3 style={styles.chartTitle}>
                         {ano === "Sem ano" ? "Sem ano identificado" : `${ano}º ano`}
                       </h3>
-                      <div style={styles.globalColumns}>
+                      <div style={styles.yearColumns}>
                         {turmasAno.map((turma) => (
-                          <div key={turma.turma.id} style={styles.globalColumn}>
-                            <div style={styles.globalTrack}>
+                          <div key={turma.turma.id} style={styles.yearColumn}>
+                            <div style={styles.yearTrack}>
                               <span
                                 style={{
-                                  ...styles.globalFill,
+                                  ...styles.yearFill,
                                   backgroundColor: isNotaBaixa(turma.mediaGeral)
                                     ? "#dc2626"
                                     : "#16a34a",
@@ -1039,21 +1038,24 @@ const styles = {
   },
   subjectColumns: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(64px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(32px, 1fr))",
     alignItems: "end",
-    gap: "10px",
-    minHeight: "170px"
+    gap: "8px",
+    minHeight: "188px"
   },
   subjectColumn: {
-    display: "grid",
-    gridTemplateRows: "120px auto",
-    gap: "8px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "end",
+    gap: "6px",
     justifyItems: "center",
-    minWidth: 0
+    minWidth: 0,
+    height: "188px"
   },
   columnTrack: {
-    width: "42px",
-    height: "120px",
+    width: "28px",
+    height: "124px",
     backgroundColor: "#e6edf5",
     borderRadius: "8px 8px 4px 4px",
     display: "flex",
@@ -1063,21 +1065,20 @@ const styles = {
   subjectFill: {
     width: "100%",
     borderRadius: "inherit",
-    color: "white",
-    fontSize: "11px",
-    fontWeight: 800,
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "center",
-    paddingTop: "4px"
+    display: "block",
+    minHeight: "4px"
   },
   columnLabel: {
     color: "#64748b",
     textAlign: "center",
-    fontSize: "12px",
+    fontSize: "10px",
     fontWeight: 700,
-    lineHeight: 1.2,
-    overflowWrap: "anywhere"
+    lineHeight: 1.1,
+    width: "100%",
+    maxWidth: "48px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap"
   },
   chartSection: {
     border: "1px solid #e2e8f0",
@@ -1145,6 +1146,41 @@ const styles = {
     borderRadius: "8px",
     padding: "14px",
     backgroundColor: "#f8fafc"
+  },
+  yearColumns: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(52px, 1fr))",
+    alignItems: "end",
+    gap: "12px",
+    minHeight: "176px",
+    paddingTop: "6px"
+  },
+  yearColumn: {
+    display: "grid",
+    gridTemplateRows: "132px auto",
+    gap: "8px",
+    justifyItems: "center",
+    minWidth: 0
+  },
+  yearTrack: {
+    width: "42px",
+    height: "132px",
+    backgroundColor: "#e6edf5",
+    borderRadius: "8px 8px 4px 4px",
+    display: "flex",
+    alignItems: "end",
+    overflow: "hidden"
+  },
+  yearFill: {
+    width: "100%",
+    borderRadius: "inherit",
+    color: "white",
+    fontSize: "11px",
+    fontWeight: 800,
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    paddingTop: "4px"
   },
   emptySmall: {
     color: "#64748b",

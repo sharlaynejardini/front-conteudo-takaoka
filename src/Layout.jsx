@@ -29,7 +29,10 @@ function Layout() {
     checkAdmin();
 
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) setCollapsed(false);
+      if (!mobile) setMenuOpen(false);
     };
 
     window.addEventListener("resize", handleResize);
@@ -73,7 +76,7 @@ function Layout() {
       <div
         style={{
           ...styles.sidebar,
-          width: collapsed ? "70px" : "240px",
+          width: isMobile ? "240px" : (collapsed ? "70px" : "240px"),
           ...(isMobile
             ? (menuOpen ? styles.sidebarOpen : styles.sidebarClosed)
             : {})
@@ -121,7 +124,9 @@ function Layout() {
 
           <button
             style={styles.menuButton}
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={menuOpen}
           >
             ☰
           </button>
@@ -171,6 +176,26 @@ const styles = {
     gap: "10px",
     transition: "0.3s",
     zIndex: 1000
+  },
+
+  sidebarOpen: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    height: "100vh",
+    transform: "translateX(0)",
+    boxShadow: "12px 0 30px rgba(15, 23, 42, 0.24)"
+  },
+
+  sidebarClosed: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    height: "100vh",
+    transform: "translateX(-105%)",
+    boxShadow: "none"
   },
 
   sidebarTop: {
