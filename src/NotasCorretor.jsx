@@ -1069,9 +1069,9 @@ const styles = {
   },
   subjectColumns: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(32px, 1fr))",
+    gridTemplateColumns: "repeat(8, minmax(0, 1fr))",
     alignItems: "end",
-    gap: "8px",
+    gap: "6px",
     minHeight: "188px"
   },
   subjectColumn: {
@@ -1085,7 +1085,7 @@ const styles = {
     height: "188px"
   },
   columnTrack: {
-    width: "28px",
+    width: "26px",
     height: "124px",
     backgroundColor: "#e6edf5",
     borderRadius: "8px 8px 4px 4px",
@@ -1106,7 +1106,7 @@ const styles = {
     fontWeight: 700,
     lineHeight: 1.1,
     width: "100%",
-    maxWidth: "48px",
+    maxWidth: "38px",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap"
