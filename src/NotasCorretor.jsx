@@ -34,6 +34,22 @@ const CORES_FALLBACK = [
   "#5c6bc0",
   "#8d6e63"
 ];
+const ORDEM_DISCIPLINAS = [
+  {
+    nome: "Portugu\u00eas",
+    aliases: ["lp", "lingua portuguesa", "l\u00edngua portuguesa", "portugues", "portugu\u00eas"]
+  },
+  { nome: "Hist\u00f3ria", aliases: ["historia", "hist\u00f3ria"] },
+  { nome: "Geografia", aliases: ["geografia"] },
+  {
+    nome: "Ed. F\u00edsica",
+    aliases: ["ed fisica", "ed. fisica", "ed f\u00edsica", "ed. f\u00edsica", "educacao fisica", "educa\u00e7\u00e3o f\u00edsica"]
+  },
+  { nome: "Matem\u00e1tica", aliases: ["matematica", "matem\u00e1tica"] },
+  { nome: "Ci\u00eancias", aliases: ["ciencias", "ci\u00eancias"] },
+  { nome: "Artes", aliases: ["artes"] },
+  { nome: "Ingles", aliases: ["ingles", "ingl\u00eas"] }
+];
 
 function listarResultados(payload) {
   if (!payload) return [];
@@ -104,6 +120,34 @@ function normalizarTexto(texto = "") {
     .toLowerCase();
 }
 
+function getDisciplinaOrdem(disciplina = "") {
+  const normalizada = normalizarTexto(disciplina);
+  const indice = ORDEM_DISCIPLINAS.findIndex((item) =>
+    item.aliases.some((alias) => normalizarTexto(alias) === normalizada)
+  );
+
+  return indice >= 0 ? indice : ORDEM_DISCIPLINAS.length;
+}
+
+function ordenarDisciplinas(disciplinas = []) {
+  return [...disciplinas].sort((a, b) => {
+    const ordemA = getDisciplinaOrdem(a);
+    const ordemB = getDisciplinaOrdem(b);
+
+    if (ordemA !== ordemB) return ordemA - ordemB;
+    return a.localeCompare(b, "pt-BR");
+  });
+}
+
+function getNomeDisciplina(disciplina = "") {
+  const normalizada = normalizarTexto(disciplina);
+  const item = ORDEM_DISCIPLINAS.find((disciplinaOrdenada) =>
+    disciplinaOrdenada.aliases.some((alias) => normalizarTexto(alias) === normalizada)
+  );
+
+  return item?.nome ?? disciplina;
+}
+
 function getCorDisciplina(disciplina = "") {
   if (CORES_DISCIPLINA[disciplina]) return CORES_DISCIPLINA[disciplina];
 
@@ -171,7 +215,13 @@ function calcularAnaliseTurma(turma, alunosTurma, resultadosTurma) {
         media: dados.quantidade ? dados.soma / dados.quantidade : null,
         quantidade: dados.quantidade
       }))
-      .sort((a, b) => a.disciplina.localeCompare(b.disciplina, "pt-BR"))
+      .sort((a, b) => {
+        const ordemA = getDisciplinaOrdem(a.disciplina);
+        const ordemB = getDisciplinaOrdem(b.disciplina);
+
+        if (ordemA !== ordemB) return ordemA - ordemB;
+        return a.disciplina.localeCompare(b.disciplina, "pt-BR");
+      })
   };
 }
 
@@ -293,7 +343,7 @@ function NotasCorretor() {
     Object.values(resultados).forEach((resultado) => {
       Object.keys(resultado.disciplinas || {}).forEach((disciplina) => nomes.add(disciplina));
     });
-    return [...nomes].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    return ordenarDisciplinas([...nomes]);
   }, [resultados]);
 
   const linhas = useMemo(() => {
@@ -360,13 +410,13 @@ function NotasCorretor() {
   }, [analiseTurmas]);
 
   const disciplinasAnalise = useMemo(() => {
-    return [
+    return ordenarDisciplinas([
       ...new Set(
         analiseTurmas.flatMap((turma) =>
           turma.mediasDisciplinas.map((disciplina) => disciplina.disciplina)
         )
       )
-    ].sort((a, b) => a.localeCompare(b, "pt-BR"));
+    ]);
   }, [analiseTurmas]);
 
   const analisePorAno = useMemo(() => {
@@ -489,9 +539,9 @@ function NotasCorretor() {
                   <th style={styles.th}>Nº</th>
                   <th style={styles.th}>Aluno</th>
                   {disciplinas.map((disciplina) => (
-                    <th key={disciplina} style={styles.th}>{disciplina}</th>
+                    <th key={disciplina} style={styles.th}>{getNomeDisciplina(disciplina)}</th>
                   ))}
-                  <th style={styles.th}>Nota global</th>
+                  <th style={styles.th}>Média geral</th>
                   <th style={styles.th}>Status</th>
                 </tr>
               </thead>
@@ -624,10 +674,10 @@ function NotasCorretor() {
                   <thead>
                     <tr>
                       <th style={styles.th}>Turma</th>
-                      <th style={styles.th}>Média geral</th>
                       {disciplinasAnalise.map((disciplina) => (
-                        <th key={disciplina} style={styles.th}>{disciplina}</th>
+                        <th key={disciplina} style={styles.th}>{getNomeDisciplina(disciplina)}</th>
                       ))}
+                      <th style={styles.th}>Média geral</th>
                       <th style={styles.th}>Alunos considerados</th>
                     </tr>
                   </thead>
@@ -635,9 +685,6 @@ function NotasCorretor() {
                     {analiseTurmas.map((turma) => (
                       <tr key={turma.turma.id}>
                         <td style={styles.tdStrong}>{turma.turma.nome}</td>
-                        <td style={styles.tdStrong}>
-                          <NotaValor valor={turma.mediaGeral} destaque />
-                        </td>
                         {disciplinasAnalise.map((disciplina) => (
                           <td key={disciplina} style={styles.td}>
                             <NotaValor
@@ -649,6 +696,9 @@ function NotasCorretor() {
                             />
                           </td>
                         ))}
+                        <td style={styles.tdStrong}>
+                          <NotaValor valor={turma.mediaGeral} destaque />
+                        </td>
                         <td style={styles.td}>
                           {turma.alunosComNotaGeral}/{turma.totalAlunos}
                         </td>
