@@ -515,7 +515,7 @@ function NotasCorretor() {
         <ResumoCard label="Alunos" value={resumo.total} />
         <ResumoCard label="Corrigidos" value={resumo.corrigidos} />
         <ResumoCard label="Pendentes" value={resumo.pendentes} />
-        <ResumoCard label="Média global" value={formatarNumero(resumo.media)} />
+        <ResumoCard label="NOTA GLOBAL" value={formatarNumero(resumo.media)} />
       </div>
 
       {aba === "resultado" && (
@@ -549,7 +549,7 @@ function NotasCorretor() {
                   {disciplinas.map((disciplina) => (
                     <th key={disciplina} style={styles.th}>{getNomeDisciplina(disciplina)}</th>
                   ))}
-                  <th style={styles.th}>Média geral</th>
+                  <th style={styles.th}>NOTA GLOBAL</th>
                   <th style={styles.th}>Status</th>
                 </tr>
               </thead>
@@ -603,7 +603,7 @@ function NotasCorretor() {
             <>
               <div style={styles.summaryGrid}>
                 <ResumoCard label="Escola" value={TAKAOKA_ESCOLA_NOME} />
-                <ResumoCard label="Média geral" value={formatarNumero(resumoAnalise.mediaGeral)} />
+                <ResumoCard label="NOTA GLOBAL" value={formatarNumero(resumoAnalise.mediaGeral)} />
                 <ResumoCard
                   label="Alunos com nota"
                   value={`${resumoAnalise.alunosComNota}/${resumoAnalise.totalAlunos}`}
@@ -661,7 +661,7 @@ function NotasCorretor() {
 
               <div style={styles.chartSection}>
                 <div style={styles.sectionHeader}>
-                  <h3 style={styles.sectionTitle}>Média global por sala</h3>
+                  <h3 style={styles.sectionTitle}>NOTA GLOBAL por sala</h3>
                   <span>{analiseTurmas.length} turma(s)</span>
                 </div>
 
@@ -693,7 +693,7 @@ function NotasCorretor() {
                       {disciplinasAnalise.map((disciplina) => (
                         <th key={disciplina} style={styles.th}>{getNomeDisciplina(disciplina)}</th>
                       ))}
-                      <th style={styles.th}>Média geral</th>
+                      <th style={styles.th}>NOTA GLOBAL</th>
                       <th style={styles.th}>Alunos considerados</th>
                     </tr>
                   </thead>
