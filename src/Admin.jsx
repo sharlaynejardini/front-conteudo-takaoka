@@ -47,8 +47,13 @@ function Admin() {
 
   const FUND1 = ["1","2","3","4","5"];
   const FUND2 = ["6","7","8","9"];
+  const TURMAS_OBMEP_2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
+  const DATA_OBMEP_2026 = "2026-06-09";
 
   const pertenceAo = (nomeTurma, anos) => anos.some(a => nomeTurma.startsWith(a));
+  const normalizarTurma = (nome = "") =>
+    nome.toUpperCase().replace(/\s/g, "").replace(/[º°]/g, "").replace("ANO", "");
+  const turmaTemObmep2026 = (nome = "") => TURMAS_OBMEP_2026.has(normalizarTurma(nome));
 
   const formatarData = (dataISO) => {
     if (!dataISO) return "";
@@ -88,13 +93,39 @@ function Admin() {
         return mapa;
       };
 
+      const adicionarObmep = (mapa, turmasSegmento) => {
+        if (bim !== 2) return mapa;
+
+        const eventosObmep = turmasSegmento
+          .filter(turma => turmaTemObmep2026(turma.nome))
+          .map(turma => ({
+            id: `obmep-2026-${turma.id}`,
+            data_avaliacao: DATA_OBMEP_2026,
+            turmaNome: turma.nome,
+            atribuicao: {
+              disciplina: { nome: "OBMEP" },
+              professor: { nome: "OBMEP" }
+            }
+          }));
+
+        if (eventosObmep.length === 0) return mapa;
+
+        return {
+          ...mapa,
+          [DATA_OBMEP_2026]: [
+            ...(mapa[DATA_OBMEP_2026] || []),
+            ...eventosObmep
+          ]
+        };
+      };
+
       const [r1, r2] = await Promise.all([
         Promise.all(turmasF1.map(fetchTurma)),
         Promise.all(turmasF2.map(fetchTurma))
       ]);
 
       setCalendarioFund1(agruparPorData(r1.flat()));
-      setCalendarioFund2(agruparPorData(r2.flat()));
+      setCalendarioFund2(adicionarObmep(agruparPorData(r2.flat()), turmasF2));
     } catch (error) {
       console.error(error);
       setErro("Erro ao carregar o calendÃ¡rio do admin.");
