@@ -116,6 +116,16 @@ function CronogramaTurma() {
 
   };
 
+  useEffect(() => {
+    if (!turmaSelecionada) {
+      setCronograma([]);
+      setMensagemErro("");
+      return;
+    }
+
+    buscarCronograma();
+  }, [turmaSelecionada, bimestre, tipoAvaliacao]);
+
   const formatarData = (dataISO) => {
 
     if (!dataISO) return "";

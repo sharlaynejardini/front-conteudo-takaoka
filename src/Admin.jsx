@@ -138,6 +138,18 @@ function Admin() {
     carregarDados();
   }, []);
 
+  useEffect(() => {
+    if (aba !== "calendario") return;
+
+    if (turmas.length === 0) {
+      setCalendarioFund1({});
+      setCalendarioFund2({});
+      return;
+    }
+
+    buscarCalendario(bimestreCal);
+  }, [aba, bimestreCal, turmas]);
+
   async function carregarDados() {
     setLoading(true);
     setErro("");
