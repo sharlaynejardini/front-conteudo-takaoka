@@ -84,8 +84,27 @@ function getDia(data) {
   return match ? Number(match[1]) : null;
 }
 
-function isPeriodo(data) {
-  return data.includes(" a ") || data.includes(" e ") || data.includes(" a ");
+function getDiasEvento(evento) {
+  const data = evento.data;
+  const diaUnico = getDia(data);
+
+  if (diaUnico) return [diaUnico];
+
+  const periodoMesmoMes = data.match(/^(\d{1,2})\s*a\s*(\d{1,2})\/\d{2}(?:\/2026)?$/i);
+
+  if (periodoMesmoMes) {
+    const inicio = Number(periodoMesmoMes[1]);
+    const fim = Number(periodoMesmoMes[2]);
+    return Array.from({ length: fim - inicio + 1 }, (_, index) => inicio + index);
+  }
+
+  const doisDias = data.match(/^(\d{1,2})\s*e\s*(\d{1,2})\/\d{2}(?:\/2026)?$/i);
+
+  if (doisDias) {
+    return [Number(doisDias[1]), Number(doisDias[2])];
+  }
+
+  return [];
 }
 
 function getTipo(evento, obs = "") {
@@ -134,11 +153,14 @@ function CalendarioEscolar() {
       ...mes,
       eventos: lista,
       eventosPorDia: lista.reduce((acc, evento) => {
-        const dia = getDia(evento.data);
-        if (dia) acc[dia] = [...(acc[dia] || []), evento];
+        const dias = getDiasEvento(evento);
+
+        dias.forEach(dia => {
+          acc[dia] = [...(acc[dia] || []), evento];
+        });
+
         return acc;
-      }, {}),
-      lembretes: lista.filter(evento => isPeriodo(evento.data))
+      }, {})
     };
   });
 
@@ -203,27 +225,6 @@ function PlannerMes({ mes }) {
           </div>
         </div>
 
-        <aside className="notes-panel">
-          <div className="notes-box important">
-            <h3>♡ Lembretes ♡</h3>
-            {mes.lembretes.length ? (
-              mes.lembretes.map((evento, index) => <MiniEvento key={`${evento.data}-${index}`} evento={evento} />)
-            ) : (
-              <p className="empty-note">Sem lembretes de período.</p>
-            )}
-          </div>
-
-          <div className="notes-box">
-            <h3>Observações</h3>
-            {mes.eventos.filter(evento => evento.obs).length ? (
-              mes.eventos
-                .filter(evento => evento.obs)
-                .map((evento, index) => <MiniEvento key={`${evento.data}-obs-${index}`} evento={evento} showObs />)
-            ) : (
-              <p className="empty-note">Passe o mouse em “Obs” quando aparecer.</p>
-            )}
-          </div>
-        </aside>
       </div>
     </section>
   );
@@ -243,7 +244,7 @@ function DiaCelula({ dia, eventos }) {
   );
 }
 
-function MiniEvento({ evento, compact = false, showObs = false }) {
+function MiniEvento({ evento, compact = false }) {
   const tipo = getTipo(evento.evento, evento.obs);
 
   return (
@@ -251,7 +252,7 @@ function MiniEvento({ evento, compact = false, showObs = false }) {
       <span className="event-date">{evento.data}</span>
       <span className="event-name">{compact ? evento.evento.replace(" - 6º ao 9º ano", "") : evento.evento}</span>
       {!compact && <span className="event-kind">{getTipoLabel(tipo)}</span>}
-      {(evento.obs || showObs) && evento.obs && (
+      {evento.obs && (
         <span className="obs-tip" data-tooltip={evento.obs} tabIndex={0}>
           Obs
         </span>
@@ -530,40 +531,6 @@ const css = `
     font-weight: 900;
   }
 
-  .notes-panel {
-    display: grid;
-    gap: 10px;
-    align-content: start;
-  }
-
-  .notes-box {
-    min-height: 180px;
-    padding: 10px;
-    border: 2px solid #f5b8ce;
-    border-radius: 8px;
-    background:
-      repeating-linear-gradient(#ffeaf2 0 21px, #f6bacf 22px),
-      #ffeaf2;
-  }
-
-  .notes-box.important {
-    border-color: #9bd9df;
-    background:
-      repeating-linear-gradient(#dff8fb 0 21px, #96d8df 22px),
-      #dff8fb;
-  }
-
-  .notes-box h3 {
-    margin: 0 0 8px;
-    color: #3b4a5a;
-    font-family: "Comic Sans MS", "Segoe Print", cursive;
-    font-size: 17px;
-  }
-
-  .notes-box .mini-event {
-    margin-bottom: 7px;
-  }
-
   .empty-note {
     margin: 0;
     color: #667085;
@@ -618,9 +585,6 @@ const css = `
       grid-template-columns: 1fr;
     }
 
-    .notes-panel {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
 
   @media (max-width: 720px) {
@@ -658,9 +622,6 @@ const css = `
       min-height: 104px;
     }
 
-    .notes-panel {
-      grid-template-columns: 1fr 1fr;
-    }
   }
 
   .planner-page {
@@ -759,7 +720,7 @@ const css = `
 
   .sheet-body {
     padding: 18px;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .calendar-board {
@@ -779,18 +740,6 @@ const css = `
 
   .day-cell.empty {
     background: #f8fafc;
-  }
-
-  .notes-box,
-  .notes-box.important {
-    border: 1px solid #d8dee8;
-    background: #f8fafc;
-  }
-
-  .notes-box h3 {
-    color: #111827;
-    font-family: Arial, "Segoe UI", sans-serif;
-    font-size: 15px;
   }
 
   .mini-event {
