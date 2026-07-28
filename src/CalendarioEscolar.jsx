@@ -752,6 +752,170 @@ const css = `
     background: #0f172a;
     color: #ffffff;
   }
+
+  .planner-page {
+    background: #f5f7fb;
+  }
+
+  .planner-title {
+    position: relative;
+    overflow: hidden;
+    border: 0;
+    background: linear-gradient(135deg, #ffffff 0%, #eef7ff 48%, #fff7ed 100%);
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+  }
+
+  .planner-title::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(#2563eb, #14b8a6, #f59e0b);
+  }
+
+  .planner-title span {
+    color: #0f766e;
+  }
+
+  .planner-title h1 {
+    color: #0f172a;
+    font-size: 36px;
+  }
+
+  .semester-strip a {
+    border: 0;
+    background: #ffffff;
+    color: #1f2937;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  }
+
+  .semester-strip a:nth-child(1) { border-top: 4px solid #2563eb; }
+  .semester-strip a:nth-child(2) { border-top: 4px solid #0f766e; }
+  .semester-strip a:nth-child(3) { border-top: 4px solid #f59e0b; }
+  .semester-strip a:nth-child(4) { border-top: 4px solid #db2777; }
+  .semester-strip a:nth-child(5) { border-top: 4px solid #7c3aed; }
+  .semester-strip a:nth-child(6) { border-top: 4px solid #dc2626; }
+
+  .semester-strip a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    background: #f8fafc;
+  }
+
+  .planner-sheet {
+    border: 0;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.10);
+  }
+
+  .planner-sheet:nth-child(1) .sheet-head { background: linear-gradient(135deg, #eff6ff, #dbeafe); }
+  .planner-sheet:nth-child(2) .sheet-head { background: linear-gradient(135deg, #f0fdfa, #ccfbf1); }
+  .planner-sheet:nth-child(3) .sheet-head { background: linear-gradient(135deg, #fffbeb, #fef3c7); }
+  .planner-sheet:nth-child(4) .sheet-head { background: linear-gradient(135deg, #fdf2f8, #fce7f3); }
+  .planner-sheet:nth-child(5) .sheet-head { background: linear-gradient(135deg, #f5f3ff, #ede9fe); }
+  .planner-sheet:nth-child(6) .sheet-head { background: linear-gradient(135deg, #fff1f2, #ffe4e6); }
+
+  .planner-label {
+    font-size: 24px;
+    font-weight: 900;
+  }
+
+  .planner-sheet:nth-child(1) .planner-label { color: #1d4ed8; }
+  .planner-sheet:nth-child(2) .planner-label { color: #0f766e; }
+  .planner-sheet:nth-child(3) .planner-label { color: #b45309; }
+  .planner-sheet:nth-child(4) .planner-label { color: #be185d; }
+  .planner-sheet:nth-child(5) .planner-label { color: #6d28d9; }
+  .planner-sheet:nth-child(6) .planner-label { color: #b91c1c; }
+
+  .calendar-board {
+    border: 1px solid #cbd5e1;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .weekday-row span {
+    min-height: 38px;
+    color: #0f172a;
+    border-color: rgba(255, 255, 255, 0.64);
+  }
+
+  .weekday-row span:nth-child(1) { background: #bfdbfe !important; }
+  .weekday-row span:nth-child(2) { background: #99f6e4 !important; }
+  .weekday-row span:nth-child(3) { background: #fde68a !important; }
+  .weekday-row span:nth-child(4) { background: #fbcfe8 !important; }
+  .weekday-row span:nth-child(5) { background: #ddd6fe !important; }
+  .weekday-row span:nth-child(6) { background: #fecaca !important; }
+  .weekday-row span:nth-child(7) { background: #bae6fd !important; }
+
+  .day-cell {
+    min-height: 132px;
+    background: #ffffff;
+    transition: background 140ms ease;
+  }
+
+  .day-cell:hover {
+    background: #f8fafc;
+  }
+
+  .day-number {
+    display: inline-grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #334155;
+  }
+
+  .mini-event {
+    border: 0;
+    border-left: 5px solid #64748b;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  }
+
+  .mini-event.compact {
+    padding: 7px;
+  }
+
+  .mini-event.simulado {
+    border-left-color: #2563eb;
+    background: #dbeafe;
+  }
+
+  .mini-event.avaliacao {
+    border-left-color: #7c3aed;
+    background: #ede9fe;
+  }
+
+  .mini-event.sem-aula {
+    border-left-color: #dc2626;
+    background: #fee2e2;
+  }
+
+  .mini-event.conselho {
+    border-left-color: #0f766e;
+    background: #ccfbf1;
+  }
+
+  .mini-event.prazo {
+    border-left-color: #ca8a04;
+    background: #fef3c7;
+  }
+
+  .event-name {
+    color: #111827;
+  }
+
+  .event-date {
+    color: #475569;
+  }
+
+  .obs-tip {
+    background: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+  }
 `;
 
 export default CalendarioEscolar;
