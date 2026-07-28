@@ -18,6 +18,7 @@ import TestAPI from "./TestAPI";
 import HorarioEscolar from "./HorarioEscolar";
 import DebugProfessor from "./DebugProfessor";
 import NotasCorretor from "./NotasCorretor";
+import CalendarioEscolar from "./CalendarioEscolar";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -56,6 +57,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
           {/* HORÁRIO ESCOLAR */}
           <Route path="horario" element={<HorarioEscolar />} />
+          <Route path="calendario-escolar" element={<CalendarioEscolar />} />
 
           {/* NOTAS DO CORRETOR */}
           <Route path="notas-corretor" element={<NotasCorretor />} />

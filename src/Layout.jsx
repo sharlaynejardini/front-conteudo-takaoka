@@ -50,6 +50,7 @@ function Layout() {
     { path: "/cronograma", label: "Cronograma", icon: "📅" },
     { path: "/trabalho", label: "Trabalhos", icon: "📚" },
     { path: "/cronograma-trabalho", label: "Cronograma Trab.", icon: "🗂️" },
+    { path: "/calendario-escolar", label: "Calendário Escolar", icon: "📅" },
     { path: "/lancamentos", label: "Lançamentos", icon: "📋" },
     { path: "/horario", label: "Horário", icon: "🕒" },
     { path: "/notas-corretor", label: "Resultado das Avaliações", icon: "📊" },
