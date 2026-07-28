@@ -16,9 +16,9 @@ function ProfessorConteudo() {
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
-  const semanaSimuladoFund2 = {
-    inicio: `${anoAtual}-05-20`,
-    fim: `${anoAtual}-05-22`
+  const semanasSimuladoFund2 = {
+    2: { inicio: `${anoAtual}-05-20`, fim: `${anoAtual}-05-22` },
+    3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
   };
 
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
@@ -103,8 +103,9 @@ function ProfessorConteudo() {
       ? atribuicoes.filter(a => atribuicoesSelecionadas.includes(a.id))
       : atribuicoes.filter(a => a.id === atribuicaoSelecionada);
 
+  const bimestreTemSimuladoFund2 = [2, 3].includes(bimestre);
   const podeCadastrarSimuladoFund2 =
-    bimestre === 2 &&
+    bimestreTemSimuladoFund2 &&
     atribuicoesAtivas.length > 0 &&
     atribuicoesAtivas.every(a => turmaEhFundamental2(a.turma?.nome));
 
@@ -115,7 +116,17 @@ function ProfessorConteudo() {
     atribuicoesAtivas.some(a => turmaTemObmep2026(a.turma?.nome));
 
   const periodoAvaliacao =
-    tipoAvaliacao === "simulado" ? semanaSimuladoFund2 : semanasProva[bimestre];
+    tipoAvaliacao === "simulado" && semanasSimuladoFund2[bimestre]
+      ? semanasSimuladoFund2[bimestre]
+      : semanasProva[bimestre];
+
+  const getDescricaoProvaRegular = () =>
+    bimestre === 2
+      ? "Prova bimestral - 08, 10 a 12/06 ou 16/06"
+      : "Prova bimestral";
+
+  const getDescricaoSimulado = () =>
+    bimestre === 3 ? "Simulado - 19 a 21/08" : "Simulado - 20 a 22/05";
 
   useEffect(() => {
     async function carregar() {
@@ -347,7 +358,7 @@ function ProfessorConteudo() {
         : [atribuicaoSelecionada];
 
     if (tipoAvaliacao === "simulado" && !podeCadastrarSimuladoFund2) {
-      setMensagem("O simulado está liberado apenas para turmas do 6º ao 9º ano no 2º bimestre.");
+      setMensagem("O simulado esta liberado apenas para turmas do 6o ao 9o ano no 2o e 3o bimestres.");
       setTipoMensagem("error");
       return;
     }
@@ -504,15 +515,15 @@ function ProfessorConteudo() {
         <option value={4}>4º Bimestre</option>
       </select>
 
-      {bimestre === 2 && (
+      {bimestreTemSimuladoFund2 && (
         <select
           style={inputStyle}
           value={tipoAvaliacao}
           onChange={(e) => setTipoAvaliacao(e.target.value)}
           disabled={!podeCadastrarSimuladoFund2}
         >
-          <option value="regular">Prova bimestral - 08, 10 a 12/06 ou 16/06</option>
-          <option value="simulado">Simulado - 20 a 22/05</option>
+          <option value="regular">{getDescricaoProvaRegular()}</option>
+          <option value="simulado">{getDescricaoSimulado()}</option>
         </select>
       )}
 

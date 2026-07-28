@@ -15,9 +15,9 @@ function CronogramaTurma() {
     4: { inicio: `${anoAtual}-11-13`, fim: `${anoAtual}-11-19` }
   };
 
-  const semanaSimuladoFund2 = {
-    inicio: `${anoAtual}-05-20`,
-    fim: `${anoAtual}-05-22`
+  const semanasSimuladoFund2 = {
+    2: { inicio: `${anoAtual}-05-20`, fim: `${anoAtual}-05-22` },
+    3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
   };
 
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
@@ -63,17 +63,26 @@ function CronogramaTurma() {
   const normalizarTurma = (nome = "") =>
     nome.toUpperCase().replace(/\s/g, "").replace(/[ÂºÂ°º°]/g, "").replace("ANO", "");
   const turmaTemObmep2026 = (nome = "") => turmasObmep2026.has(normalizarTurma(nome));
-  const podeEscolherProvaFund2 = bimestre === 2 && turmaEhFundamental2(turmaNome);
+  const bimestreTemSimuladoFund2 = [2, 3].includes(bimestre);
+  const podeEscolherProvaFund2 = bimestreTemSimuladoFund2 && turmaEhFundamental2(turmaNome);
   const mostrarObmepNoCronograma =
     bimestre === 2 &&
     tipoAvaliacao === "regular" &&
     turmaTemObmep2026(turmaNome);
 
   const getIntervaloAvaliacao = (item) =>
-    item?.tipo_avaliacao === "simulado" ? semanaSimuladoFund2 : semanasProva[item.bimestre];
+    item?.tipo_avaliacao === "simulado" ? semanasSimuladoFund2[item.bimestre] : semanasProva[item.bimestre];
 
   const getNomeAvaliacao = (tipo = tipoAvaliacao) =>
     tipo === "simulado" ? "Simulado" : "Prova bimestral";
+
+  const getDescricaoProvaRegular = () =>
+    bimestre === 2
+      ? "Prova bimestral - 08, 10 a 12/06 ou 16/06"
+      : "Prova bimestral";
+
+  const getDescricaoSimulado = () =>
+    bimestre === 3 ? "Simulado - 19 a 21/08" : "Simulado - 20 a 22/05";
 
   useEffect(() => {
     if (!podeEscolherProvaFund2 && tipoAvaliacao === "simulado") {
@@ -505,8 +514,8 @@ function CronogramaTurma() {
               value={tipoAvaliacao}
               onChange={(e) => setTipoAvaliacao(e.target.value)}
             >
-              <option value="regular">Prova bimestral - 08, 10 a 12/06 ou 16/06</option>
-              <option value="simulado">Simulado - 20 a 22/05</option>
+              <option value="regular">{getDescricaoProvaRegular()}</option>
+              <option value="simulado">{getDescricaoSimulado()}</option>
             </select>
           )}
 
