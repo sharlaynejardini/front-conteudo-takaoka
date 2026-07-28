@@ -137,7 +137,9 @@ function ProfessorConteudo() {
       : semanasProva[bimestre];
 
   const getDescricaoProvaRegular = () =>
-    bimestre === 2
+    bimestre === 3
+      ? "Prova bimestral - 14 a 18/09"
+      : bimestre === 2
       ? "Prova bimestral - 08, 10 a 12/06 ou 16/06"
       : "Prova bimestral";
 
