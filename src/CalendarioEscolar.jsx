@@ -336,12 +336,14 @@ function PlannerMes({ mes }) {
 }
 
 function DiaCelula({ dia, eventos }) {
+  const temMultiplos = eventos.length > 1;
+
   return (
-    <div className={`day-cell ${!dia ? "empty" : ""}`}>
+    <div className={`day-cell ${!dia ? "empty" : ""} ${temMultiplos ? "multi-day" : ""}`}>
       {dia && <span className="day-number">{dia}</span>}
       <div className="day-events">
         {eventos.slice(0, 3).map((evento, index) => (
-          <MiniEvento key={`${evento.evento}-${index}`} evento={evento} compact />
+          <MiniEvento key={`${evento.evento}-${index}`} evento={evento} compact multi={temMultiplos} />
         ))}
         {eventos.length > 3 && <span className="more-events">+{eventos.length - 3}</span>}
       </div>
@@ -349,11 +351,11 @@ function DiaCelula({ dia, eventos }) {
   );
 }
 
-function MiniEvento({ evento, compact = false }) {
+function MiniEvento({ evento, compact = false, multi = false }) {
   const tipo = getTipo(evento.evento, evento.obs);
 
   return (
-    <div className={`mini-event ${tipo} ${compact ? "compact" : ""}`}>
+    <div className={`mini-event ${tipo} ${compact ? "compact" : ""} ${multi ? "multi" : ""}`}>
       <span className="event-date">{evento.data}</span>
       <span className="event-name">{getNomeEvento(evento, compact)}</span>
       {!compact && <span className="event-kind">{getTipoLabel(tipo)}</span>}
@@ -1328,6 +1330,57 @@ const css = `
     .agenda-events .event-name {
       font-size: 13px;
     }
+  }
+
+  .day-cell.multi-day {
+    background: #fffaf0;
+    box-shadow: inset 0 0 0 2px #fbbf24;
+  }
+
+  .day-cell.multi-day:hover {
+    background: #fff7e0;
+  }
+
+  .day-cell.multi-day .day-number {
+    background: #f59e0b;
+    color: #ffffff;
+  }
+
+  .mini-event.multi {
+    border-color: #fed7aa;
+    border-left-color: #f59e0b;
+    background: #fff7ed;
+  }
+
+  .mini-event.multi.simulado {
+    border-color: #bfdbfe;
+    border-left-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .mini-event.multi.avaliacao {
+    border-color: #ddd6fe;
+    border-left-color: #7c3aed;
+    background: #f5f3ff;
+  }
+
+  .mini-event.multi.conselho {
+    border-color: #99f6e4;
+    border-left-color: #0f766e;
+    background: #f0fdfa;
+  }
+
+  .mini-event.multi.prazo {
+    border-color: #fde68a;
+    border-left-color: #ca8a04;
+    background: #fffbeb;
+  }
+
+  .mini-event.multi.sem-aula,
+  .mini-event.sem-aula {
+    border-color: #fecaca;
+    border-left-color: #dc2626;
+    background: #fff1f2;
   }
 `;
 
