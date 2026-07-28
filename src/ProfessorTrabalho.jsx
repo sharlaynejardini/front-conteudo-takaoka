@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
-import { getBimestreAtual } from "./utils/bimestreAtual";
 import { supabase } from "./supabaseClient"; // 🔥 NOVO
 
 function ProfessorTrabalho() {
-  const bimestreAtual = getBimestreAtual();
+  const bimestreDisponivel = 3;
 
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
@@ -15,7 +14,7 @@ function ProfessorTrabalho() {
 
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
-  const [bimestre, setBimestre] = useState(bimestreAtual);
+  const [bimestre] = useState(bimestreDisponivel);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
   const [topicos, setTopicos] = useState([""]);
@@ -163,10 +162,7 @@ function ProfessorTrabalho() {
     const params = new URLSearchParams(window.location.search);
 
     const atribuicao = params.get("atribuicao");
-    const bimestreParam = params.get("bimestre");
-
     if (atribuicao) setAtribuicaoSelecionada(atribuicao);
-    if (bimestreParam) setBimestre(Number(bimestreParam));
 
   }, []);
 
@@ -397,12 +393,9 @@ function ProfessorTrabalho() {
       <select
         style={inputStyle}
         value={bimestre}
-        onChange={(e) => setBimestre(Number(e.target.value))}
+        disabled
       >
-        <option value={1}>1º Bimestre</option>
-        <option value={2}>2º Bimestre</option>
         <option value={3}>3º Bimestre</option>
-        <option value={4}>4º Bimestre</option>
       </select>
 
       <input

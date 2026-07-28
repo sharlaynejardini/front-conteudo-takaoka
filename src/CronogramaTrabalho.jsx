@@ -8,7 +8,7 @@ function CronogramaTrabalho() {
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
-  const [bimestre, setBimestre] = useState(1);
+  const [bimestre] = useState(3);
   const [cronograma, setCronograma] = useState([]);
   const [mensagemErro, setMensagemErro] = useState("");
   const [editandoId, setEditandoId] = useState(null);
@@ -357,12 +357,9 @@ function CronogramaTrabalho() {
           <select
             style={selectStyle}
             value={bimestre}
-            onChange={(e) => setBimestre(Number(e.target.value))}
+            disabled
           >
-            <option value={1}>1º Bimestre</option>
-            <option value={2}>2º Bimestre</option>
             <option value={3}>3º Bimestre</option>
-            <option value={4}>4º Bimestre</option>
           </select>
 
           <button style={buttonStyle} onClick={buscarCronograma}>
