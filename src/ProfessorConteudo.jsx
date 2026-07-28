@@ -52,7 +52,7 @@ function ProfessorConteudo() {
 
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // ðŸ”¥ NOVO
+  // Copiar conteúdo
   const [atribuicaoCopiar, setAtribuicaoCopiar] = useState("");
 
   const inputStyle = {
@@ -98,7 +98,7 @@ function ProfessorConteudo() {
   };
 
   const normalizarTurma = (nome = "") =>
-    nome.toUpperCase().replace(/\s/g, "").replace(/[Ã‚ÂºÃ‚Â°ÂºÂ°]/g, "").replace("ANO", "");
+    nome.toUpperCase().replace(/\s/g, "").replace(/[º°Â]/g, "").replace("ANO", "");
   const turmaTemObmep2026 = (nome = "") => turmasObmep2026.has(normalizarTurma(nome));
   const turmaPodeSimuladoFund2 = (nome = "") => turmasSimuladoFund2.has(normalizarTurma(nome));
 
@@ -169,7 +169,7 @@ function ProfessorConteudo() {
         setProfessorSelecionado(professor.id);
         carregarAtribuicoes(professor.id);
       } else {
-        console.warn("âŒ Nenhum professor com esse email");
+        console.warn("Nenhum professor com esse email");
       }
 
     }
@@ -257,7 +257,7 @@ function ProfessorConteudo() {
         setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
 
-        setMensagem("VocÃª estÃ¡ editando uma avaliaÃ§Ã£o existente.");
+        setMensagem("Você está editando uma avaliação existente.");
         setTipoMensagem("warning");
 
       } catch {
@@ -320,7 +320,7 @@ function ProfessorConteudo() {
 
   };
 
-  // ðŸ”¥ NOVO - copiar conteÃºdo
+  // Copiar conteúdo
   const copiarConteudo = async () => {
     if (!atribuicaoCopiar) return;
 
@@ -343,12 +343,12 @@ function ProfessorConteudo() {
 
       setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
 
-      setMensagem("ConteÃºdo copiado com sucesso!");
+      setMensagem("Conteúdo copiado com sucesso!");
       setTipoMensagem("success");
 
     } catch (err) {
       console.error(err);
-      setMensagem("Erro ao copiar conteÃºdo.");
+      setMensagem("Erro ao copiar conteúdo.");
       setTipoMensagem("error");
     }
   };
@@ -384,7 +384,7 @@ function ProfessorConteudo() {
       .filter(Boolean);
 
     if (topicosPreenchidos.length === 0) {
-      setMensagem("Preencha ao menos um conteÃƒÂºdo.");
+      setMensagem("Preencha ao menos um conteúdo.");
       setTipoMensagem("error");
       return;
     }
@@ -418,17 +418,17 @@ function ProfessorConteudo() {
       try {
         await logAction({
           action: modoEdicao ? "UPDATE" : "CREATE",
-          entidade: "AvaliaÃ§Ã£o",
+          entidade: "Avaliação",
           turma: atribuicaoAtual?.turma?.nome,
           disciplina: atribuicaoAtual?.disciplina?.nome,
           bimestre,
-          detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova bimestral"} | ConteÃºdo: ${topicosPreenchidos.join(", ")} | Data: ${dataAvaliacao}`
+          detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova bimestral"} | Conteúdo: ${topicosPreenchidos.join(", ")} | Data: ${dataAvaliacao}`
         });
       } catch (logError) {
         console.warn("Conteudo salvo, mas nao foi possivel registrar o log.", logError);
       }
 
-      setMensagem("ConteÃºdo salvo com sucesso!");
+      setMensagem("Conteúdo salvo com sucesso!");
       setTipoMensagem("success");
 
       limparFormulario();
@@ -455,14 +455,14 @@ function ProfessorConteudo() {
     <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
       <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "20px" }}>
-        LanÃ§amento de AvaliaÃ§Ã£o
+        Lançamento de Avaliação
       </h2>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
       {isAdmin && (
         <p style={{ color: "green", fontWeight: "bold" }}>
-          ðŸ”¥ Modo Administrador
+          Modo Administrador
         </p>
       )}
 
@@ -518,10 +518,10 @@ function ProfessorConteudo() {
         value={bimestre}
         onChange={(e) => alterarBimestre(Number(e.target.value))}
       >
-        <option value={1}>1Âº Bimestre</option>
-        <option value={2}>2Âº Bimestre</option>
-        <option value={3}>3Âº Bimestre</option>
-        <option value={4}>4Âº Bimestre</option>
+        <option value={1}>1º Bimestre</option>
+        <option value={2}>2º Bimestre</option>
+        <option value={3}>3º Bimestre</option>
+        <option value={4}>4º Bimestre</option>
       </select>
 
       {bimestreTemSimuladoFund2 && (
@@ -561,7 +561,7 @@ function ProfessorConteudo() {
         }}
       />
 
-      <h4>ConteÃºdos:</h4>
+      <h4>Conteúdos:</h4>
 
       {topicos.map((topico, index) => (
         <div key={index} style={{ display: "flex", gap: "10px" }}>
@@ -571,21 +571,21 @@ function ProfessorConteudo() {
             onChange={(e) => atualizarTopico(index, e.target.value)}
             style={{ ...inputStyle, marginBottom: "0" }}
           />
-          <button onClick={() => removerTopico(index)}>âŒ</button>
+          <button onClick={() => removerTopico(index)}>Remover</button>
         </div>
       ))}
 
       <button onClick={adicionarTopico} style={buttonStyle}>
-        + Adicionar TÃ³pico
+        + Adicionar Tópico
       </button>
 
       <button onClick={salvarConteudo} style={buttonStyle}>
-        {modoEdicao ? "Atualizar ConteÃºdo" : "Salvar ConteÃºdo"}
+        {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
       </button>
 
-      {/* ðŸ”¥ NOVO - UI copiar */}
+      {/* Copiar conteúdo */}
       <button onClick={() => setMostrarCopiar(!mostrarCopiar)} style={buttonStyle}>
-        ðŸ“‹ Copiar conteÃºdo de outra turma
+        Copiar conteúdo de outra turma
       </button>
 
       {mostrarCopiar && (
@@ -605,7 +605,7 @@ function ProfessorConteudo() {
           </select>
 
           <button onClick={copiarConteudo} style={buttonStyle}>
-            Confirmar cÃ³pia
+            Confirmar cópia
           </button>
         </div>
       )}
