@@ -75,7 +75,7 @@ function CronogramaTurma() {
     item?.tipo_avaliacao === "simulado" ? semanasSimuladoFund2[item.bimestre] : semanasProva[item.bimestre];
 
   const getNomeAvaliacao = (tipo = tipoAvaliacao) =>
-    tipo === "simulado" ? "Simulado" : "Prova bimestral";
+    tipo === "simulado" ? "Simulado Mensal" : "Prova bimestral";
 
   const getDescricaoProvaRegular = () =>
     bimestre === 2

@@ -90,6 +90,19 @@ function ProfessorConteudo() {
     boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
   };
 
+  const removeButtonStyle = {
+    padding: "0 12px",
+    backgroundColor: "#fee2e2",
+    color: "#991b1b",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: "600",
+    minHeight: "46px",
+    alignSelf: "stretch"
+  };
+
   const limparFormulario = () => {
     setTopicos([""]);
     setConteudoId(null);
@@ -556,7 +569,13 @@ function ProfessorConteudo() {
             onChange={(e) => atualizarTopico(index, e.target.value)}
             style={{ ...inputStyle, marginBottom: "0" }}
           />
-          <button onClick={() => removerTopico(index)}>Remover</button>
+          <button
+            type="button"
+            onClick={() => removerTopico(index)}
+            style={removeButtonStyle}
+          >
+            Remover
+          </button>
         </div>
       ))}
 
