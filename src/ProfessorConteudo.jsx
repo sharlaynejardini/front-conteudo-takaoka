@@ -21,6 +21,7 @@ function ProfessorConteudo() {
     3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
   };
 
+  const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const dataObmep2026 = `${anoAtual}-06-09`;
   const dataRemanejadaObmep2026 = `${anoAtual}-06-16`;
@@ -33,12 +34,16 @@ function ProfessorConteudo() {
 
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
+  const tipoAvaliacaoInicial = bimestreAtual === 3 ? "simulado" : "regular";
+  const periodoAvaliacaoInicial =
+    tipoAvaliacaoInicial === "simulado" ? semanasSimuladoFund2[bimestreAtual] : semanasProva[bimestreAtual];
+
   const [bimestre, setBimestre] = useState(bimestreAtual);
-  const [tipoAvaliacao, setTipoAvaliacao] = useState("regular");
+  const [tipoAvaliacao, setTipoAvaliacao] = useState(tipoAvaliacaoInicial);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
   const [topicos, setTopicos] = useState([""]);
-  const [dataAvaliacao, setDataAvaliacao] = useState(semanasProva[bimestreAtual].inicio);
+  const [dataAvaliacao, setDataAvaliacao] = useState(periodoAvaliacaoInicial.inicio);
 
   const [conteudoId, setConteudoId] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
@@ -47,7 +52,7 @@ function ProfessorConteudo() {
 
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // 🔥 NOVO
+  // ðŸ”¥ NOVO
   const [atribuicaoCopiar, setAtribuicaoCopiar] = useState("");
 
   const inputStyle = {
@@ -92,11 +97,10 @@ function ProfessorConteudo() {
     setModoEdicao(false);
   };
 
-  const turmaEhFundamental2 = (nome = "") => /^[6-9]\s*[º°o]?/.test(nome.trim());
-
   const normalizarTurma = (nome = "") =>
-    nome.toUpperCase().replace(/\s/g, "").replace(/[ÂºÂ°º°]/g, "").replace("ANO", "");
+    nome.toUpperCase().replace(/\s/g, "").replace(/[Ã‚ÂºÃ‚Â°ÂºÂ°]/g, "").replace("ANO", "");
   const turmaTemObmep2026 = (nome = "") => turmasObmep2026.has(normalizarTurma(nome));
+  const turmaPodeSimuladoFund2 = (nome = "") => turmasSimuladoFund2.has(normalizarTurma(nome));
 
   const atribuicoesAtivas =
     atribuicoesSelecionadas.length > 0
@@ -107,7 +111,7 @@ function ProfessorConteudo() {
   const podeCadastrarSimuladoFund2 =
     bimestreTemSimuladoFund2 &&
     atribuicoesAtivas.length > 0 &&
-    atribuicoesAtivas.every(a => turmaEhFundamental2(a.turma?.nome));
+    atribuicoesAtivas.every(a => turmaPodeSimuladoFund2(a.turma?.nome));
 
   const dataBloqueadaPorObmep =
     tipoAvaliacao === "regular" &&
@@ -126,7 +130,12 @@ function ProfessorConteudo() {
       : "Prova bimestral";
 
   const getDescricaoSimulado = () =>
-    bimestre === 3 ? "Simulado - 19 a 21/08" : "Simulado - 20 a 22/05";
+    bimestre === 3 ? "Avaliação - Simulado - 19, 20 e 21/08" : "Simulado - 20 a 22/05";
+
+  const alterarBimestre = (valor) => {
+    setBimestre(valor);
+    setTipoAvaliacao(valor === 3 ? "simulado" : "regular");
+  };
 
   useEffect(() => {
     async function carregar() {
@@ -160,7 +169,7 @@ function ProfessorConteudo() {
         setProfessorSelecionado(professor.id);
         carregarAtribuicoes(professor.id);
       } else {
-        console.warn("❌ Nenhum professor com esse email");
+        console.warn("âŒ Nenhum professor com esse email");
       }
 
     }
@@ -220,10 +229,10 @@ function ProfessorConteudo() {
   }, [bimestre, tipoAvaliacao]);
 
   useEffect(() => {
-    if (!podeCadastrarSimuladoFund2 && tipoAvaliacao === "simulado") {
+    if (atribuicoesAtivas.length > 0 && !podeCadastrarSimuladoFund2 && tipoAvaliacao === "simulado") {
       setTipoAvaliacao("regular");
     }
-  }, [podeCadastrarSimuladoFund2, tipoAvaliacao]);
+  }, [atribuicoesAtivas.length, podeCadastrarSimuladoFund2, tipoAvaliacao]);
 
   useEffect(() => {
 
@@ -248,7 +257,7 @@ function ProfessorConteudo() {
         setTopicos(Array.isArray(salvo.conteudo) ? salvo.conteudo : [salvo.conteudo]);
         setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
 
-        setMensagem("Você está editando uma avaliação existente.");
+        setMensagem("VocÃª estÃ¡ editando uma avaliaÃ§Ã£o existente.");
         setTipoMensagem("warning");
 
       } catch {
@@ -311,7 +320,7 @@ function ProfessorConteudo() {
 
   };
 
-  // 🔥 NOVO - copiar conteúdo
+  // ðŸ”¥ NOVO - copiar conteÃºdo
   const copiarConteudo = async () => {
     if (!atribuicaoCopiar) return;
 
@@ -334,12 +343,12 @@ function ProfessorConteudo() {
 
       setDataAvaliacao(salvo.data_avaliacao?.split("T")[0]);
 
-      setMensagem("Conteúdo copiado com sucesso!");
+      setMensagem("ConteÃºdo copiado com sucesso!");
       setTipoMensagem("success");
 
     } catch (err) {
       console.error(err);
-      setMensagem("Erro ao copiar conteúdo.");
+      setMensagem("Erro ao copiar conteÃºdo.");
       setTipoMensagem("error");
     }
   };
@@ -358,7 +367,7 @@ function ProfessorConteudo() {
         : [atribuicaoSelecionada];
 
     if (tipoAvaliacao === "simulado" && !podeCadastrarSimuladoFund2) {
-      setMensagem("O simulado esta liberado apenas para turmas do 6o ao 9o ano no 2o e 3o bimestres.");
+      setMensagem("O simulado esta liberado apenas para as turmas 6A, 6B, 7A, 7B, 8A, 8B, 8C, 9A, 9B e 9C no 2o e 3o bimestres.");
       setTipoMensagem("error");
       return;
     }
@@ -375,7 +384,7 @@ function ProfessorConteudo() {
       .filter(Boolean);
 
     if (topicosPreenchidos.length === 0) {
-      setMensagem("Preencha ao menos um conteÃºdo.");
+      setMensagem("Preencha ao menos um conteÃƒÂºdo.");
       setTipoMensagem("error");
       return;
     }
@@ -409,17 +418,17 @@ function ProfessorConteudo() {
       try {
         await logAction({
           action: modoEdicao ? "UPDATE" : "CREATE",
-          entidade: "Avaliação",
+          entidade: "AvaliaÃ§Ã£o",
           turma: atribuicaoAtual?.turma?.nome,
           disciplina: atribuicaoAtual?.disciplina?.nome,
           bimestre,
-          detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova bimestral"} | Conteúdo: ${topicosPreenchidos.join(", ")} | Data: ${dataAvaliacao}`
+          detalhes: `${tipoAvaliacao === "simulado" ? "Simulado" : "Prova bimestral"} | ConteÃºdo: ${topicosPreenchidos.join(", ")} | Data: ${dataAvaliacao}`
         });
       } catch (logError) {
         console.warn("Conteudo salvo, mas nao foi possivel registrar o log.", logError);
       }
 
-      setMensagem("Conteúdo salvo com sucesso!");
+      setMensagem("ConteÃºdo salvo com sucesso!");
       setTipoMensagem("success");
 
       limparFormulario();
@@ -446,14 +455,14 @@ function ProfessorConteudo() {
     <div style={{ maxWidth: "700px", margin: "0 auto", padding: "0" }}>
 
       <h2 style={{ textAlign: "center", color: "#1e3a8a", marginBottom: "20px" }}>
-        Lançamento de Avaliação
+        LanÃ§amento de AvaliaÃ§Ã£o
       </h2>
 
       {mensagem && <div style={mensagemStyle}>{mensagem}</div>}
 
       {isAdmin && (
         <p style={{ color: "green", fontWeight: "bold" }}>
-          🔥 Modo Administrador
+          ðŸ”¥ Modo Administrador
         </p>
       )}
 
@@ -507,12 +516,12 @@ function ProfessorConteudo() {
       <select
         style={inputStyle}
         value={bimestre}
-        onChange={(e) => setBimestre(Number(e.target.value))}
+        onChange={(e) => alterarBimestre(Number(e.target.value))}
       >
-        <option value={1}>1º Bimestre</option>
-        <option value={2}>2º Bimestre</option>
-        <option value={3}>3º Bimestre</option>
-        <option value={4}>4º Bimestre</option>
+        <option value={1}>1Âº Bimestre</option>
+        <option value={2}>2Âº Bimestre</option>
+        <option value={3}>3Âº Bimestre</option>
+        <option value={4}>4Âº Bimestre</option>
       </select>
 
       {bimestreTemSimuladoFund2 && (
@@ -520,7 +529,7 @@ function ProfessorConteudo() {
           style={inputStyle}
           value={tipoAvaliacao}
           onChange={(e) => setTipoAvaliacao(e.target.value)}
-          disabled={!podeCadastrarSimuladoFund2}
+          disabled={atribuicoesAtivas.length > 0 && !podeCadastrarSimuladoFund2}
         >
           <option value="regular">{getDescricaoProvaRegular()}</option>
           <option value="simulado">{getDescricaoSimulado()}</option>
@@ -552,7 +561,7 @@ function ProfessorConteudo() {
         }}
       />
 
-      <h4>Conteúdos:</h4>
+      <h4>ConteÃºdos:</h4>
 
       {topicos.map((topico, index) => (
         <div key={index} style={{ display: "flex", gap: "10px" }}>
@@ -562,21 +571,21 @@ function ProfessorConteudo() {
             onChange={(e) => atualizarTopico(index, e.target.value)}
             style={{ ...inputStyle, marginBottom: "0" }}
           />
-          <button onClick={() => removerTopico(index)}>❌</button>
+          <button onClick={() => removerTopico(index)}>âŒ</button>
         </div>
       ))}
 
       <button onClick={adicionarTopico} style={buttonStyle}>
-        + Adicionar Tópico
+        + Adicionar TÃ³pico
       </button>
 
       <button onClick={salvarConteudo} style={buttonStyle}>
-        {modoEdicao ? "Atualizar Conteúdo" : "Salvar Conteúdo"}
+        {modoEdicao ? "Atualizar ConteÃºdo" : "Salvar ConteÃºdo"}
       </button>
 
-      {/* 🔥 NOVO - UI copiar */}
+      {/* ðŸ”¥ NOVO - UI copiar */}
       <button onClick={() => setMostrarCopiar(!mostrarCopiar)} style={buttonStyle}>
-        📋 Copiar conteúdo de outra turma
+        ðŸ“‹ Copiar conteÃºdo de outra turma
       </button>
 
       {mostrarCopiar && (
@@ -596,7 +605,7 @@ function ProfessorConteudo() {
           </select>
 
           <button onClick={copiarConteudo} style={buttonStyle}>
-            Confirmar cópia
+            Confirmar cÃ³pia
           </button>
         </div>
       )}
@@ -606,3 +615,4 @@ function ProfessorConteudo() {
 }
 
 export default ProfessorConteudo;
+

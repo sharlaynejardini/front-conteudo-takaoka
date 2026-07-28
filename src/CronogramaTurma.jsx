@@ -20,6 +20,7 @@ function CronogramaTurma() {
     3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
   };
 
+  const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const dataObmep2026 = `${anoAtual}-06-09`;
   const dataRemanejadaObmep2026 = `${anoAtual}-06-16`;
@@ -59,12 +60,12 @@ function CronogramaTurma() {
   const turmaNome =
     turmas.find(t => t.id === turmaSelecionada)?.nome || "Turma";
 
-  const turmaEhFundamental2 = (nome = "") => /^[6-9]\s*[º°o]?/.test(nome.trim());
   const normalizarTurma = (nome = "") =>
     nome.toUpperCase().replace(/\s/g, "").replace(/[ÂºÂ°º°]/g, "").replace("ANO", "");
   const turmaTemObmep2026 = (nome = "") => turmasObmep2026.has(normalizarTurma(nome));
+  const turmaPodeSimuladoFund2 = (nome = "") => turmasSimuladoFund2.has(normalizarTurma(nome));
   const bimestreTemSimuladoFund2 = [2, 3].includes(bimestre);
-  const podeEscolherProvaFund2 = bimestreTemSimuladoFund2 && turmaEhFundamental2(turmaNome);
+  const podeEscolherProvaFund2 = bimestreTemSimuladoFund2 && turmaPodeSimuladoFund2(turmaNome);
   const mostrarObmepNoCronograma =
     bimestre === 2 &&
     tipoAvaliacao === "regular" &&
@@ -82,7 +83,12 @@ function CronogramaTurma() {
       : "Prova bimestral";
 
   const getDescricaoSimulado = () =>
-    bimestre === 3 ? "Simulado - 19 a 21/08" : "Simulado - 20 a 22/05";
+    bimestre === 3 ? "Avaliação - Simulado - 19, 20 e 21/08" : "Simulado - 20 a 22/05";
+
+  const alterarBimestre = (valor) => {
+    setBimestre(valor);
+    setTipoAvaliacao(valor === 3 ? "simulado" : "regular");
+  };
 
   useEffect(() => {
     if (!podeEscolherProvaFund2 && tipoAvaliacao === "simulado") {
@@ -499,7 +505,7 @@ function CronogramaTurma() {
           </select>
 
           <select style={selectStyle} value={bimestre}
-            onChange={(e) => setBimestre(Number(e.target.value))}>
+            onChange={(e) => alterarBimestre(Number(e.target.value))}>
 
             <option value={1}>1º Bimestre</option>
             <option value={2}>2º Bimestre</option>
