@@ -187,11 +187,18 @@ function CalendarioEscolar() {
   useEffect(() => {
     let ativo = true;
 
-    api.get("/calendario-escolar")
+    api.get(`/calendario-escolar?ts=${Date.now()}`, {
+      headers: {
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+      }
+    })
       .then(response => {
         if (!ativo) return;
 
-        const dados = Array.isArray(response.data) ? response.data : [];
+        const dados = Array.isArray(response.data)
+          ? response.data
+          : response.data?.eventos || [];
         setEventos(dados.length ? dados : eventosPadrao);
         setErro("");
       })
