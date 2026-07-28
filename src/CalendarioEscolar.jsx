@@ -163,6 +163,18 @@ function getTipoLabel(tipo) {
   return labels[tipo] || "Evento";
 }
 
+function getNomeEvento(evento, compact = false) {
+  if (!compact) return evento.evento;
+
+  return evento.evento
+    .replace(" - 6º ao 9º ano", "")
+    .replace("Simulado mensal - ", "")
+    .replace("Simulado substitutiva - 6º ao 9º ano.", "Simulado substitutiva")
+    .replace("Entrega MÁXIMA de conteúdo do Simulado mensal e conteúdos essenciais.", "Entrega de conteúdos do simulado")
+    .replace("Simulados SAEB (5º e 9º anos - Mat/LP e CN/CH)", "SAEB - 5º e 9º anos")
+    .replace("5º OBMEP Mirim - 1º Fase", "OBMEP Mirim - 1ª fase");
+}
+
 function getCalendarioMes(mes) {
   const primeiroDia = new Date(2026, Number(mes.id) - 1, 1).getDay();
   const deslocamento = primeiroDia === 0 ? 6 : primeiroDia - 1;
@@ -343,7 +355,7 @@ function MiniEvento({ evento, compact = false }) {
   return (
     <div className={`mini-event ${tipo} ${compact ? "compact" : ""}`}>
       <span className="event-date">{evento.data}</span>
-      <span className="event-name">{compact ? evento.evento.replace(" - 6º ao 9º ano", "") : evento.evento}</span>
+      <span className="event-name">{getNomeEvento(evento, compact)}</span>
       {!compact && <span className="event-kind">{getTipoLabel(tipo)}</span>}
       {evento.obs && (
         <span className="obs-tip" data-tooltip={evento.obs} tabIndex={0}>
@@ -1177,6 +1189,145 @@ const css = `
 
   .event-name {
     line-height: 1.25;
+  }
+
+  .planner-page {
+    font-family: Arial, "Segoe UI", sans-serif;
+  }
+
+  .calendar-board {
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  .weekday-row span {
+    min-height: 34px;
+    font-size: 12px;
+    color: #334155;
+    background: #f1f5f9 !important;
+    border-right: 1px solid #dbe3ee;
+  }
+
+  .weekday-row span:nth-child(6),
+  .weekday-row span:nth-child(7) {
+    background: #f8fafc !important;
+    color: #64748b;
+  }
+
+  .day-cell {
+    min-height: 128px;
+    padding: 34px 8px 8px;
+    background: #ffffff;
+  }
+
+  .day-cell:nth-child(7n),
+  .day-cell:nth-child(7n - 1) {
+    background: #fafcff;
+  }
+
+  .day-number {
+    top: 8px;
+    left: 8px;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    color: #475569;
+    font-size: 13px;
+  }
+
+  .day-events {
+    gap: 5px;
+  }
+
+  .mini-event {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 6px 8px;
+    border: 1px solid #dbe3ee;
+    border-left: 4px solid #64748b;
+    border-radius: 6px;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .mini-event.compact {
+    padding: 6px 8px;
+  }
+
+  .mini-event.compact .event-date {
+    display: none;
+  }
+
+  .mini-event.simulado {
+    border-color: #bfdbfe;
+    border-left-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .mini-event.avaliacao {
+    border-color: #ddd6fe;
+    border-left-color: #7c3aed;
+    background: #f5f3ff;
+  }
+
+  .mini-event.sem-aula {
+    border-color: #fecaca;
+    border-left-color: #dc2626;
+    background: #fff1f2;
+  }
+
+  .mini-event.conselho {
+    border-color: #99f6e4;
+    border-left-color: #0f766e;
+    background: #f0fdfa;
+  }
+
+  .mini-event.prazo {
+    border-color: #fde68a;
+    border-left-color: #ca8a04;
+    background: #fffbeb;
+  }
+
+  .event-name {
+    color: #1f2937;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .event-date {
+    color: #64748b;
+    font-size: 11px;
+  }
+
+  .obs-tip {
+    align-self: center;
+    padding: 2px 7px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    font-size: 10px;
+    box-shadow: none;
+  }
+
+  .more-events {
+    padding: 3px 7px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 10px;
+  }
+
+  @media (max-width: 760px) {
+    .mobile-agenda .mini-event .event-date {
+      display: block;
+    }
+
+    .agenda-events .event-name {
+      font-size: 13px;
+    }
   }
 `;
 
