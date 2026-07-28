@@ -1,4 +1,7 @@
-const eventos = [
+import { useEffect, useState } from "react";
+import api from "./api";
+
+const eventosPadrao = [
   { data: "27/07/2026", dia: "2ª Feira", evento: "Início do 3º Bimestre" },
   { data: "03/08/2026", dia: "2ª Feira", evento: "Simulado Saresp 2º anos" },
   { data: "04/08/2026", dia: "3ª Feira", evento: "Simulado Saresp 2º anos" },
@@ -79,32 +82,63 @@ function getMes(data) {
   return match?.[1] || "08";
 }
 
-function getDia(data) {
-  const match = data.match(/^(\d{2})\/\d{2}\/2026$/);
-  return match ? Number(match[1]) : null;
+function criarData(dia, mes, ano = 2026) {
+  return new Date(Number(ano), Number(mes) - 1, Number(dia));
 }
 
-function getDiasEvento(evento) {
-  const data = evento.data;
-  const diaUnico = getDia(data);
+function listarPeriodo(inicio, fim) {
+  const datas = [];
+  const atual = new Date(inicio);
 
-  if (diaUnico) return [diaUnico];
-
-  const periodoMesmoMes = data.match(/^(\d{1,2})\s*a\s*(\d{1,2})\/\d{2}(?:\/2026)?$/i);
-
-  if (periodoMesmoMes) {
-    const inicio = Number(periodoMesmoMes[1]);
-    const fim = Number(periodoMesmoMes[2]);
-    return Array.from({ length: fim - inicio + 1 }, (_, index) => inicio + index);
+  while (atual <= fim) {
+    datas.push(new Date(atual));
+    atual.setDate(atual.getDate() + 1);
   }
 
-  const doisDias = data.match(/^(\d{1,2})\s*e\s*(\d{1,2})\/\d{2}(?:\/2026)?$/i);
+  return datas;
+}
+
+function getDatasEvento(evento) {
+  const data = evento.data;
+  const dataUnica = data.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  if (dataUnica) {
+    return [criarData(dataUnica[1], dataUnica[2], dataUnica[3])];
+  }
+
+  const periodoEntreMeses = data.match(/^(\d{1,2})\/(\d{1,2})\s*a\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/i);
+
+  if (periodoEntreMeses) {
+    const [, diaInicio, mesInicio, diaFim, mesFim, ano = 2026] = periodoEntreMeses;
+    return listarPeriodo(criarData(diaInicio, mesInicio, ano), criarData(diaFim, mesFim, ano));
+  }
+
+  const periodoMesmoMes = data.match(/^(\d{1,2})\s*a\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/i);
+
+  if (periodoMesmoMes) {
+    const [, diaInicio, diaFim, mes, ano = 2026] = periodoMesmoMes;
+    return listarPeriodo(criarData(diaInicio, mes, ano), criarData(diaFim, mes, ano));
+  }
+
+  const doisDias = data.match(/^(\d{1,2})\s*e\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/i);
 
   if (doisDias) {
-    return [Number(doisDias[1]), Number(doisDias[2])];
+    const [, diaUm, diaDois, mes, ano = 2026] = doisDias;
+    return [criarData(diaUm, mes, ano), criarData(diaDois, mes, ano)];
   }
 
   return [];
+}
+
+function getMesesEvento(evento) {
+  const mesesEvento = getDatasEvento(evento).map(data => String(data.getMonth() + 1).padStart(2, "0"));
+  return [...new Set(mesesEvento.length ? mesesEvento : [getMes(evento.data)])];
+}
+
+function getDiasEvento(evento, mesId) {
+  return getDatasEvento(evento)
+    .filter(data => String(data.getMonth() + 1).padStart(2, "0") === mesId)
+    .map(data => data.getDate());
 }
 
 function getTipo(evento, obs = "") {
@@ -146,14 +180,43 @@ function getCalendarioMes(mes) {
 }
 
 function CalendarioEscolar() {
+  const [eventos, setEventos] = useState(eventosPadrao);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    let ativo = true;
+
+    api.get("/calendario-escolar")
+      .then(response => {
+        if (!ativo) return;
+
+        const dados = Array.isArray(response.data) ? response.data : [];
+        setEventos(dados.length ? dados : eventosPadrao);
+        setErro("");
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setEventos(eventosPadrao);
+        setErro("Não foi possível atualizar pela planilha agora. Mostrando a última versão salva.");
+      })
+      .finally(() => {
+        if (ativo) setCarregando(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
   const eventosPorMes = meses.map(mes => {
-    const lista = eventos.filter(evento => getMes(evento.data) === mes.id);
+    const lista = eventos.filter(evento => getMesesEvento(evento).includes(mes.id));
 
     return {
       ...mes,
       eventos: lista,
       eventosPorDia: lista.reduce((acc, evento) => {
-        const dias = getDiasEvento(evento);
+        const dias = getDiasEvento(evento, mes.id);
 
         dias.forEach(dia => {
           acc[dia] = [...(acc[dia] || []), evento];
@@ -171,8 +234,10 @@ function CalendarioEscolar() {
       <header className="planner-title">
         <span>Calendário Escolar</span>
         <h1>Planner 2º Semestre 2026</h1>
-        <p>Takaoka</p>
+        <p>{carregando ? "Atualizando pela planilha..." : "Takaoka"}</p>
       </header>
+
+      {erro && <div className="planner-alert">{erro}</div>}
 
       <div className="semester-strip">
         {meses.map(mes => (
@@ -682,6 +747,17 @@ const css = `
   .semester-strip {
     max-width: 1180px;
     justify-content: flex-start;
+  }
+
+  .planner-alert {
+    max-width: 1180px;
+    margin: 0 auto 12px;
+    padding: 10px 12px;
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 13px;
   }
 
   .semester-strip a {
