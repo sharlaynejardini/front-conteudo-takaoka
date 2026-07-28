@@ -64,17 +64,28 @@ const eventos = [
 ];
 
 const meses = [
-  { id: "07", nome: "Julho" },
-  { id: "08", nome: "Agosto" },
-  { id: "09", nome: "Setembro" },
-  { id: "10", nome: "Outubro" },
-  { id: "11", nome: "Novembro" },
-  { id: "12", nome: "Dezembro" }
+  { id: "07", nome: "Julho", totalDias: 31 },
+  { id: "08", nome: "Agosto", totalDias: 31 },
+  { id: "09", nome: "Setembro", totalDias: 30 },
+  { id: "10", nome: "Outubro", totalDias: 31 },
+  { id: "11", nome: "Novembro", totalDias: 30 },
+  { id: "12", nome: "Dezembro", totalDias: 31 }
 ];
+
+const diasSemana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
 
 function getMes(data) {
   const match = data.match(/(?:\d{2}\/)?(\d{2})(?:\/\d{4})?$/);
   return match?.[1] || "08";
+}
+
+function getDia(data) {
+  const match = data.match(/^(\d{2})\/\d{2}\/2026$/);
+  return match ? Number(match[1]) : null;
+}
+
+function isPeriodo(data) {
+  return data.includes(" a ") || data.includes(" e ") || data.includes(" a ");
 }
 
 function getTipo(evento, obs = "") {
@@ -85,105 +96,6 @@ function getTipo(evento, obs = "") {
   if (texto.includes("conselho")) return "conselho";
   if (texto.includes("prazo") || texto.includes("entrega")) return "prazo";
   return "evento";
-}
-
-function CalendarioEscolar() {
-  const eventosPorMes = meses.map(mes => ({
-    ...mes,
-    eventos: eventos.filter(evento => getMes(evento.data) === mes.id)
-  }));
-
-  const resumo = [
-    { label: "Eventos", value: eventos.length },
-    { label: "Sem aula", value: eventos.filter(e => getTipo(e.evento, e.obs) === "sem-aula").length },
-    { label: "Avaliações", value: eventos.filter(e => ["simulado", "avaliacao"].includes(getTipo(e.evento, e.obs))).length },
-    { label: "Com observação", value: eventos.filter(e => e.obs).length }
-  ];
-
-  return (
-    <div style={styles.page}>
-      <style>{css}</style>
-
-      <section style={styles.hero}>
-        <div>
-          <span style={styles.kicker}>Calendário Escolar</span>
-          <h1 style={styles.title}>2º Semestre de 2026</h1>
-          <p style={styles.subtitle}>
-            Cronograma oficial organizado por mês, com observações disponíveis ao passar o mouse.
-          </p>
-        </div>
-
-        <div style={styles.summaryGrid}>
-          {resumo.map(item => (
-            <div key={item.label} style={styles.summaryItem}>
-              <strong>{item.value}</strong>
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <div style={styles.legend}>
-        <Legenda tipo="simulado" label="Simulados" />
-        <Legenda tipo="avaliacao" label="Avaliações" />
-        <Legenda tipo="sem-aula" label="Sem aula" />
-        <Legenda tipo="conselho" label="Conselhos" />
-        <Legenda tipo="prazo" label="Prazos" />
-        <Legenda tipo="evento" label="Eventos" />
-      </div>
-
-      <main style={styles.monthGrid}>
-        {eventosPorMes.map(mes => (
-          <section key={mes.id} style={styles.monthSection}>
-            <div style={styles.monthHeader}>
-              <h2>{mes.nome}</h2>
-              <span>{mes.eventos.length} item(ns)</span>
-            </div>
-
-            <div style={styles.timeline}>
-              {mes.eventos.map((evento, index) => (
-                <EventoCard key={`${evento.data}-${evento.evento}-${index}`} evento={evento} />
-              ))}
-            </div>
-          </section>
-        ))}
-      </main>
-    </div>
-  );
-}
-
-function Legenda({ tipo, label }) {
-  return (
-    <span style={styles.legendItem}>
-      <i className={`dot ${tipo}`} />
-      {label}
-    </span>
-  );
-}
-
-function EventoCard({ evento }) {
-  const tipo = getTipo(evento.evento, evento.obs);
-
-  return (
-    <article className={`event-card ${tipo}`}>
-      <div style={styles.dateBlock}>
-        <strong>{evento.data}</strong>
-        <span>{evento.dia || "Período"}</span>
-      </div>
-
-      <div style={styles.eventBody}>
-        <div style={styles.eventTop}>
-          <span className={`pill ${tipo}`}>{getTipoLabel(tipo)}</span>
-          {evento.obs && (
-            <span className="obs-tip" data-tooltip={evento.obs} tabIndex={0}>
-              Obs
-            </span>
-          )}
-        </div>
-        <h3>{evento.evento}</h3>
-      </div>
-    </article>
-  );
 }
 
 function getTipoLabel(tipo) {
@@ -198,141 +110,477 @@ function getTipoLabel(tipo) {
   return labels[tipo] || "Evento";
 }
 
-const styles = {
-  page: { minHeight: "100%", color: "#0f172a" },
-  hero: {
-    display: "grid",
-    gridTemplateColumns: "minmax(0, 1.4fr) minmax(280px, 0.8fr)",
-    gap: "24px",
-    alignItems: "end",
-    padding: "28px",
-    borderRadius: "8px",
-    background: "linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #155e75 100%)",
-    color: "white",
-    boxShadow: "0 18px 40px rgba(15, 23, 42, 0.18)"
-  },
-  kicker: {
-    display: "inline-block",
-    marginBottom: "10px",
-    fontSize: "13px",
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "#bae6fd"
-  },
-  title: { margin: 0, fontSize: "34px", lineHeight: 1.1 },
-  subtitle: { margin: "12px 0 0", maxWidth: "720px", color: "#dbeafe", fontSize: "15px" },
-  summaryGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "10px" },
-  summaryItem: {
-    padding: "14px",
-    borderRadius: "8px",
-    background: "rgba(255,255,255,0.12)",
-    border: "1px solid rgba(255,255,255,0.16)"
-  },
-  legend: { display: "flex", flexWrap: "wrap", gap: "10px", margin: "22px 0" },
-  legendItem: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "8px 11px",
-    borderRadius: "8px",
-    background: "white",
-    border: "1px solid #e2e8f0",
-    fontSize: "13px",
-    fontWeight: 700
-  },
-  monthGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "18px" },
-  monthSection: {
-    background: "white",
-    border: "1px solid #e2e8f0",
-    borderRadius: "8px",
-    overflow: "visible",
-    boxShadow: "0 10px 24px rgba(15, 23, 42, 0.07)"
-  },
-  monthHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px 18px",
-    background: "#f8fafc",
-    borderBottom: "1px solid #e2e8f0"
-  },
-  timeline: { display: "grid", gap: "10px", padding: "14px" },
-  dateBlock: { display: "grid", gap: "4px", alignContent: "start", minWidth: "104px" },
-  eventBody: { minWidth: 0 },
-  eventTop: { display: "flex", justifyContent: "space-between", gap: "10px", alignItems: "center", marginBottom: "6px" }
-};
+function getCalendarioMes(mes) {
+  const primeiroDia = new Date(2026, Number(mes.id) - 1, 1).getDay();
+  const deslocamento = primeiroDia === 0 ? 6 : primeiroDia - 1;
+  const celulas = Array.from({ length: deslocamento }, () => null);
+
+  for (let dia = 1; dia <= mes.totalDias; dia += 1) {
+    celulas.push(dia);
+  }
+
+  while (celulas.length % 7 !== 0) {
+    celulas.push(null);
+  }
+
+  return celulas;
+}
+
+function CalendarioEscolar() {
+  const eventosPorMes = meses.map(mes => {
+    const lista = eventos.filter(evento => getMes(evento.data) === mes.id);
+
+    return {
+      ...mes,
+      eventos: lista,
+      eventosPorDia: lista.reduce((acc, evento) => {
+        const dia = getDia(evento.data);
+        if (dia) acc[dia] = [...(acc[dia] || []), evento];
+        return acc;
+      }, {}),
+      lembretes: lista.filter(evento => isPeriodo(evento.data))
+    };
+  });
+
+  return (
+    <div className="planner-page">
+      <style>{css}</style>
+
+      <header className="planner-title">
+        <span>Calendário Escolar</span>
+        <h1>Planner do 2º Semestre</h1>
+        <p>Takaoka · 2026</p>
+      </header>
+
+      <div className="semester-strip">
+        {meses.map(mes => (
+          <a key={mes.id} href={`#mes-${mes.id}`}>{mes.nome}</a>
+        ))}
+      </div>
+
+      <main className="planner-stack">
+        {eventosPorMes.map(mes => (
+          <PlannerMes key={mes.id} mes={mes} />
+        ))}
+      </main>
+    </div>
+  );
+}
+
+function PlannerMes({ mes }) {
+  return (
+    <section id={`mes-${mes.id}`} className="planner-sheet">
+      <div className="rings" aria-hidden="true">
+        {Array.from({ length: 26 }, (_, index) => (
+          <span key={index} />
+        ))}
+      </div>
+
+      <div className="sheet-head">
+        <div className="planner-label">♡ Planner Mensal ♡</div>
+        <label>
+          Mês
+          <strong>{mes.nome}</strong>
+        </label>
+        <label>
+          Ano
+          <strong>2026</strong>
+        </label>
+      </div>
+
+      <div className="sheet-body">
+        <div className="calendar-board">
+          <div className="weekday-row">
+            {diasSemana.map(dia => (
+              <span key={dia}>{dia}</span>
+            ))}
+          </div>
+
+          <div className="day-grid">
+            {getCalendarioMes(mes).map((dia, index) => (
+              <DiaCelula key={`${mes.id}-${index}`} dia={dia} eventos={dia ? mes.eventosPorDia[dia] || [] : []} />
+            ))}
+          </div>
+        </div>
+
+        <aside className="notes-panel">
+          <div className="notes-box important">
+            <h3>♡ Lembretes ♡</h3>
+            {mes.lembretes.length ? (
+              mes.lembretes.map((evento, index) => <MiniEvento key={`${evento.data}-${index}`} evento={evento} />)
+            ) : (
+              <p className="empty-note">Sem lembretes de período.</p>
+            )}
+          </div>
+
+          <div className="notes-box">
+            <h3>Observações</h3>
+            {mes.eventos.filter(evento => evento.obs).length ? (
+              mes.eventos
+                .filter(evento => evento.obs)
+                .map((evento, index) => <MiniEvento key={`${evento.data}-obs-${index}`} evento={evento} showObs />)
+            ) : (
+              <p className="empty-note">Passe o mouse em “Obs” quando aparecer.</p>
+            )}
+          </div>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function DiaCelula({ dia, eventos }) {
+  return (
+    <div className={`day-cell ${!dia ? "empty" : ""}`}>
+      {dia && <span className="day-number">{dia}</span>}
+      <div className="day-events">
+        {eventos.slice(0, 3).map((evento, index) => (
+          <MiniEvento key={`${evento.evento}-${index}`} evento={evento} compact />
+        ))}
+        {eventos.length > 3 && <span className="more-events">+{eventos.length - 3}</span>}
+      </div>
+    </div>
+  );
+}
+
+function MiniEvento({ evento, compact = false, showObs = false }) {
+  const tipo = getTipo(evento.evento, evento.obs);
+
+  return (
+    <div className={`mini-event ${tipo} ${compact ? "compact" : ""}`}>
+      <span className="event-date">{evento.data}</span>
+      <span className="event-name">{compact ? evento.evento.replace(" - 6º ao 9º ano", "") : evento.evento}</span>
+      {!compact && <span className="event-kind">{getTipoLabel(tipo)}</span>}
+      {(evento.obs || showObs) && evento.obs && (
+        <span className="obs-tip" data-tooltip={evento.obs} tabIndex={0}>
+          Obs
+        </span>
+      )}
+    </div>
+  );
+}
 
 const css = `
-  .event-card {
-    display: grid;
-    grid-template-columns: 112px minmax(0, 1fr);
-    gap: 12px;
-    padding: 13px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    border-left: 5px solid #64748b;
-    background: #ffffff;
-    transition: transform 160ms ease, box-shadow 160ms ease;
-    position: relative;
+  .planner-page {
+    min-height: 100%;
+    padding: 18px 18px 36px;
+    color: #2f3440;
+    background-color: #f7fbff;
+    background-image:
+      linear-gradient(#d8eef2 1px, transparent 1px),
+      linear-gradient(90deg, #d8eef2 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 
-  .event-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 22px rgba(15, 23, 42, 0.10);
+  .planner-title {
+    text-align: center;
+    margin: 4px auto 16px;
   }
 
-  .event-card h3 {
-    margin: 0;
+  .planner-title span {
+    display: block;
+    color: #7e8da6;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .planner-title h1 {
+    margin: 2px 0 0;
+    color: #242736;
+    font-family: "Comic Sans MS", "Segoe Print", cursive;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .planner-title p {
+    margin: 2px 0 0;
+    color: #4a5264;
     font-size: 14px;
-    line-height: 1.35;
-    color: #0f172a;
+    font-weight: 800;
+    text-transform: uppercase;
   }
 
-  .event-card strong { font-size: 14px; color: #1e3a8a; }
-  .event-card span { font-size: 12px; color: #64748b; }
-  .event-card.simulado { border-left-color: #2563eb; background: #f8fbff; }
-  .event-card.avaliacao { border-left-color: #7c3aed; background: #fbf8ff; }
-  .event-card.sem-aula { border-left-color: #dc2626; background: #fffafa; }
-  .event-card.conselho { border-left-color: #0f766e; background: #f7fffd; }
-  .event-card.prazo { border-left-color: #ca8a04; background: #fffdf5; }
+  .semester-strip {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 auto 18px;
+  }
 
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 999px;
-    font-size: 11px !important;
+  .semester-strip a {
+    color: #3d5369;
+    background: #fff7bd;
+    border: 1px solid #f0d982;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    box-shadow: 0 2px 0 #efb6ca;
+  }
+
+  .planner-stack {
+    display: grid;
+    gap: 28px;
+    max-width: 1160px;
+    margin: 0 auto;
+  }
+
+  .planner-sheet {
+    position: relative;
+    padding: 32px 16px 16px;
+    border: 8px solid #f59abd;
+    border-radius: 8px;
+    background: #fffdfd;
+    box-shadow: 0 12px 22px rgba(172, 92, 123, 0.22);
+  }
+
+  .planner-sheet::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border: 2px solid #fbd1df;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+
+  .rings {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    top: -19px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+
+  .rings span {
+    width: 12px;
+    height: 30px;
+    border: 3px solid #b8c4d6;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(#eef4fb, #c8d3e2);
+  }
+
+  .sheet-head {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(190px, 1fr) minmax(160px, 0.6fr) minmax(110px, 0.35fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .planner-label,
+  .sheet-head label {
+    min-height: 38px;
+    border: 2px solid #a2dce2;
+    border-radius: 8px;
+    background: #fff0f7;
+    padding: 8px 12px;
+    color: #3c4a58;
+    font-size: 13px;
     font-weight: 800;
   }
 
-  .pill.simulado { background: #dbeafe; color: #1d4ed8; }
-  .pill.avaliacao { background: #ede9fe; color: #6d28d9; }
-  .pill.sem-aula { background: #fee2e2; color: #b91c1c; }
-  .pill.conselho { background: #ccfbf1; color: #0f766e; }
-  .pill.prazo { background: #fef3c7; color: #92400e; }
-  .pill.evento { background: #e2e8f0; color: #334155; }
+  .planner-label {
+    font-family: "Comic Sans MS", "Segoe Print", cursive;
+    font-size: 17px;
+  }
 
-  .dot { width: 10px; height: 10px; border-radius: 999px; background: #64748b; }
-  .dot.simulado { background: #2563eb; }
-  .dot.avaliacao { background: #7c3aed; }
-  .dot.sem-aula { background: #dc2626; }
-  .dot.conselho { background: #0f766e; }
-  .dot.prazo { background: #ca8a04; }
+  .sheet-head strong {
+    display: block;
+    color: #1f2937;
+    font-size: 16px;
+  }
+
+  .sheet-body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 220px;
+    gap: 12px;
+  }
+
+  .calendar-board {
+    border: 2px solid #b9e1e6;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+  }
+
+  .weekday-row,
+  .day-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .weekday-row span {
+    min-height: 32px;
+    display: grid;
+    place-items: center;
+    color: #49566b;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    border-right: 1px solid #e8c9d5;
+  }
+
+  .weekday-row span:nth-child(1) { background: #bfeef2; }
+  .weekday-row span:nth-child(2) { background: #ffe5a4; }
+  .weekday-row span:nth-child(3) { background: #ffc3dc; }
+  .weekday-row span:nth-child(4) { background: #bfedf2; }
+  .weekday-row span:nth-child(5) { background: #ffe7a8; }
+  .weekday-row span:nth-child(6) { background: #ffc1d7; }
+  .weekday-row span:nth-child(7) { background: #c6eef0; border-right: 0; }
+
+  .day-cell {
+    position: relative;
+    min-height: 116px;
+    padding: 20px 5px 6px;
+    border-top: 1px solid #e3e8ee;
+    border-right: 1px solid #e3e8ee;
+    background:
+      linear-gradient(90deg, transparent 18px, rgba(247, 182, 205, 0.3) 19px, transparent 20px),
+      white;
+  }
+
+  .day-cell:nth-child(7n) {
+    border-right: 0;
+  }
+
+  .day-cell.empty {
+    background: #fafafa;
+  }
+
+  .day-number {
+    position: absolute;
+    top: 5px;
+    left: 7px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .day-events {
+    display: grid;
+    gap: 4px;
+  }
+
+  .mini-event {
+    position: relative;
+    display: grid;
+    gap: 3px;
+    padding: 7px;
+    border: 1px solid #e7d7df;
+    border-left: 5px solid #9fb2c8;
+    border-radius: 7px;
+    background: #ffffff;
+    color: #384252;
+    font-size: 12px;
+    box-shadow: 0 2px 0 rgba(227, 168, 191, 0.22);
+  }
+
+  .mini-event.compact {
+    padding: 5px;
+    border-left-width: 4px;
+    font-size: 10px;
+  }
+
+  .mini-event.simulado { border-left-color: #74c7d5; background: #f0fbfd; }
+  .mini-event.avaliacao { border-left-color: #f090b8; background: #fff4f8; }
+  .mini-event.sem-aula { border-left-color: #f4b45c; background: #fff8e8; }
+  .mini-event.conselho { border-left-color: #8fcf9b; background: #f3fff5; }
+  .mini-event.prazo { border-left-color: #d6b84d; background: #fffbe8; }
+
+  .event-date {
+    color: #6b7280;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .event-name {
+    color: #2f3440;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .event-kind {
+    width: max-content;
+    max-width: 100%;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #f5ecff;
+    color: #695275;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .more-events {
+    width: max-content;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #315b84;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .notes-panel {
+    display: grid;
+    gap: 10px;
+    align-content: start;
+  }
+
+  .notes-box {
+    min-height: 180px;
+    padding: 10px;
+    border: 2px solid #f5b8ce;
+    border-radius: 8px;
+    background:
+      repeating-linear-gradient(#ffeaf2 0 21px, #f6bacf 22px),
+      #ffeaf2;
+  }
+
+  .notes-box.important {
+    border-color: #9bd9df;
+    background:
+      repeating-linear-gradient(#dff8fb 0 21px, #96d8df 22px),
+      #dff8fb;
+  }
+
+  .notes-box h3 {
+    margin: 0 0 8px;
+    color: #3b4a5a;
+    font-family: "Comic Sans MS", "Segoe Print", cursive;
+    font-size: 17px;
+  }
+
+  .notes-box .mini-event {
+    margin-bottom: 7px;
+  }
+
+  .empty-note {
+    margin: 0;
+    color: #667085;
+    font-size: 12px;
+    font-weight: 700;
+  }
 
   .obs-tip {
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 22px;
-    padding: 0 8px;
+    justify-self: start;
+    padding: 3px 8px;
+    border: 1px solid #d783a3;
     border-radius: 999px;
-    background: #0f172a;
-    color: white !important;
-    font-size: 11px !important;
-    font-weight: 800;
+    background: #fff;
+    color: #9a4264;
+    font-size: 10px;
+    font-weight: 900;
     cursor: help;
     outline: none;
   }
@@ -341,19 +589,20 @@ const css = `
     content: attr(data-tooltip);
     position: absolute;
     right: 0;
-    top: calc(100% + 8px);
+    top: calc(100% + 7px);
     width: max-content;
-    max-width: 260px;
-    padding: 9px 10px;
+    max-width: 230px;
+    padding: 8px 10px;
+    border: 1px solid #f0c0d0;
     border-radius: 8px;
-    background: #111827;
-    color: white;
+    background: #fffdfd;
+    color: #384252;
     font-size: 12px;
-    line-height: 1.35;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.22);
+    line-height: 1.3;
+    box-shadow: 0 10px 24px rgba(93, 59, 75, 0.2);
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     transition: 140ms ease;
     z-index: 20;
   }
@@ -364,8 +613,54 @@ const css = `
     transform: translateY(0);
   }
 
-  @media (max-width: 760px) {
-    .event-card { grid-template-columns: 1fr; }
+  @media (max-width: 980px) {
+    .sheet-body {
+      grid-template-columns: 1fr;
+    }
+
+    .notes-panel {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .planner-page {
+      padding: 12px 8px 28px;
+    }
+
+    .planner-title h1 {
+      font-size: 30px;
+    }
+
+    .planner-sheet {
+      padding: 28px 8px 10px;
+      border-width: 5px;
+      overflow-x: auto;
+    }
+
+    .rings {
+      left: 12px;
+      right: 12px;
+    }
+
+    .rings span {
+      width: 8px;
+      height: 24px;
+      border-width: 2px;
+    }
+
+    .sheet-head,
+    .sheet-body {
+      min-width: 760px;
+    }
+
+    .day-cell {
+      min-height: 104px;
+    }
+
+    .notes-panel {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 `;
 
