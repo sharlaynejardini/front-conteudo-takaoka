@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
 import { supabase } from "./supabaseClient";
-import { getBimestreAtual } from "./utils/bimestreAtual";
 
 function ProfessorConteudo() {
 
   const anoAtual = new Date().getFullYear();
-  const bimestreAtual = getBimestreAtual();
+  const bimestreDisponivel = 3;
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
@@ -34,11 +33,11 @@ function ProfessorConteudo() {
 
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
-  const tipoAvaliacaoInicial = bimestreAtual === 3 ? "simulado" : "regular";
+  const tipoAvaliacaoInicial = "simulado";
   const periodoAvaliacaoInicial =
-    tipoAvaliacaoInicial === "simulado" ? semanasSimuladoFund2[bimestreAtual] : semanasProva[bimestreAtual];
+    semanasSimuladoFund2[bimestreDisponivel];
 
-  const [bimestre, setBimestre] = useState(bimestreAtual);
+  const [bimestre] = useState(bimestreDisponivel);
   const [tipoAvaliacao, setTipoAvaliacao] = useState(tipoAvaliacaoInicial);
   const [mostrarCopiar, setMostrarCopiar] = useState(false);
 
@@ -131,11 +130,6 @@ function ProfessorConteudo() {
 
   const getDescricaoSimulado = () =>
     bimestre === 3 ? "Avaliação - Simulado - 19, 20 e 21/08" : "Simulado - 20 a 22/05";
-
-  const alterarBimestre = (valor) => {
-    setBimestre(valor);
-    setTipoAvaliacao(valor === 3 ? "simulado" : "regular");
-  };
 
   useEffect(() => {
     async function carregar() {
@@ -280,14 +274,8 @@ function ProfessorConteudo() {
     const params = new URLSearchParams(window.location.search);
 
     const atribuicao = params.get("atribuicao");
-    const bimestreParam = params.get("bimestre");
-
     if (atribuicao) {
       setAtribuicaoSelecionada(atribuicao);
-    }
-
-    if (bimestreParam) {
-      setBimestre(Number(bimestreParam));
     }
 
   }, []);
@@ -516,12 +504,9 @@ function ProfessorConteudo() {
       <select
         style={inputStyle}
         value={bimestre}
-        onChange={(e) => alterarBimestre(Number(e.target.value))}
+        disabled
       >
-        <option value={1}>1º Bimestre</option>
-        <option value={2}>2º Bimestre</option>
         <option value={3}>3º Bimestre</option>
-        <option value={4}>4º Bimestre</option>
       </select>
 
       {bimestreTemSimuladoFund2 && (
