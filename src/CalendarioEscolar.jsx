@@ -1019,6 +1019,30 @@ const css = `
       font-size: 9px;
     }
   }
+
+  .planner-title h1 {
+    font-weight: 600;
+  }
+
+  .planner-title span,
+  .planner-title p,
+  .semester-strip a,
+  .weekday-row span,
+  .planner-label,
+  .sheet-head label,
+  .sheet-head strong,
+  .day-number,
+  .event-date,
+  .event-name,
+  .event-kind,
+  .more-events,
+  .obs-tip {
+    font-weight: 500;
+  }
+
+  .event-name {
+    line-height: 1.25;
+  }
 `;
 
 export default CalendarioEscolar;
