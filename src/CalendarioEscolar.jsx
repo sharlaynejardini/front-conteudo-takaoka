@@ -190,6 +190,10 @@ function CalendarioEscolar() {
 }
 
 function PlannerMes({ mes }) {
+  const diasAgenda = Object.entries(mes.eventosPorDia)
+    .map(([dia, eventos]) => ({ dia: Number(dia), eventos }))
+    .sort((a, b) => a.dia - b.dia);
+
   return (
     <section id={`mes-${mes.id}`} className="planner-sheet">
       <div className="rings" aria-hidden="true">
@@ -223,6 +227,23 @@ function PlannerMes({ mes }) {
               <DiaCelula key={`${mes.id}-${index}`} dia={dia} eventos={dia ? mes.eventosPorDia[dia] || [] : []} />
             ))}
           </div>
+        </div>
+
+        <div className="mobile-agenda">
+          {diasAgenda.map(({ dia, eventos }) => (
+            <div key={`${mes.id}-agenda-${dia}`} className="agenda-day">
+              <div className="agenda-date">
+                <strong>{String(dia).padStart(2, "0")}</strong>
+                <span>{mes.nome}</span>
+              </div>
+
+              <div className="agenda-events">
+                {eventos.map((evento, index) => (
+                  <MiniEvento key={`${evento.evento}-${index}`} evento={evento} />
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
 
       </div>
@@ -834,6 +855,10 @@ const css = `
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
+  .mobile-agenda {
+    display: none;
+  }
+
   .weekday-row span {
     min-height: 38px;
     color: #0f172a;
@@ -984,39 +1009,66 @@ const css = `
       display: block;
       min-width: 0;
       padding: 10px;
-      overflow-x: auto;
+      overflow-x: visible;
     }
 
     .calendar-board {
-      min-width: 720px;
+      display: none;
     }
 
-    .weekday-row span {
-      min-height: 34px;
+    .mobile-agenda {
+      display: grid;
+      gap: 10px;
+    }
+
+    .agenda-day {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+    }
+
+    .agenda-date {
+      display: grid;
+      place-items: center;
+      min-height: 58px;
+      border-radius: 8px;
+      background: #eef2ff;
+      color: #334155;
+    }
+
+    .agenda-date strong {
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 600;
+    }
+
+    .agenda-date span {
       font-size: 10px;
+      text-transform: uppercase;
     }
 
-    .day-cell {
-      min-height: 112px;
-      padding: 30px 5px 6px;
+    .agenda-events {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
     }
 
-    .day-number {
-      width: 22px;
-      height: 22px;
-      font-size: 11px;
+    .agenda-events .mini-event {
+      padding: 9px;
     }
 
-    .mini-event.compact {
-      padding: 6px;
+    .agenda-events .event-name {
+      font-size: 13px;
     }
 
-    .event-name {
+    .agenda-events .event-date {
       font-size: 10px;
-    }
-
-    .event-date {
-      font-size: 9px;
     }
   }
 
