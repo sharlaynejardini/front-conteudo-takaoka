@@ -170,8 +170,8 @@ function CalendarioEscolar() {
 
       <header className="planner-title">
         <span>Calendário Escolar</span>
-        <h1>Calendário do 2º Semestre</h1>
-        <p>Takaoka · 2026</p>
+        <h1>Planner 2º Semestre 2026</h1>
+        <p>Takaoka</p>
       </header>
 
       <div className="semester-strip">
@@ -915,6 +915,109 @@ const css = `
     background: #ffffff;
     color: #1e293b;
     box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
+  }
+
+  @media (max-width: 760px) {
+    .planner-page {
+      padding: 12px;
+    }
+
+    .planner-title {
+      margin-bottom: 12px;
+      padding: 18px 16px 18px 22px;
+    }
+
+    .planner-title h1 {
+      font-size: 26px;
+      line-height: 1.12;
+    }
+
+    .planner-title p {
+      font-size: 13px;
+    }
+
+    .semester-strip {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 2px 2px 12px;
+      margin-bottom: 12px;
+      scroll-snap-type: x proximity;
+    }
+
+    .semester-strip a {
+      flex: 0 0 auto;
+      min-width: 94px;
+      text-align: center;
+      scroll-snap-align: start;
+    }
+
+    .planner-stack {
+      gap: 18px;
+    }
+
+    .planner-sheet {
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    .sheet-head {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 14px;
+    }
+
+    .planner-label {
+      font-size: 20px;
+    }
+
+    .sheet-head label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 8px;
+      border-top: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .sheet-body {
+      display: block;
+      min-width: 0;
+      padding: 10px;
+      overflow-x: auto;
+    }
+
+    .calendar-board {
+      min-width: 720px;
+    }
+
+    .weekday-row span {
+      min-height: 34px;
+      font-size: 10px;
+    }
+
+    .day-cell {
+      min-height: 112px;
+      padding: 30px 5px 6px;
+    }
+
+    .day-number {
+      width: 22px;
+      height: 22px;
+      font-size: 11px;
+    }
+
+    .mini-event.compact {
+      padding: 6px;
+    }
+
+    .event-name {
+      font-size: 10px;
+    }
+
+    .event-date {
+      font-size: 9px;
+    }
   }
 `;
 
