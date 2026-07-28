@@ -148,7 +148,7 @@ function CalendarioEscolar() {
 
       <header className="planner-title">
         <span>Calendário Escolar</span>
-        <h1>Planner do 2º Semestre</h1>
+        <h1>Calendário do 2º Semestre</h1>
         <p>Takaoka · 2026</p>
       </header>
 
@@ -177,7 +177,7 @@ function PlannerMes({ mes }) {
       </div>
 
       <div className="sheet-head">
-        <div className="planner-label">♡ Planner Mensal ♡</div>
+        <div className="planner-label">Calendário Mensal</div>
         <label>
           Mês
           <strong>{mes.nome}</strong>
@@ -661,6 +661,147 @@ const css = `
     .notes-panel {
       grid-template-columns: 1fr 1fr;
     }
+  }
+
+  .planner-page {
+    padding: 24px;
+    color: #111827;
+    background: #f3f6fa;
+    background-image: none;
+  }
+
+  .planner-title {
+    max-width: 1180px;
+    margin: 0 auto 18px;
+    padding: 24px 28px;
+    border: 1px solid #d8dee8;
+    border-radius: 8px;
+    background: #ffffff;
+    text-align: left;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  }
+
+  .planner-title span {
+    color: #2563eb;
+    letter-spacing: 0;
+  }
+
+  .planner-title h1 {
+    color: #111827;
+    font-family: Arial, "Segoe UI", sans-serif;
+    font-size: 32px;
+  }
+
+  .planner-title p {
+    color: #64748b;
+    letter-spacing: 0;
+  }
+
+  .semester-strip {
+    max-width: 1180px;
+    justify-content: flex-start;
+  }
+
+  .semester-strip a {
+    border: 1px solid #d8dee8;
+    background: #ffffff;
+    color: #334155;
+    box-shadow: none;
+  }
+
+  .planner-stack {
+    max-width: 1180px;
+  }
+
+  .planner-sheet {
+    padding: 0;
+    border: 1px solid #d8dee8;
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  }
+
+  .planner-sheet::before,
+  .rings {
+    display: none;
+  }
+
+  .sheet-head {
+    grid-template-columns: minmax(0, 1fr) 160px 100px;
+    gap: 12px;
+    margin: 0;
+    padding: 18px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .planner-label,
+  .sheet-head label {
+    min-height: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0;
+    color: #64748b;
+    font-family: Arial, "Segoe UI", sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+
+  .planner-label {
+    color: #0f172a;
+    font-size: 22px;
+    text-transform: none;
+  }
+
+  .sheet-head strong {
+    color: #0f172a;
+  }
+
+  .sheet-body {
+    padding: 18px;
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .calendar-board {
+    border-color: #d8dee8;
+  }
+
+  .weekday-row span {
+    background: #eaf0f8 !important;
+    border-color: #d8dee8;
+    color: #334155;
+  }
+
+  .day-cell {
+    border-color: #e2e8f0;
+    background: #ffffff;
+  }
+
+  .day-cell.empty {
+    background: #f8fafc;
+  }
+
+  .notes-box,
+  .notes-box.important {
+    border: 1px solid #d8dee8;
+    background: #f8fafc;
+  }
+
+  .notes-box h3 {
+    color: #111827;
+    font-family: Arial, "Segoe UI", sans-serif;
+    font-size: 15px;
+  }
+
+  .mini-event {
+    border-color: #e2e8f0;
+    box-shadow: none;
+  }
+
+  .obs-tip {
+    border-color: #cbd5e1;
+    background: #0f172a;
+    color: #ffffff;
   }
 `;
 
