@@ -50,7 +50,7 @@ function Layout() {
     { path: "/cronograma", label: "Cronograma", icon: "📅" },
     { path: "/trabalho", label: "Trabalhos", icon: "📚" },
     { path: "/cronograma-trabalho", label: "Cronograma Trab.", icon: "🗂️" },
-    { path: "/calendario-escolar", label: "Planner 2º Bimestre", icon: "📅" },
+    { path: "/calendario-escolar", label: "Planner 2º Semestre", icon: "📅" },
     { path: "/cronograma-envio-pebi", label: "Envio PEBI", icon: "📤" },
     { path: "/lancamentos", label: "Lançamentos", icon: "📋" },
     { path: "/horario", label: "Horário", icon: "🕒" },
