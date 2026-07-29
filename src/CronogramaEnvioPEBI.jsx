@@ -23,7 +23,7 @@ const meses = [
       { datas: "01 a 04", turmas: "2ºA e 2ºB" },
       { datas: "07 a 11", turmas: "3ºA e 3ºB" },
       { datas: "14 a 18", turmas: "5ºA e 5ºB" },
-      { datas: "21 a 25", turmas: "1ºA e 4ºB" },
+      { datas: "21 a 25", turmas: "1ºA e 4ºA" },
       { datas: "28 a 02/10", turmas: "2ºA e 2ºB" },
     ],
   },
