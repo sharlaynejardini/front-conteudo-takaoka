@@ -113,6 +113,8 @@ function ProfessorTrabalho() {
   const temRestricaoTrabalhoFund1 = getAtribuicoesParaSalvar().some(a =>
     trabalhoFund1Restrito(a, bimestre)
   );
+  const turmaSelecionadaParaData = getIdsAtribuicoesParaSalvar().length > 0;
+  const dataEntregaBloqueada = !turmaSelecionadaParaData;
 
   const alterarDataEntrega = (valor) => {
     setDataEntrega(valor);
@@ -127,6 +129,16 @@ function ProfessorTrabalho() {
       setTipoMensagem("");
     }
   };
+
+  useEffect(() => {
+    if (temRestricaoTrabalhoFund1 && dataEntrega && !dataTrabalhoFund1Permitida(dataEntrega)) {
+      setDataEntrega("");
+      setMensagem(
+        `Para turmas do 1o ao 5o ano, escolha apenas ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+      );
+      setTipoMensagem("warning");
+    }
+  }, [temRestricaoTrabalhoFund1, dataEntrega]);
 
   // =========================
   // CARREGAR PROFESSORES + ADMIN
@@ -467,10 +479,22 @@ function ProfessorTrabalho() {
 
       <input
         type="date"
-        style={inputStyle}
+        style={{
+          ...inputStyle,
+          cursor: dataEntregaBloqueada ? "not-allowed" : "pointer",
+          opacity: dataEntregaBloqueada ? 0.65 : 1
+        }}
         value={dataEntrega}
+        disabled={dataEntregaBloqueada}
         min={temRestricaoTrabalhoFund1 ? DATAS_TRABALHO_FUND1_3BIMESTRE.inicio : undefined}
         max={temRestricaoTrabalhoFund1 ? DATAS_TRABALHO_FUND1_3BIMESTRE.fim : undefined}
+        title={
+          dataEntregaBloqueada
+            ? "Selecione uma turma/disciplina antes de escolher a data."
+            : temRestricaoTrabalhoFund1
+            ? `Disponivel apenas em ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+            : undefined
+        }
         onChange={(e) => alterarDataEntrega(e.target.value)}
       />
 
