@@ -3,6 +3,35 @@ import api from "./api";
 import { logAction } from "./utils/logAction";
 import { supabase } from "./supabaseClient"; // 🔥 NOVO
 
+const DATAS_TRABALHO_FUND1_3BIMESTRE = {
+  inicio: "2026-08-19",
+  fim: "2026-08-21",
+  texto: "19, 20 e 21/08/2026"
+};
+
+function normalizarNomeTurma(nome) {
+  return (nome || "")
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[º°ª]/g, "")
+    .replace("ANO", "");
+}
+
+function turmaFundamental1(nome) {
+  return /^[1-5][A-Z]?$/.test(normalizarNomeTurma(nome));
+}
+
+function trabalhoFund1Restrito(atribuicao, bimestre) {
+  return bimestre === 3 && turmaFundamental1(atribuicao?.turma?.nome);
+}
+
+function dataTrabalhoFund1Permitida(data) {
+  return (
+    data >= DATAS_TRABALHO_FUND1_3BIMESTRE.inicio &&
+    data <= DATAS_TRABALHO_FUND1_3BIMESTRE.fim
+  );
+}
+
 function ProfessorTrabalho() {
   const bimestreDisponivel = 3;
 
@@ -67,6 +96,36 @@ function ProfessorTrabalho() {
     setInstrucoes("");
     setDataEntrega("");
     setModoEdicao(false);
+  };
+
+  const getIdsAtribuicoesParaSalvar = () =>
+    atribuicoesSelecionadas.length > 0
+      ? atribuicoesSelecionadas
+      : atribuicaoSelecionada
+      ? [atribuicaoSelecionada]
+      : [];
+
+  const getAtribuicoesParaSalvar = () => {
+    const ids = getIdsAtribuicoesParaSalvar().map(String);
+    return atribuicoes.filter(a => ids.includes(String(a.id)));
+  };
+
+  const temRestricaoTrabalhoFund1 = getAtribuicoesParaSalvar().some(a =>
+    trabalhoFund1Restrito(a, bimestre)
+  );
+
+  const alterarDataEntrega = (valor) => {
+    setDataEntrega(valor);
+
+    if (temRestricaoTrabalhoFund1 && valor && !dataTrabalhoFund1Permitida(valor)) {
+      setMensagem(
+        `Para turmas do 1o ao 5o ano, os trabalhos do 3o bimestre devem ficar em ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+      );
+      setTipoMensagem("warning");
+    } else if (tipoMensagem === "warning") {
+      setMensagem("");
+      setTipoMensagem("");
+    }
   };
 
   // =========================
@@ -265,10 +324,18 @@ function ProfessorTrabalho() {
 
     }
 
-    const atribuicoesParaSalvar =
-      atribuicoesSelecionadas.length > 0
-        ? atribuicoesSelecionadas
-        : [atribuicaoSelecionada];
+    const atribuicoesParaSalvar = getIdsAtribuicoesParaSalvar();
+    const temRestricao = getAtribuicoesParaSalvar().some(a =>
+      trabalhoFund1Restrito(a, bimestre)
+    );
+
+    if (temRestricao && !dataTrabalhoFund1Permitida(dataEntrega)) {
+      setMensagem(
+        `Para turmas do 1o ao 5o ano, os trabalhos do 3o bimestre devem ficar em ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+      );
+      setTipoMensagem("error");
+      return;
+    }
 
     try {
 
@@ -310,9 +377,9 @@ function ProfessorTrabalho() {
 
       }, 1200);
 
-    } catch {
+    } catch (error) {
 
-      setMensagem("Erro ao salvar trabalho.");
+      setMensagem(error.response?.data?.detail || "Erro ao salvar trabalho.");
       setTipoMensagem("error");
 
     }
@@ -402,7 +469,9 @@ function ProfessorTrabalho() {
         type="date"
         style={inputStyle}
         value={dataEntrega}
-        onChange={(e) => setDataEntrega(e.target.value)}
+        min={temRestricaoTrabalhoFund1 ? DATAS_TRABALHO_FUND1_3BIMESTRE.inicio : undefined}
+        max={temRestricaoTrabalhoFund1 ? DATAS_TRABALHO_FUND1_3BIMESTRE.fim : undefined}
+        onChange={(e) => alterarDataEntrega(e.target.value)}
       />
 
       <h4>Conteúdo:</h4>
