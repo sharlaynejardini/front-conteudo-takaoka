@@ -1,14 +1,15 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import api from "./api";
 import html2canvas from "html2canvas";
 import html2pdf from "html2pdf.js";
 import logoTakaoka from "./assets/logo_takaoka.png";
+import { getBimestreAtual } from "./utils/bimestreAtual";
 
 function CronogramaTrabalho() {
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
-  const [bimestre] = useState(3);
+  const [bimestre, setBimestre] = useState(getBimestreAtual());
   const [cronograma, setCronograma] = useState([]);
   const [mensagemErro, setMensagemErro] = useState("");
   const [editandoId, setEditandoId] = useState(null);
@@ -36,11 +37,16 @@ function CronogramaTrabalho() {
     carregarTurmas();
   }, []);
 
-  const buscarCronograma = async () => {
+  const buscarCronograma = useCallback(async () => {
 
-    if (!turmaSelecionada) return;
+    if (!turmaSelecionada) {
+      setCronograma([]);
+      setMensagemErro("");
+      return;
+    }
 
     setMensagemErro("");
+    setEditandoId(null);
 
     try {
 
@@ -68,7 +74,11 @@ function CronogramaTrabalho() {
 
     }
 
-  };
+  }, [turmaSelecionada, bimestre]);
+
+  useEffect(() => {
+    buscarCronograma();
+  }, [buscarCronograma]);
 
   const formatarData = (dataISO) => {
     if (!dataISO) return "";
@@ -357,9 +367,12 @@ function CronogramaTrabalho() {
           <select
             style={selectStyle}
             value={bimestre}
-            disabled
+            onChange={(e) => setBimestre(Number(e.target.value))}
           >
+            <option value={1}>1º Bimestre</option>
+            <option value={2}>2º Bimestre</option>
             <option value={3}>3º Bimestre</option>
+            <option value={4}>4º Bimestre</option>
           </select>
 
           <button style={buttonStyle} onClick={buscarCronograma}>
