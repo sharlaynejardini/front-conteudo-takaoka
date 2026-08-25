@@ -75,11 +75,16 @@ function getNotaGlobal(resultado) {
 }
 
 function getStatusOriginal(registro) {
+  if (registro?.transferido === true || registro?.transferida === true) return "Transferido";
+
   return (
     registro?.status ??
     registro?.situacao ??
     registro?.situacao_aluno ??
+    registro?.situacao_matricula ??
     registro?.status_aluno ??
+    registro?.status_matricula ??
+    registro?.matricula_status ??
     registro?.status_correcao ??
     registro?.correcao_status ??
     registro?.resultado_status ??
@@ -94,6 +99,12 @@ function normalizarStatus(valor) {
 
   const texto = normalizarTexto(valor).trim();
   if (!texto) return null;
+
+  if (["transferido", "transferida", "transferencia", "transferido da escola"].some(
+    (termo) => texto.includes(termo)
+  )) {
+    return "transferido";
+  }
 
   if (
     ["corrigido", "corrigida", "finalizado", "finalizada", "concluido", "concluida"].some(
@@ -118,6 +129,7 @@ function formatarStatus(valor, corrigidoFallback = false) {
   const statusNormalizado = normalizarStatus(valor);
   if (statusNormalizado === "corrigido") return "Corrigido";
   if (statusNormalizado === "pendente") return "Pendente";
+  if (statusNormalizado === "transferido") return "Transferido";
   if (valor !== null && valor !== undefined && valor !== "") return String(valor);
   return corrigidoFallback ? "Corrigido" : "Pendente";
 }
@@ -128,8 +140,19 @@ function isCorrigido(resultado, aluno) {
 
   if (statusNormalizado === "corrigido") return true;
   if (statusNormalizado === "pendente") return false;
+  if (statusNormalizado === "transferido") return false;
 
   return resultado?.nota != null || resultado?.acertos != null;
+}
+
+function isTransferido(resultado, aluno) {
+  const statusOriginal = getStatusOriginal(aluno) ?? getStatusOriginal(resultado);
+  return normalizarStatus(statusOriginal) === "transferido";
+}
+
+function getBadgeStatusStyle(statusNormalizado, corrigido) {
+  if (statusNormalizado === "transferido") return styles.badgeTransfer;
+  return corrigido ? styles.badgeOk : styles.badgePending;
 }
 
 function agruparDisciplinas(respostas = []) {
@@ -412,22 +435,31 @@ function NotasCorretor() {
       .map((aluno) => {
         const resultado = resultados[String(aluno.id)];
         const corrigido = isCorrigido(resultado, aluno);
-        const statusOriginal = getStatusOriginal(resultado) ?? getStatusOriginal(aluno);
+        const transferido = isTransferido(resultado, aluno);
+        const statusOriginalAluno = getStatusOriginal(aluno);
+        const statusOriginalResultado = getStatusOriginal(resultado);
+        const statusOriginal = transferido
+          ? statusOriginalAluno ?? statusOriginalResultado
+          : statusOriginalResultado ?? statusOriginalAluno;
+        const statusNormalizado = normalizarStatus(statusOriginal);
 
         return {
           aluno,
           resultado,
           corrigido,
+          transferido,
+          statusNormalizado,
           statusLabel: formatarStatus(statusOriginal, corrigido)
         };
       })
-      .filter(({ aluno, corrigido }) => {
+      .filter(({ aluno, corrigido, transferido }) => {
         const texto = `${aluno.numero_chamada ?? ""} ${aluno.nome ?? ""}`.toLowerCase();
         const combinaBusca = !termo || texto.includes(termo);
         const combinaStatus =
           status === "todos" ||
-          (status === "corrigidos" && corrigido) ||
-          (status === "pendentes" && !corrigido);
+          (status === "corrigidos" && corrigido && !transferido) ||
+          (status === "pendentes" && !corrigido && !transferido) ||
+          (status === "transferidos" && transferido);
 
         return combinaBusca && combinaStatus;
       });
@@ -436,7 +468,12 @@ function NotasCorretor() {
   const resumo = useMemo(() => {
     const corrigidos = alunos.filter((aluno) => {
       const resultado = resultados[String(aluno.id)];
-      return isCorrigido(resultado, aluno);
+      return isCorrigido(resultado, aluno) && !isTransferido(resultado, aluno);
+    });
+
+    const transferidos = alunos.filter((aluno) => {
+      const resultado = resultados[String(aluno.id)];
+      return isTransferido(resultado, aluno);
     });
 
     const notas = corrigidos
@@ -450,7 +487,8 @@ function NotasCorretor() {
     return {
       total: alunos.length,
       corrigidos: corrigidos.length,
-      pendentes: Math.max(alunos.length - corrigidos.length, 0),
+      pendentes: Math.max(alunos.length - corrigidos.length - transferidos.length, 0),
+      transferidos: transferidos.length,
       media
     };
   }, [alunos, resultados]);
@@ -578,6 +616,7 @@ function NotasCorretor() {
         <ResumoCard label="Alunos" value={resumo.total} />
         <ResumoCard label="Corrigidos" value={resumo.corrigidos} />
         <ResumoCard label="Pendentes" value={resumo.pendentes} />
+        <ResumoCard label="Transferidos" value={resumo.transferidos} />
         <ResumoCard label="NOTA GLOBAL" value={formatarNumero(resumo.media)} />
       </div>
 
@@ -600,6 +639,7 @@ function NotasCorretor() {
               <option value="todos">Todos</option>
               <option value="corrigidos">Corrigidos</option>
               <option value="pendentes">Pendentes</option>
+              <option value="transferidos">Transferidos</option>
             </select>
           </div>
 
@@ -631,7 +671,7 @@ function NotasCorretor() {
                   </tr>
                 )}
 
-                {!carregando && linhas.map(({ aluno, resultado, corrigido, statusLabel }) => (
+                {!carregando && linhas.map(({ aluno, resultado, corrigido, statusNormalizado, statusLabel }) => (
                   <tr key={aluno.id}>
                     <td style={styles.td}>{aluno.numero_chamada ?? "-"}</td>
                     <td style={styles.tdStrong}>{aluno.nome}</td>
@@ -644,7 +684,7 @@ function NotasCorretor() {
                       <NotaValor valor={resultado?.nota} destaque />
                     </td>
                     <td style={styles.td}>
-                      <span style={corrigido ? styles.badgeOk : styles.badgePending}>
+                      <span style={getBadgeStatusStyle(statusNormalizado, corrigido)}>
                         {statusLabel}
                       </span>
                     </td>
@@ -1040,6 +1080,14 @@ const styles = {
   badgePending: {
     backgroundColor: "#fef3c7",
     color: "#92400e",
+    borderRadius: "999px",
+    padding: "4px 8px",
+    fontSize: "12px",
+    fontWeight: 700
+  },
+  badgeTransfer: {
+    backgroundColor: "#e2e8f0",
+    color: "#475569",
     borderRadius: "999px",
     padding: "4px 8px",
     fontSize: "12px",
