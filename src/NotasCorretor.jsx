@@ -74,6 +74,64 @@ function getNotaGlobal(resultado) {
   return resultado?.nota_global ?? resultado?.nota ?? null;
 }
 
+function getStatusOriginal(registro) {
+  return (
+    registro?.status ??
+    registro?.situacao ??
+    registro?.situacao_aluno ??
+    registro?.status_aluno ??
+    registro?.status_correcao ??
+    registro?.correcao_status ??
+    registro?.resultado_status ??
+    null
+  );
+}
+
+function normalizarStatus(valor) {
+  if (valor === null || valor === undefined || valor === "") return null;
+
+  if (typeof valor === "boolean") return valor ? "corrigido" : "pendente";
+
+  const texto = normalizarTexto(valor).trim();
+  if (!texto) return null;
+
+  if (
+    ["corrigido", "corrigida", "finalizado", "finalizada", "concluido", "concluida"].some(
+      (termo) => texto.includes(termo)
+    )
+  ) {
+    return "corrigido";
+  }
+
+  if (
+    ["pendente", "aguardando", "nao corrigido", "nao corrigida", "sem correcao"].some(
+      (termo) => texto.includes(termo)
+    )
+  ) {
+    return "pendente";
+  }
+
+  return texto;
+}
+
+function formatarStatus(valor, corrigidoFallback = false) {
+  const statusNormalizado = normalizarStatus(valor);
+  if (statusNormalizado === "corrigido") return "Corrigido";
+  if (statusNormalizado === "pendente") return "Pendente";
+  if (valor !== null && valor !== undefined && valor !== "") return String(valor);
+  return corrigidoFallback ? "Corrigido" : "Pendente";
+}
+
+function isCorrigido(resultado, aluno) {
+  const statusOriginal = getStatusOriginal(resultado) ?? getStatusOriginal(aluno);
+  const statusNormalizado = normalizarStatus(statusOriginal);
+
+  if (statusNormalizado === "corrigido") return true;
+  if (statusNormalizado === "pendente") return false;
+
+  return resultado?.nota != null || resultado?.acertos != null;
+}
+
 function agruparDisciplinas(respostas = []) {
   return respostas.reduce((mapa, resposta) => {
     const disciplina = resposta.disciplina || "Sem disciplina";
@@ -99,6 +157,7 @@ function normalizarResultados(payload) {
     porAluno[String(alunoId)] = {
       acertos: getAcertos(resultado),
       nota: getNotaGlobal(resultado),
+      status: getStatusOriginal(resultado),
       disciplinas: agruparDisciplinas(resultado.respostas_salvas || []),
       totalQuestoesGlobal: resultado.total_questoes_global ?? resultado.total_questoes ?? null
     };
@@ -352,10 +411,14 @@ function NotasCorretor() {
     return alunos
       .map((aluno) => {
         const resultado = resultados[String(aluno.id)];
+        const corrigido = isCorrigido(resultado, aluno);
+        const statusOriginal = getStatusOriginal(resultado) ?? getStatusOriginal(aluno);
+
         return {
           aluno,
           resultado,
-          corrigido: resultado?.nota != null || resultado?.acertos != null
+          corrigido,
+          statusLabel: formatarStatus(statusOriginal, corrigido)
         };
       })
       .filter(({ aluno, corrigido }) => {
@@ -373,7 +436,7 @@ function NotasCorretor() {
   const resumo = useMemo(() => {
     const corrigidos = alunos.filter((aluno) => {
       const resultado = resultados[String(aluno.id)];
-      return resultado?.nota != null || resultado?.acertos != null;
+      return isCorrigido(resultado, aluno);
     });
 
     const notas = corrigidos
@@ -568,7 +631,7 @@ function NotasCorretor() {
                   </tr>
                 )}
 
-                {!carregando && linhas.map(({ aluno, resultado, corrigido }) => (
+                {!carregando && linhas.map(({ aluno, resultado, corrigido, statusLabel }) => (
                   <tr key={aluno.id}>
                     <td style={styles.td}>{aluno.numero_chamada ?? "-"}</td>
                     <td style={styles.tdStrong}>{aluno.nome}</td>
@@ -582,7 +645,7 @@ function NotasCorretor() {
                     </td>
                     <td style={styles.td}>
                       <span style={corrigido ? styles.badgeOk : styles.badgePending}>
-                        {corrigido ? "Corrigido" : "Pendente"}
+                        {statusLabel}
                       </span>
                     </td>
                   </tr>
