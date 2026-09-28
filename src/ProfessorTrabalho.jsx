@@ -3,37 +3,25 @@ import api from "./api";
 import { logAction } from "./utils/logAction";
 import { supabase } from "./supabaseClient"; // 🔥 NOVO
 
-const DATAS_TRABALHO_FUND1_3BIMESTRE = {
-  inicio: "2026-08-19",
-  fim: "2026-08-21",
-  texto: "19, 20 e 21/08/2026"
+const DATAS_TRABALHO_4BIMESTRE = {
+  inicio: "2026-10-19",
+  fim: "2026-10-23",
+  texto: "19 a 23/10/2026"
 };
 
-function normalizarNomeTurma(nome) {
-  return (nome || "")
-    .toUpperCase()
-    .replace(/\s+/g, "")
-    .replace(/[º°ª]/g, "")
-    .replace("ANO", "");
+function trabalhoComDataRestrita(atribuicao, bimestre) {
+  return bimestre === 4 && !!atribuicao;
 }
 
-function turmaFundamental1(nome) {
-  return /^[1-5][A-Z]?$/.test(normalizarNomeTurma(nome));
-}
-
-function trabalhoFund1Restrito(atribuicao, bimestre) {
-  return bimestre === 3 && turmaFundamental1(atribuicao?.turma?.nome);
-}
-
-function dataTrabalhoFund1Permitida(data) {
+function dataTrabalhoPermitida(data) {
   return (
-    data >= DATAS_TRABALHO_FUND1_3BIMESTRE.inicio &&
-    data <= DATAS_TRABALHO_FUND1_3BIMESTRE.fim
+    data >= DATAS_TRABALHO_4BIMESTRE.inicio &&
+    data <= DATAS_TRABALHO_4BIMESTRE.fim
   );
 }
 
 function ProfessorTrabalho() {
-  const bimestreDisponivel = 3;
+  const bimestreDisponivel = 4;
 
   const [professores, setProfessores] = useState([]);
   const [atribuicoes, setAtribuicoes] = useState([]);
@@ -110,8 +98,8 @@ function ProfessorTrabalho() {
     return atribuicoes.filter(a => ids.includes(String(a.id)));
   };
 
-  const temRestricaoTrabalhoFund1 = getAtribuicoesParaSalvar().some(a =>
-    trabalhoFund1Restrito(a, bimestre)
+  const temRestricaoTrabalho = getAtribuicoesParaSalvar().some(a =>
+    trabalhoComDataRestrita(a, bimestre)
   );
   const turmaSelecionadaParaData = getIdsAtribuicoesParaSalvar().length > 0;
   const dataEntregaBloqueada = !turmaSelecionadaParaData;
@@ -119,9 +107,9 @@ function ProfessorTrabalho() {
   const alterarDataEntrega = (valor) => {
     setDataEntrega(valor);
 
-    if (temRestricaoTrabalhoFund1 && valor && !dataTrabalhoFund1Permitida(valor)) {
+    if (temRestricaoTrabalho && valor && !dataTrabalhoPermitida(valor)) {
       setMensagem(
-        `Para turmas do 1o ao 5o ano, os trabalhos do 3o bimestre devem ficar em ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+        `Os trabalhos do 4o bimestre devem ficar apenas em ${DATAS_TRABALHO_4BIMESTRE.texto}.`
       );
       setTipoMensagem("warning");
     } else if (tipoMensagem === "warning") {
@@ -131,14 +119,14 @@ function ProfessorTrabalho() {
   };
 
   useEffect(() => {
-    if (temRestricaoTrabalhoFund1 && dataEntrega && !dataTrabalhoFund1Permitida(dataEntrega)) {
+    if (temRestricaoTrabalho && dataEntrega && !dataTrabalhoPermitida(dataEntrega)) {
       setDataEntrega("");
       setMensagem(
-        `Para turmas do 1o ao 5o ano, escolha apenas ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+        `Escolha apenas uma data entre ${DATAS_TRABALHO_4BIMESTRE.texto}.`
       );
       setTipoMensagem("warning");
     }
-  }, [temRestricaoTrabalhoFund1, dataEntrega]);
+  }, [temRestricaoTrabalho, dataEntrega]);
 
   // =========================
   // CARREGAR PROFESSORES + ADMIN
@@ -338,12 +326,12 @@ function ProfessorTrabalho() {
 
     const atribuicoesParaSalvar = getIdsAtribuicoesParaSalvar();
     const temRestricao = getAtribuicoesParaSalvar().some(a =>
-      trabalhoFund1Restrito(a, bimestre)
+      trabalhoComDataRestrita(a, bimestre)
     );
 
-    if (temRestricao && !dataTrabalhoFund1Permitida(dataEntrega)) {
+    if (temRestricao && !dataTrabalhoPermitida(dataEntrega)) {
       setMensagem(
-        `Para turmas do 1o ao 5o ano, os trabalhos do 3o bimestre devem ficar em ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+        `Os trabalhos do 4o bimestre devem ficar apenas em ${DATAS_TRABALHO_4BIMESTRE.texto}.`
       );
       setTipoMensagem("error");
       return;
@@ -474,7 +462,7 @@ function ProfessorTrabalho() {
         value={bimestre}
         disabled
       >
-        <option value={3}>3º Bimestre</option>
+        <option value={4}>4º Bimestre</option>
       </select>
 
       <input
@@ -486,13 +474,13 @@ function ProfessorTrabalho() {
         }}
         value={dataEntrega}
         disabled={dataEntregaBloqueada}
-        min={temRestricaoTrabalhoFund1 ? DATAS_TRABALHO_FUND1_3BIMESTRE.inicio : undefined}
-        max={temRestricaoTrabalhoFund1 ? DATAS_TRABALHO_FUND1_3BIMESTRE.fim : undefined}
+        min={temRestricaoTrabalho ? DATAS_TRABALHO_4BIMESTRE.inicio : undefined}
+        max={temRestricaoTrabalho ? DATAS_TRABALHO_4BIMESTRE.fim : undefined}
         title={
           dataEntregaBloqueada
             ? "Selecione uma turma/disciplina antes de escolher a data."
-            : temRestricaoTrabalhoFund1
-            ? `Disponivel apenas em ${DATAS_TRABALHO_FUND1_3BIMESTRE.texto}.`
+            : temRestricaoTrabalho
+            ? `Disponivel apenas em ${DATAS_TRABALHO_4BIMESTRE.texto}.`
             : undefined
         }
         onChange={(e) => alterarDataEntrega(e.target.value)}
