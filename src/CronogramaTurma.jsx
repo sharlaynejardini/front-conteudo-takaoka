@@ -17,7 +17,8 @@ function CronogramaTurma() {
 
   const semanasSimuladoFund2 = {
     2: { inicio: `${anoAtual}-05-20`, fim: `${anoAtual}-05-22` },
-    3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
+    3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` },
+    4: { inicio: `${anoAtual}-10-19`, fim: `${anoAtual}-10-21` }
   };
 
   const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
@@ -64,7 +65,7 @@ function CronogramaTurma() {
     nome.toUpperCase().replace(/\s/g, "").replace(/[ÂºÂ°º°]/g, "").replace("ANO", "");
   const turmaTemObmep2026 = (nome = "") => turmasObmep2026.has(normalizarTurma(nome));
   const turmaPodeSimuladoFund2 = (nome = "") => turmasSimuladoFund2.has(normalizarTurma(nome));
-  const bimestreTemSimuladoFund2 = [2, 3].includes(bimestre);
+  const bimestreTemSimuladoFund2 = [2, 3, 4].includes(bimestre);
   const podeEscolherProvaFund2 = bimestreTemSimuladoFund2 && turmaPodeSimuladoFund2(turmaNome);
   const mostrarObmepNoCronograma =
     bimestre === 2 &&
@@ -85,11 +86,15 @@ function CronogramaTurma() {
       : "Prova bimestral";
 
   const getDescricaoSimulado = () =>
-    bimestre === 3 ? "Avaliação - Simulado - 19, 20 e 21/08" : "Simulado - 20 a 22/05";
+    bimestre === 4
+      ? "Avaliação - Simulado Mensal - 19, 20 e 21/10"
+      : bimestre === 3
+      ? "Avaliação - Simulado - 19, 20 e 21/08"
+      : "Simulado - 20 a 22/05";
 
   const alterarBimestre = (valor) => {
     setBimestre(valor);
-    setTipoAvaliacao(valor === 3 ? "simulado" : "regular");
+    setTipoAvaliacao([3, 4].includes(valor) ? "simulado" : "regular");
   };
 
   useEffect(() => {

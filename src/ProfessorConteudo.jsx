@@ -6,7 +6,7 @@ import { supabase } from "./supabaseClient";
 function ProfessorConteudo() {
 
   const anoAtual = new Date().getFullYear();
-  const bimestreDisponivel = 3;
+  const bimestreDisponivel = 4;
 
   const semanasProva = {
     1: { inicio: `${anoAtual}-04-13`, fim: `${anoAtual}-04-17` },
@@ -17,7 +17,8 @@ function ProfessorConteudo() {
 
   const semanasSimuladoFund2 = {
     2: { inicio: `${anoAtual}-05-20`, fim: `${anoAtual}-05-22` },
-    3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
+    3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` },
+    4: { inicio: `${anoAtual}-10-19`, fim: `${anoAtual}-10-21` }
   };
 
   const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
@@ -119,7 +120,7 @@ function ProfessorConteudo() {
       ? atribuicoes.filter(a => atribuicoesSelecionadas.includes(a.id))
       : atribuicoes.filter(a => a.id === atribuicaoSelecionada);
 
-  const bimestreTemSimuladoFund2 = [2, 3].includes(bimestre);
+  const bimestreTemSimuladoFund2 = [2, 3, 4].includes(bimestre);
   const podeCadastrarSimuladoFund2 =
     bimestreTemSimuladoFund2 &&
     atribuicoesAtivas.length > 0 &&
@@ -144,7 +145,11 @@ function ProfessorConteudo() {
       : "Prova bimestral";
 
   const getDescricaoSimulado = () =>
-    bimestre === 3 ? "Avaliação - Simulado - 19, 20 e 21/08" : "Simulado - 20 a 22/05";
+    bimestre === 4
+      ? "Avaliação - Simulado Mensal - 19, 20 e 21/10"
+      : bimestre === 3
+      ? "Avaliação - Simulado - 19, 20 e 21/08"
+      : "Simulado - 20 a 22/05";
 
   useEffect(() => {
     async function carregar() {
@@ -370,7 +375,7 @@ function ProfessorConteudo() {
         : [atribuicaoSelecionada];
 
     if (tipoAvaliacao === "simulado" && !podeCadastrarSimuladoFund2) {
-      setMensagem("O simulado esta liberado apenas para as turmas 6A, 6B, 7A, 7B, 8A, 8B, 8C, 9A, 9B e 9C no 2o e 3o bimestres.");
+      setMensagem("O simulado esta liberado apenas para as turmas 6A, 6B, 7A, 7B, 8A, 8B, 8C, 9A, 9B e 9C no 2o, 3o e 4o bimestres.");
       setTipoMensagem("error");
       return;
     }
@@ -521,7 +526,7 @@ function ProfessorConteudo() {
         value={bimestre}
         disabled
       >
-        <option value={3}>3º Bimestre</option>
+        <option value={4}>4º Bimestre</option>
       </select>
 
       {bimestreTemSimuladoFund2 && (
