@@ -28,8 +28,8 @@ function CronogramaTurma() {
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
-  const [bimestre, setBimestre] = useState(1);
-  const [tipoAvaliacao, setTipoAvaliacao] = useState("regular");
+  const [bimestre, setBimestre] = useState(4);
+  const [tipoAvaliacao, setTipoAvaliacao] = useState("simulado");
   const [cronograma, setCronograma] = useState([]);
   const [mensagemErro, setMensagemErro] = useState("");
   const [editandoId, setEditandoId] = useState(null);
