@@ -34,9 +34,9 @@ function ProfessorConteudo() {
 
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
-  const tipoAvaliacaoInicial = "simulado";
+  const tipoAvaliacaoInicial = "regular";
   const periodoAvaliacaoInicial =
-    semanasSimuladoFund2[bimestreDisponivel];
+    semanasProva[bimestreDisponivel];
 
   const [bimestre] = useState(bimestreDisponivel);
   const [tipoAvaliacao, setTipoAvaliacao] = useState(tipoAvaliacaoInicial);
@@ -138,7 +138,9 @@ function ProfessorConteudo() {
       : semanasProva[bimestre];
 
   const getDescricaoProvaRegular = () =>
-    bimestre === 3
+    bimestre === 4
+      ? "Prova bimestral - 13 a 19/11"
+      : bimestre === 3
       ? "Prova bimestral - 14 a 18/09"
       : bimestre === 2
       ? "Prova bimestral - 08, 10 a 12/06 ou 16/06"

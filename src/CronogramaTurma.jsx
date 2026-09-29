@@ -79,7 +79,9 @@ function CronogramaTurma() {
     tipo === "simulado" ? "Simulado Mensal" : "Prova bimestral";
 
   const getDescricaoProvaRegular = () =>
-    bimestre === 3
+    bimestre === 4
+      ? "Prova bimestral - 13 a 19/11"
+      : bimestre === 3
       ? "Prova bimestral - 14 a 18/09"
       : bimestre === 2
       ? "Prova bimestral - 08, 10 a 12/06 ou 16/06"
@@ -94,7 +96,7 @@ function CronogramaTurma() {
 
   const alterarBimestre = (valor) => {
     setBimestre(valor);
-    setTipoAvaliacao([3, 4].includes(valor) ? "simulado" : "regular");
+    setTipoAvaliacao(valor === 3 ? "simulado" : "regular");
   };
 
   useEffect(() => {
