@@ -3,13 +3,12 @@ import api from "./api";
 import html2canvas from "html2canvas";
 import html2pdf from "html2pdf.js";
 import logoTakaoka from "./assets/logo_takaoka.png";
-import { getBimestreAtual } from "./utils/bimestreAtual";
 
 function CronogramaTrabalho() {
 
   const [turmas, setTurmas] = useState([]);
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
-  const [bimestre, setBimestre] = useState(getBimestreAtual());
+  const [bimestre, setBimestre] = useState(4);
   const [cronograma, setCronograma] = useState([]);
   const [mensagemErro, setMensagemErro] = useState("");
   const [editandoId, setEditandoId] = useState(null);
