@@ -96,7 +96,7 @@ function CronogramaTurma() {
 
   const alterarBimestre = (valor) => {
     setBimestre(valor);
-    setTipoAvaliacao(valor === 3 ? "simulado" : "regular");
+    setTipoAvaliacao([3, 4].includes(valor) ? "simulado" : "regular");
   };
 
   useEffect(() => {

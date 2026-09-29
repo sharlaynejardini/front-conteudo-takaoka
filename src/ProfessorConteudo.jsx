@@ -34,9 +34,9 @@ function ProfessorConteudo() {
 
   const [atribuicoesSelecionadas, setAtribuicoesSelecionadas] = useState([]);
 
-  const tipoAvaliacaoInicial = "regular";
+  const tipoAvaliacaoInicial = "simulado";
   const periodoAvaliacaoInicial =
-    semanasProva[bimestreDisponivel];
+    semanasSimuladoFund2[bimestreDisponivel];
 
   const [bimestre] = useState(bimestreDisponivel);
   const [tipoAvaliacao, setTipoAvaliacao] = useState(tipoAvaliacaoInicial);
