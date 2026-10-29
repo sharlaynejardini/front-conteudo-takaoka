@@ -585,10 +585,6 @@ function ProfessorConteudo() {
         }}
       />
 
-      {tipoAvaliacao === "regular" && bimestre === 4 && (
-        <p>Datas permitidas: {descreverDatasProva(datasProvaDisponiveis)}.</p>
-      )}
-
       <h4>Conteúdos:</h4>
 
       {topicos.map((topico, index) => (
