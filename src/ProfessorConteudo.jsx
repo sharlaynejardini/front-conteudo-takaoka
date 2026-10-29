@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "./api";
 import { logAction } from "./utils/logAction";
 import { supabase } from "./supabaseClient";
+import { getDatasProva4Bimestre, descreverDatasProva } from "./utils/avaliacaoBimestral";
 
 function ProfessorConteudo() {
 
@@ -19,8 +20,6 @@ function ProfessorConteudo() {
     2: { inicio: `${anoAtual}-05-20`, fim: `${anoAtual}-05-22` },
     3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
   };
-
-  const datasExtrasProvaBimestral = [`${anoAtual}-11-23`, `${anoAtual}-11-24`];
 
   const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
@@ -122,6 +121,13 @@ function ProfessorConteudo() {
       : atribuicoes.filter(a => a.id === atribuicaoSelecionada);
 
   const bimestreTemSimuladoFund2 = [2, 3].includes(bimestre);
+  const datasProva4Bimestre = atribuicoesAtivas.reduce(
+    (datas, atribuicao) => datas.filter(data => getDatasProva4Bimestre(atribuicao.turma?.nome, anoAtual).includes(data)),
+    [...new Set([...getDatasProva4Bimestre("", anoAtual), `${anoAtual}-11-25`])]
+  );
+  const datasProvaDisponiveis = atribuicoesAtivas.length > 0
+    ? datasProva4Bimestre
+    : getDatasProva4Bimestre("", anoAtual);
   const podeCadastrarSimuladoFund2 =
     bimestreTemSimuladoFund2 &&
     atribuicoesAtivas.length > 0 &&
@@ -134,13 +140,15 @@ function ProfessorConteudo() {
     atribuicoesAtivas.some(a => turmaTemObmep2026(a.turma?.nome));
 
   const periodoAvaliacao =
-    tipoAvaliacao === "simulado" && semanasSimuladoFund2[bimestre]
+    tipoAvaliacao === "regular" && bimestre === 4
+      ? { inicio: datasProvaDisponiveis[0], fim: datasProvaDisponiveis.at(-1) }
+      : tipoAvaliacao === "simulado" && semanasSimuladoFund2[bimestre]
       ? semanasSimuladoFund2[bimestre]
       : semanasProva[bimestre];
 
   const getDescricaoProvaRegular = () =>
     bimestre === 4
-      ? "Prova bimestral - 13 a 19/11, 23 e 24/11"
+      ? `Prova bimestral - ${descreverDatasProva(datasProvaDisponiveis)}`
       : bimestre === 3
       ? "Prova bimestral - 14 a 18/09"
       : bimestre === 2
@@ -241,7 +249,7 @@ function ProfessorConteudo() {
     if (!modoEdicao) {
       setDataAvaliacao(periodoAvaliacao.inicio);
     }
-  }, [bimestre, tipoAvaliacao]);
+  }, [bimestre, tipoAvaliacao, periodoAvaliacao.inicio]);
 
   useEffect(() => {
     if (atribuicoesAtivas.length > 0 && !podeCadastrarSimuladoFund2 && tipoAvaliacao === "simulado") {
@@ -367,10 +375,9 @@ function ProfessorConteudo() {
     if (
       tipoAvaliacao === "regular" &&
       bimestre === 4 &&
-      !datasExtrasProvaBimestral.includes(dataAvaliacao) &&
-      (dataAvaliacao < periodoAvaliacao.inicio || dataAvaliacao > periodoAvaliacao.fim)
+      !datasProvaDisponiveis.includes(dataAvaliacao)
     ) {
-      setMensagem("Selecione uma data de 13 a 19/11, 23 ou 24/11.");
+      setMensagem(`Selecione uma das datas permitidas: ${descreverDatasProva(datasProvaDisponiveis)}.`);
       setTipoMensagem("error");
       return;
     }
@@ -558,7 +565,7 @@ function ProfessorConteudo() {
         style={inputStyle}
         value={dataAvaliacao}
         min={periodoAvaliacao.inicio}
-        max={tipoAvaliacao === "regular" && bimestre === 4 ? datasExtrasProvaBimestral[1] : periodoAvaliacao.fim}
+        max={periodoAvaliacao.fim}
         onChange={(e) => {
           const novaData = e.target.value;
 
@@ -577,6 +584,10 @@ function ProfessorConteudo() {
           setDataAvaliacao(novaData);
         }}
       />
+
+      {tipoAvaliacao === "regular" && bimestre === 4 && (
+        <p>Datas permitidas: {descreverDatasProva(datasProvaDisponiveis)}.</p>
+      )}
 
       <h4>Conteúdos:</h4>
 

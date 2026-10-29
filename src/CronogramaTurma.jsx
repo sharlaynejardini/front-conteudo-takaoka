@@ -3,6 +3,7 @@ import api from "./api";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import logoTakaoka from "./assets/logo_takaoka.png";
+import { getDatasProva4Bimestre, descreverDatasProva } from "./utils/avaliacaoBimestral";
 
 function CronogramaTurma() {
 
@@ -20,8 +21,6 @@ function CronogramaTurma() {
     3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` },
     4: { inicio: `${anoAtual}-10-19`, fim: `${anoAtual}-10-21` }
   };
-
-  const datasExtrasProvaBimestral = [`${anoAtual}-11-23`, `${anoAtual}-11-24`];
 
   const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
@@ -74,15 +73,20 @@ function CronogramaTurma() {
     tipoAvaliacao === "regular" &&
     turmaTemObmep2026(turmaNome);
 
+  const datasProva4Bimestre = getDatasProva4Bimestre(turmaNome, anoAtual);
   const getIntervaloAvaliacao = (item) =>
-    item?.tipo_avaliacao === "simulado" ? semanasSimuladoFund2[item.bimestre] : semanasProva[item.bimestre];
+    item?.tipo_avaliacao === "simulado"
+      ? semanasSimuladoFund2[item.bimestre]
+      : item.bimestre === 4
+      ? { inicio: datasProva4Bimestre[0], fim: datasProva4Bimestre.at(-1) }
+      : semanasProva[item.bimestre];
 
   const getNomeAvaliacao = (tipo = tipoAvaliacao) =>
     tipo === "simulado" ? "Simulado Mensal" : "Prova bimestral";
 
   const getDescricaoProvaRegular = () =>
     bimestre === 4
-      ? "Prova bimestral - 13 a 19/11, 23 e 24/11"
+      ? `Prova bimestral - ${descreverDatasProva(datasProva4Bimestre)}`
       : bimestre === 3
       ? "Prova bimestral - 14 a 18/09"
       : bimestre === 2
@@ -317,9 +321,13 @@ function CronogramaTurma() {
 
     const intervaloBimestre = getIntervaloAvaliacao(item);
 
+    if (item.tipo_avaliacao !== "simulado" && item.bimestre === 4 && !datasProva4Bimestre.includes(edicao.data_avaliacao)) {
+      alert(`Selecione uma das datas permitidas: ${descreverDatasProva(datasProva4Bimestre)}.`);
+      return;
+    }
+
     if (
       intervaloBimestre &&
-      !(item.tipo_avaliacao !== "simulado" && item.bimestre === 4 && datasExtrasProvaBimestral.includes(edicao.data_avaliacao)) &&
       (edicao.data_avaliacao < intervaloBimestre.inicio ||
         edicao.data_avaliacao > intervaloBimestre.fim)
     ) {
@@ -662,7 +670,7 @@ function CronogramaTurma() {
                           style={inputStyle}
                           value={edicao.data_avaliacao}
                           min={getIntervaloAvaliacao(item)?.inicio}
-                          max={item.tipo_avaliacao !== "simulado" && item.bimestre === 4 ? datasExtrasProvaBimestral[1] : getIntervaloAvaliacao(item)?.fim}
+                          max={getIntervaloAvaliacao(item)?.fim}
                           onChange={(e) => {
                             const novaData = e.target.value;
 
