@@ -665,6 +665,19 @@ function CronogramaTurma() {
 
                     <td style={tdStyle}>
                       {emEdicao ? (
+                        item.tipo_avaliacao !== "simulado" && item.bimestre === 4 ? (
+                          <select
+                            aria-label="Data da avaliação"
+                            style={inputStyle}
+                            value={datasProva4Bimestre.includes(edicao.data_avaliacao) ? edicao.data_avaliacao : ""}
+                            onChange={(e) => setEdicao(prev => ({ ...prev, data_avaliacao: e.target.value }))}
+                          >
+                            <option value="" disabled>Selecione a data da avaliação</option>
+                            {datasProva4Bimestre.map(data => (
+                              <option key={data} value={data}>{formatarData(data)}</option>
+                            ))}
+                          </select>
+                        ) : (
                         <input
                           type="date"
                           style={inputStyle}
@@ -694,6 +707,7 @@ function CronogramaTurma() {
                             }));
                           }}
                         />
+                        )
                       ) : (
                         formatarData(item.data_avaliacao)
                       )}

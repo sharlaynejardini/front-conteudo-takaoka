@@ -560,6 +560,22 @@ function ProfessorConteudo() {
         </select>
       )}
 
+      {tipoAvaliacao === "regular" && bimestre === 4 ? (
+        <select
+          aria-label="Data da avaliação"
+          style={inputStyle}
+          value={atribuicoesAtivas.length > 0 && datasProvaDisponiveis.includes(dataAvaliacao) ? dataAvaliacao : ""}
+          disabled={atribuicoesAtivas.length === 0}
+          onChange={(e) => setDataAvaliacao(e.target.value)}
+        >
+          <option value="" disabled>
+            {atribuicoesAtivas.length === 0 ? "Selecione a turma primeiro" : "Selecione a data da avaliação"}
+          </option>
+          {atribuicoesAtivas.length > 0 && datasProvaDisponiveis.map(data => (
+            <option key={data} value={data}>{data.split("-").reverse().join("/")}</option>
+          ))}
+        </select>
+      ) : (
       <input
         type="date"
         style={inputStyle}
@@ -584,6 +600,7 @@ function ProfessorConteudo() {
           setDataAvaliacao(novaData);
         }}
       />
+      )}
 
       <h4>Conteúdos:</h4>
 
