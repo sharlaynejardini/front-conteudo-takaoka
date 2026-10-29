@@ -4,7 +4,10 @@ export function getDatasProva4Bimestre(nomeTurma = "", ano) {
   const dias = fundamental1
     ? turma.startsWith("5") ? [17, 18, 19, 24, 25] : [17, 18, 19, 23, 24]
     : [13, 14, 15, 16, 17, 18, 19, 23, 24];
-  return dias.map(dia => `${ano}-11-${dia}`);
+  return dias.map(dia => `${ano}-11-${dia}`).filter(data => {
+    const diaSemana = new Date(`${data}T12:00:00Z`).getUTCDay();
+    return diaSemana !== 0 && diaSemana !== 6;
+  });
 }
 
 export function descreverDatasProva(datas) {
