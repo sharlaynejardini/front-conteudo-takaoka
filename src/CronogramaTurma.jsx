@@ -21,6 +21,8 @@ function CronogramaTurma() {
     4: { inicio: `${anoAtual}-10-19`, fim: `${anoAtual}-10-21` }
   };
 
+  const datasExtrasProvaBimestral = [`${anoAtual}-11-23`, `${anoAtual}-11-24`];
+
   const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const dataObmep2026 = `${anoAtual}-06-09`;
@@ -80,7 +82,7 @@ function CronogramaTurma() {
 
   const getDescricaoProvaRegular = () =>
     bimestre === 4
-      ? "Prova bimestral - 13 a 19/11"
+      ? "Prova bimestral - 13 a 19/11, 23 e 24/11"
       : bimestre === 3
       ? "Prova bimestral - 14 a 18/09"
       : bimestre === 2
@@ -317,6 +319,7 @@ function CronogramaTurma() {
 
     if (
       intervaloBimestre &&
+      !(item.tipo_avaliacao !== "simulado" && item.bimestre === 4 && datasExtrasProvaBimestral.includes(edicao.data_avaliacao)) &&
       (edicao.data_avaliacao < intervaloBimestre.inicio ||
         edicao.data_avaliacao > intervaloBimestre.fim)
     ) {
@@ -659,7 +662,7 @@ function CronogramaTurma() {
                           style={inputStyle}
                           value={edicao.data_avaliacao}
                           min={getIntervaloAvaliacao(item)?.inicio}
-                          max={getIntervaloAvaliacao(item)?.fim}
+                          max={item.tipo_avaliacao !== "simulado" && item.bimestre === 4 ? datasExtrasProvaBimestral[1] : getIntervaloAvaliacao(item)?.fim}
                           onChange={(e) => {
                             const novaData = e.target.value;
 

@@ -20,6 +20,8 @@ function ProfessorConteudo() {
     3: { inicio: `${anoAtual}-08-19`, fim: `${anoAtual}-08-21` }
   };
 
+  const datasExtrasProvaBimestral = [`${anoAtual}-11-23`, `${anoAtual}-11-24`];
+
   const turmasSimuladoFund2 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const turmasObmep2026 = new Set(["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"]);
   const dataObmep2026 = `${anoAtual}-06-09`;
@@ -138,7 +140,7 @@ function ProfessorConteudo() {
 
   const getDescricaoProvaRegular = () =>
     bimestre === 4
-      ? "Prova bimestral - 13 a 19/11"
+      ? "Prova bimestral - 13 a 19/11, 23 e 24/11"
       : bimestre === 3
       ? "Prova bimestral - 14 a 18/09"
       : bimestre === 2
@@ -362,6 +364,17 @@ function ProfessorConteudo() {
 
   const salvarConteudo = async () => {
 
+    if (
+      tipoAvaliacao === "regular" &&
+      bimestre === 4 &&
+      !datasExtrasProvaBimestral.includes(dataAvaliacao) &&
+      (dataAvaliacao < periodoAvaliacao.inicio || dataAvaliacao > periodoAvaliacao.fim)
+    ) {
+      setMensagem("Selecione uma data de 13 a 19/11, 23 ou 24/11.");
+      setTipoMensagem("error");
+      return;
+    }
+
     if (!atribuicaoSelecionada && atribuicoesSelecionadas.length === 0) {
       setMensagem("Selecione uma turma/disciplina.");
       setTipoMensagem("error");
@@ -545,7 +558,7 @@ function ProfessorConteudo() {
         style={inputStyle}
         value={dataAvaliacao}
         min={periodoAvaliacao.inicio}
-        max={periodoAvaliacao.fim}
+        max={tipoAvaliacao === "regular" && bimestre === 4 ? datasExtrasProvaBimestral[1] : periodoAvaliacao.fim}
         onChange={(e) => {
           const novaData = e.target.value;
 
