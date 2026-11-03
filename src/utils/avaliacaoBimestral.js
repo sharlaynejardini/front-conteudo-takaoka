@@ -1,8 +1,10 @@
 export function getDatasProva4Bimestre(nomeTurma = "", ano) {
   const turma = nomeTurma.toUpperCase().replace(/\s/g, "").replace(/[º°ª]/g, "").replace("ANO", "");
   const fundamental1 = /^[1-5][A-Z]?$/.test(turma);
+  const fundamental2 = ["6A", "6B", "7A", "7B", "8A", "8B", "8C", "9A", "9B", "9C"].includes(turma);
   const dias = fundamental1
     ? turma.startsWith("5") ? [17, 18, 19, 24, 25] : [17, 18, 19, 23, 24]
+    : fundamental2 ? [13, 14, 15, 16, 17, 18, 19]
     : [13, 14, 15, 16, 17, 18, 19, 23, 24];
   return dias.map(dia => `${ano}-11-${dia}`).filter(data => {
     const diaSemana = new Date(`${data}T12:00:00Z`).getUTCDay();
