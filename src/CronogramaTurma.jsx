@@ -176,9 +176,9 @@ function CronogramaTurma() {
         id: `__avaliacao_municipal_${dia}__`,
         isEvento: true,
         data_avaliacao: `${anoAtual}-11-${dia}`,
-        conteudo: ["Avaliação externa municipal"],
+        conteudo: ["Avaliação Externa Municipal"],
         atribuicao: {
-          disciplina: { nome: "Avaliação externa municipal" }
+          disciplina: { nome: "Avaliação Externa Municipal" }
         }
       }))
     : [];
