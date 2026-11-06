@@ -179,6 +179,11 @@ function CronogramaTurma() {
         { dias: [18, 19], nome: "Avaliação Externa Municipal" },
         { dias: [25, 26], nome: "SARESP" }
       ]
+    : ["5A", "5B"].includes(turmaNormalizada)
+    ? [
+        { dias: [23], nome: "SARESP" },
+        { dias: [25, 26], nome: "Avaliação Externa Municipal" }
+      ]
     : [];
   const eventosExternos = bimestre === 4 && tipoAvaliacao === "regular"
     ? avaliacoesExternas.flatMap(({ dias, nome }) => dias.map(dia => ({
