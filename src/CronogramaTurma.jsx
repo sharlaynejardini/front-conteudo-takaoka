@@ -171,6 +171,18 @@ function CronogramaTurma() {
     return nome;
   };
 
+  const eventosMunicipais = bimestre === 4 && tipoAvaliacao === "regular" && normalizarTurma(turmaNome) === "1A"
+    ? [25, 26].map(dia => ({
+        id: `__avaliacao_municipal_${dia}__`,
+        isEvento: true,
+        data_avaliacao: `${anoAtual}-11-${dia}`,
+        conteudo: ["Avaliação externa municipal"],
+        atribuicao: {
+          disciplina: { nome: "Avaliação externa municipal" }
+        }
+      }))
+    : [];
+
   const cronogramaComEventos = mostrarObmepNoCronograma
     ? [
         ...cronograma,
@@ -185,7 +197,9 @@ function CronogramaTurma() {
           }
         }
       ].sort((a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao))
-    : cronograma;
+    : [...cronograma, ...eventosMunicipais].sort(
+        (a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
+      );
 
   const gerarImagem = async () => {
 
