@@ -172,7 +172,7 @@ function CronogramaTurma() {
   };
 
   const turmaNormalizada = normalizarTurma(turmaNome);
-  const avaliacoesExternas = turmaNormalizada === "1A"
+  const avaliacoesExternas = ["1A", "3A"].includes(turmaNormalizada)
     ? [{ dias: [25, 26], nome: "Avaliação Externa Municipal" }]
     : ["2A", "2B"].includes(turmaNormalizada)
     ? [
