@@ -1,6 +1,6 @@
 export function getDatasProva4Bimestre(nomeTurma = "", ano) {
   const turma = nomeTurma.toUpperCase().replace(/\s/g, "").replace(/[º°ª]/g, "").replace("ANO", "");
-  if (turma === "1A") {
+  if (["1A", "2A", "2B"].includes(turma)) {
     return [11, 12, 13, 16, 17].map(dia => `${ano}-11-${dia}`);
   }
   const fundamental1 = /^[1-5][A-Z]?$/.test(turma);

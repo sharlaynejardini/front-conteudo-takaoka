@@ -171,16 +171,25 @@ function CronogramaTurma() {
     return nome;
   };
 
-  const eventosMunicipais = bimestre === 4 && tipoAvaliacao === "regular" && normalizarTurma(turmaNome) === "1A"
-    ? [25, 26].map(dia => ({
-        id: `__avaliacao_municipal_${dia}__`,
+  const turmaNormalizada = normalizarTurma(turmaNome);
+  const avaliacoesExternas = turmaNormalizada === "1A"
+    ? [{ dias: [25, 26], nome: "Avaliação Externa Municipal" }]
+    : ["2A", "2B"].includes(turmaNormalizada)
+    ? [
+        { dias: [18, 19], nome: "Avaliação Externa Municipal" },
+        { dias: [25, 26], nome: "SARESP" }
+      ]
+    : [];
+  const eventosExternos = bimestre === 4 && tipoAvaliacao === "regular"
+    ? avaliacoesExternas.flatMap(({ dias, nome }) => dias.map(dia => ({
+        id: `__avaliacao_externa_${dia}__`,
         isEvento: true,
         data_avaliacao: `${anoAtual}-11-${dia}`,
-        conteudo: ["Avaliação Externa Municipal"],
+        conteudo: [nome],
         atribuicao: {
-          disciplina: { nome: "Avaliação Externa Municipal" }
+          disciplina: { nome }
         }
-      }))
+      })))
     : [];
 
   const cronogramaComEventos = mostrarObmepNoCronograma
@@ -197,7 +206,7 @@ function CronogramaTurma() {
           }
         }
       ].sort((a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao))
-    : [...cronograma, ...eventosMunicipais].sort(
+    : [...cronograma, ...eventosExternos].sort(
         (a, b) => new Date(a.data_avaliacao) - new Date(b.data_avaliacao)
       );
 
